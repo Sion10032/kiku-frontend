@@ -1,8 +1,7 @@
-import { Outlet, Link } from '@tanstack/react-router';
+import { Outlet, Link, useNavigate } from '@tanstack/react-router';
 import { M3eAppBar } from '@m3e/react/app-bar';
-import { useUserStore } from '../stores/userStore';
+import { useAuth } from '../hooks/useAuth';
 import { M3eButton } from '@m3e/react/button';
-import styles from './MainLayout.module.css';
 
 interface NavEntry {
   to: string;
@@ -22,34 +21,36 @@ const NAV_ENTRIES: NavEntry[] = [
  *
  * 播放器条（PlayerBar）与全屏播放器（AudioPlayer）在步骤 8 接入；
  * 移动端底部导航栏在步骤 15 接入。
- *
- * 认证守卫：未登录时由 mainLayoutRoute.beforeLoad 重定向到 /login，
- * 因此此组件假定用户已登录。顶部展示当前用户名（步骤 5 完善下拉菜单）。
  */
 export default function MainLayout() {
-  const name = useUserStore((s) => s.name);
-  const logout = useUserStore((s) => s.logout);
+  const navigate = useNavigate();
+  const { name, logout } = useAuth();
+
+  function handleLogout() {
+    logout();
+    navigate({ to: '/login' });
+  }
 
   return (
-    <div className={styles.layout}>
-      <M3eAppBar className={styles.appBar}>
-        <span slot="headline" className={styles.headline}>
+    <div className="grid h-dvh grid-cols-[240px_1fr] grid-rows-[auto_1fr] overflow-hidden [grid-template-areas:'appbar_appbar''drawer_content']">
+      <M3eAppBar className="[grid-area:appbar]">
+        <span slot="headline" className="text-xl font-medium">
           Kiku
         </span>
-        <span slot="trailing" className={styles.user}>
+        <span slot="trailing" className="me-2 inline-flex items-center gap-2">
           {name}
-          <M3eButton variant="text" onClick={() => logout()}>
+          <M3eButton variant="text" onClick={handleLogout}>
             退出
           </M3eButton>
         </span>
       </M3eAppBar>
 
-      <nav className={styles.drawer}>
+      <nav className="[grid-area:drawer] overflow-y-auto border-ie p-2">
         {NAV_ENTRIES.map((entry) => (
           <Link
             key={entry.to}
             to={entry.to}
-            className={styles.navLink}
+            className="mb-0.5 block rounded-full px-4 py-3 text-[0.95rem] no-underline data-[active]:font-semibold"
             activeProps={{ 'data-active': '' }}
           >
             {entry.label}
@@ -57,7 +58,7 @@ export default function MainLayout() {
         ))}
       </nav>
 
-      <main className={styles.content}>
+      <main className="[grid-area:content] overflow-y-auto p-4 px-6">
         <Outlet />
       </main>
     </div>

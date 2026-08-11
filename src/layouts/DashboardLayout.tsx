@@ -1,7 +1,6 @@
 import { Outlet, Link } from '@tanstack/react-router';
 import { M3eAppBar } from '@m3e/react/app-bar';
 import { M3eButton } from '@m3e/react/button';
-import styles from './DashboardLayout.module.css';
 
 interface NavEntry {
   to: string;
@@ -21,24 +20,24 @@ const NAV_ENTRIES: NavEntry[] = [
  */
 export default function DashboardLayout() {
   return (
-    <div className={styles.layout}>
-      <M3eAppBar className={styles.appBar}>
+    <div className="flex h-dvh flex-col overflow-hidden">
+      <M3eAppBar>
         <span slot="leading">
-          <Link to="/works" style={{ textDecoration: 'none' }}>
+          <Link to="/works" className="no-underline">
             <M3eButton variant="text">← 返回</M3eButton>
           </Link>
         </span>
-        <span slot="headline" className={styles.headline}>
+        <span slot="headline" className="text-xl font-medium">
           管理后台
         </span>
       </M3eAppBar>
 
-      <nav className={styles.tabs}>
+      <nav className="flex flex-0 gap-1 overflow-x-auto border-be p-2 px-4">
         {NAV_ENTRIES.map((entry) => (
           <Link
             key={entry.to}
             to={entry.to}
-            className={styles.navLink}
+            className="whitespace-nowrap rounded-full px-4 py-2 no-underline data-[active]:font-semibold"
             activeProps={{ 'data-active': '' }}
           >
             {entry.label}
@@ -46,10 +45,9 @@ export default function DashboardLayout() {
         ))}
       </nav>
 
-      <main className={styles.content}>
+      <main className="flex-1 overflow-y-auto p-6">
         <Outlet />
       </main>
     </div>
   );
 }
-

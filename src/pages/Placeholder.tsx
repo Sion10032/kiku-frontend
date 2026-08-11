@@ -14,7 +14,7 @@ export default function Placeholder({ title }: { title: string }) {
   return (
     <section>
       <h1>{title}</h1>
-      <p style={{ color: 'var(--m3e-on-surface-variant, #666)' }}>
+      <p>
         该页面尚未实现，将在后续步骤完成。
       </p>
     </section>
