@@ -2,7 +2,7 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 import { rootRoute, mainLayoutRoute, dashboardLayoutRoute } from './__root';
 import { worksRoute } from './works';
-import Work from '../pages/Work';
+import { workRoute } from './work';
 import List from '../pages/List';
 import Favourites from '../pages/Favourites';
 import Login from '../pages/Login';
@@ -21,16 +21,7 @@ const indexRoute = createRoute({
   },
 });
 
-// 作品详情：路径参数 id → number
-const workRoute = createRoute({
-  getParentRoute: () => mainLayoutRoute,
-  path: '/work/$id',
-  params: {
-    parse: (raw) => ({ id: z.coerce.number().int().parse(raw.id) }),
-    stringify: ({ id }) => ({ id: String(id) }),
-  },
-  component: Work,
-});
+// 作品详情：路径参数 id → number（定义见 routes/work.tsx）
 
 // 圈子/标签/声优：path param 收敛为枚举（替代三个独立 prop 路由）
 const listRoute = createRoute({

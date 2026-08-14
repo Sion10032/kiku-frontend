@@ -89,21 +89,25 @@ export interface WorksPage {
 
 // ---------- 文件树 ----------
 
-export interface TrackLeaf {
-  /** 文件相对路径（作为 media index） */
-  mediaPath: string;
-  title: string;
-  type?: string;
-  children?: never;
-}
+/** 文件树节点类型（对齐原 kikoeru-quasar 的 tracks 响应）。 */
+export type TrackItemType = 'folder' | 'audio' | 'text' | 'image' | 'other';
 
 export interface TrackFolder {
   title: string;
+  type: 'folder';
   children: TrackNode[];
-  mediaPath?: never;
 }
 
-export type TrackNode = TrackLeaf | TrackFolder;
+export interface TrackLeaf {
+  title: string;
+  /** 文件类型（folder 单独建模为 TrackFolder） */
+  type: Exclude<TrackItemType, 'folder'>;
+  /** 文件相对路径（media index），如 `subfolder/track01.mp3` */
+  hash: string;
+  children?: never;
+}
+
+export type TrackNode = TrackFolder | TrackLeaf;
 
 /** /tracks/:id 响应（文件树根数组） */
 export type Tracks = TrackNode[];

@@ -1,7 +1,9 @@
-import { apiFetch } from './client';
+import { apiFetch, ApiError } from './client';
+import { buildMockTracks } from '../mocks/tracks';
 import type {
   Circle,
   Tag,
+  Tracks,
   Va,
   Work,
   WorksPage,
@@ -37,9 +39,23 @@ export function getWork(id: number): Promise<Work> {
   return apiFetch<Work>(`work/${id}`);
 }
 
-/** 文件树：GET /api/tracks/:id */
-export function getTracks(id: number) {
-  return apiFetch<unknown>(`tracks/${id}`);
+/**
+ * 文件树：GET /api/tracks/:id
+ *
+ * ⚠️ 后端 /tracks/:id 尚未实现（返回 501 stub，见 TODO.md 注意事项 13）。
+ * 请求失败（501/404）时回退到 mock 文件树（mocks/tracks.ts），保证 WorkTree
+ * 可渲染、可播放；后端实现后移除该 fallback 与 mock 模块。
+ */
+export async function getTracks(id: number): Promise<Tracks> {
+  try {
+    return await apiFetch<Tracks>(`tracks/${id}`);
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 501 || err.status === 404)) {
+      // 后端实现后移除 mock fallback
+      return buildMockTracks(id);
+    }
+    throw err;
+  }
 }
 
 /** 圈子下的作品：GET /api/circles/:id/works （返回裸数组） */

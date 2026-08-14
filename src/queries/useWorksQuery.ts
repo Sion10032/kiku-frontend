@@ -5,12 +5,13 @@ import {
 import {
   getWorks,
   getWork,
+  getTracks,
   getCircleWorks,
   getTagWorks,
   getVaWorks,
   searchWorks,
 } from '../api/works';
-import type { Work, WorksParams } from '../types';
+import type { WorksParams } from '../types';
 
 /**
  * 作品库无限滚动查询（仅 /works，含分页）。
@@ -79,8 +80,11 @@ export function useWorkQuery(id: number) {
   });
 }
 
-/** 把无限滚动 / 筛选 / 搜索的响应统一拍平为 Work[] 的辅助类型。 */
-export type WorksResult = {
-  works: Work[];
-  totalCount?: number;
-};
+/** 作品文件树（步骤 7 使用）。后端 501 时由 getTracks 内部回退 mock。 */
+export function useTracksQuery(id: number) {
+  return useQuery({
+    queryKey: ['tracks', id],
+    queryFn: () => getTracks(id),
+    enabled: id != null,
+  });
+}
