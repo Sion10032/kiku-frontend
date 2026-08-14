@@ -11,6 +11,29 @@ interface CoverSFWProps {
   thumbnail?: boolean;
 }
 
+/** 封面图加载失败时的占位（封面缺失时显示）。 */
+function CoverFallback({
+  rjcode,
+  release,
+  thumbnail,
+}: {
+  rjcode: string;
+  release?: string | null;
+  thumbnail?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        'flex flex-col items-center justify-center bg-black/10 text-sm opacity-50',
+        thumbnail ? 'h-[60px] w-[60px]' : 'aspect-[4/3] w-full',
+      ].join(' ')}
+    >
+      <span className="font-mono">RJ{rjcode}</span>
+      {release && !thumbnail && <span className="text-xs">{release}</span>}
+    </div>
+  );
+}
+
 /**
  * 封面图（NSFW 模糊）。
  *
@@ -27,6 +50,7 @@ export default function CoverSFW({
   thumbnail = false,
 }: CoverSFWProps) {
   const [blur, setBlur] = useState(true);
+  const [failed, setFailed] = useState(false);
   const rjcode = `000000${workId}`.slice(-6);
   const src = mediaUrl(`/api/cover/${workId}${thumbnail ? '?type=sam' : ''}`);
 
@@ -40,23 +64,30 @@ export default function CoverSFW({
       onMouseEnter={() => setBlur(false)}
       onMouseLeave={() => setBlur(true)}
     >
-      <img
-        src={src}
-        alt={`RJ${rjcode}`}
-        loading="lazy"
-        className={[
-          'w-full bg-black/5 object-cover transition-[filter] duration-200',
-          thumbnail ? 'h-[60px] w-[60px]' : 'aspect-[4/3]',
-          shouldBlur ? 'blur-[10px]' : '',
-        ].join(' ')}
-      />
-      <span className="absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white">
-        RJ{rjcode}
-      </span>
-      {release && !thumbnail && (
-        <span className="absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white">
-          {release}
-        </span>
+      {failed ? (
+        <CoverFallback rjcode={rjcode} release={release} thumbnail={thumbnail} />
+      ) : (
+        <>
+          <img
+            src={src}
+            alt={`RJ${rjcode}`}
+            loading="lazy"
+            onError={() => setFailed(true)}
+            className={[
+              'w-full bg-black/5 object-cover transition-[filter] duration-200',
+              thumbnail ? 'h-[60px] w-[60px]' : 'aspect-[4/3]',
+              shouldBlur ? 'blur-[10px]' : '',
+            ].join(' ')}
+          />
+          <span className="absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white">
+            RJ{rjcode}
+          </span>
+          {release && !thumbnail && (
+            <span className="absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white">
+              {release}
+            </span>
+          )}
+        </>
       )}
     </Link>
   );
