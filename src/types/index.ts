@@ -54,14 +54,16 @@ export interface Pagination {
 
 // ---------- 作品列表 / 筛选 ----------
 
-/** /works 排序字段（兼容原 kikoeru-quasar 的排序选项） */
+/** /works 排序字段（对齐原 kikoeru-quasar 的排序选项） */
 export type WorksOrder =
   | 'release'
-  | 'rating'
-  | 'download'
+  | 'rating' // 我的评价（userRating）
+  | 'dl_count'
   | 'price'
-  | 'duration'
-  | 'review'
+  | 'rate_average_2dp'
+  | 'review_count'
+  | 'id'
+  | 'nsfw'
   | 'random';
 
 export type WorksSort = 'desc' | 'asc';
@@ -74,7 +76,8 @@ export interface WorksParams {
   seed?: number;
   circleId?: number;
   tagId?: number;
-  vaId?: number;
+  /** 声优 id（后端为 string） */
+  vaId?: string;
   keyword?: string;
 }
 

@@ -20,10 +20,12 @@ export const worksRoute = createRoute({
       .enum([
         'release',
         'rating',
-        'download',
+        'dl_count',
         'price',
-        'duration',
-        'review',
+        'rate_average_2dp',
+        'review_count',
+        'id',
+        'nsfw',
         'random',
       ])
       .optional(),
@@ -32,7 +34,7 @@ export const worksRoute = createRoute({
     seed: z.number().optional(),
     circleId: z.number().optional(),
     tagId: z.number().optional(),
-    vaId: z.number().optional(),
+    vaId: z.string().optional(),
     keyword: z.string().optional(),
   }),
   // loaderDeps / loader 在步骤 3 接入 API 后启用：

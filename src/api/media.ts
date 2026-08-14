@@ -29,9 +29,10 @@ export function checkLrc(
   );
 }
 
-/** 封面图 URL（无鉴权时直接拼接）。 */
-export function coverUrl(workId: number): string {
-  return `/api/cover/${workId}`;
+/** 封面图 URL（无鉴权时直接拼接）。type='sam' 为缩略图。 */
+export function coverUrl(workId: number, type?: 'sam'): string {
+  const sep = type ? `?type=${type}` : '';
+  return `/api/cover/${workId}${sep}`;
 }
 
 /** 编码 media index 中的路径分隔符，保持后端可解析。 */
