@@ -1,9 +1,187 @@
-import Placeholder from './Placeholder';
+import { useMemo, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { M3eSearchBar } from '@m3e/react/search';
+import { M3eIcon } from '@m3e/react/icon';
+import { M3eList, M3eListItem } from '@m3e/react/list';
+import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
+import '@m3e/icons/outlined/search';
+import '@m3e/icons/outlined/chevron_right';
+import '@m3e/icons/outlined/group';
+import '@m3e/icons/outlined/label';
+import '@m3e/icons/outlined/mic';
+import {
+  useCirclesQuery,
+  useTagsQuery,
+  useVasQuery,
+} from '../queries/useListQuery';
 
 export type ListType = 'circles' | 'tags' | 'vas';
 
-/** 圈子/标签/声优列表页。步骤 9 实现。 */
+const LABELS: Record<ListType, string> = {
+  circles: '圈子',
+  tags: '标签',
+  vas: '声优',
+};
+
+const LEADING_ICONS: Record<ListType, string> = {
+  circles: 'group',
+  tags: 'label',
+  vas: 'mic',
+};
+
+/** 列表项跳转 /works 携带的筛选 search 参数（对齐 worksRoute 的 validateSearch）。 */
+type EntitySearch =
+  | { circleId: number }
+  | { tagId: number }
+  | { vaId: string };
+
+interface Entry {
+  key: string;
+  name: string;
+  search: EntitySearch;
+}
+
+/**
+ * 圈子 / 标签 / 声优 列表页（步骤 9）。
+ *
+ * - 按路由 type 选择查询（getCircles / getTags / getVas，均返回裸数组）
+ * - m3e SearchBar 输入即筛（客户端按名称过滤）
+ * - 点击项跳转 /works 并携带筛选参数：circleId / tagId / vaId（va.id 为 string 原样透传）
+ *
+ * 注意：M3eListItem 的 named slot（leading/trailing）只对直接子元素生效，
+ * 因此导航用 onClick + useNavigate 而非把 slot 元素包进 <Link>。
+ */
 export default function List({ type }: { type: ListType }) {
-  const label = { circles: '圈子', tags: '标签', vas: '声优' }[type];
-  return <Placeholder title={`${label}列表`} />;
+  const navigate = useNavigate();
+  const label = LABELS[type];
+  const [keyword, setKeyword] = useState('');
+
+  const circles = useCirclesQuery();
+  const tags = useTagsQuery();
+  const vas = useVasQuery();
+
+  // 列表项 + 跳转 search 参数（按 type 构建；导航用 onClick，见组件注释）
+  const entries = useMemo<Entry[]>(() => {
+    const kw = keyword.trim().toLowerCase();
+    const match = (name: string) => !kw || name.toLowerCase().includes(kw);
+    if (type === 'circles') {
+      return (circles.data ?? [])
+        .filter((c) => match(c.name))
+        .map((c) => ({
+          key: String(c.id),
+          name: c.name,
+          search: { circleId: c.id },
+        }));
+    }
+    if (type === 'tags') {
+      return (tags.data ?? [])
+        .filter((t) => match(t.name))
+        .map((t) => ({
+          key: String(t.id),
+          name: t.name,
+          search: { tagId: t.id },
+        }));
+    }
+    return (vas.data ?? [])
+      .filter((v) => match(v.name))
+      .map((v) => ({
+        key: v.id,
+        name: v.name,
+        search: { vaId: v.id },
+      }));
+  }, [type, circles.data, tags.data, vas.data, keyword]);
+
+  const loading =
+    type === 'circles'
+      ? circles.isLoading
+      : type === 'tags'
+        ? tags.isLoading
+        : vas.isLoading;
+
+  const isError =
+    type === 'circles'
+      ? circles.isError
+      : type === 'tags'
+        ? tags.isError
+        : vas.isError;
+
+  const total =
+    type === 'circles'
+      ? (circles.data?.length ?? 0)
+      : type === 'tags'
+        ? (tags.data?.length ?? 0)
+        : (vas.data?.length ?? 0);
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-4">
+        <h1 className="m-0 text-xl">
+          {label}
+          {!loading && total > 0 && (
+            <span className="ml-2 text-base opacity-60">({total})</span>
+          )}
+        </h1>
+      </div>
+
+      {/* 搜索（客户端过滤；m3e SearchBar 的 input 由调用方提供） */}
+      <M3eSearchBar
+        clearable
+        className="mb-4 block max-w-md"
+        onClear={() => setKeyword('')}
+      >
+        <M3eIcon slot="leading" name="search" />
+        <input
+          slot="input"
+          type="text"
+          placeholder={`搜索${label}…`}
+          value={keyword}
+          onInput={(e) => setKeyword((e.target as HTMLInputElement).value)}
+        />
+      </M3eSearchBar>
+
+      {/* 加载中 */}
+      {loading && (
+        <div className="flex justify-center py-12">
+          <M3eCircularProgressIndicator />
+        </div>
+      )}
+
+      {/* 加载失败 */}
+      {!loading && isError && (
+        <div className="py-16 text-center opacity-60">
+          加载失败，请稍后重试
+        </div>
+      )}
+
+      {/* 列表 */}
+      {!loading && !isError && entries.length > 0 && (
+        <M3eList>
+          {entries.map((entry) => (
+            <M3eListItem
+              key={entry.key}
+              onClick={() => navigate({ to: '/works', search: entry.search })}
+            >
+              <span
+                slot="leading"
+                className="me-3 flex items-center opacity-60"
+              >
+                <M3eIcon name={LEADING_ICONS[type]} />
+              </span>
+              <span className="block truncate">{entry.name}</span>
+              <span slot="trailing" className="flex items-center opacity-50">
+                <M3eIcon name="chevron_right" />
+              </span>
+            </M3eListItem>
+          ))}
+        </M3eList>
+      )}
+
+      {/* 空状态 */}
+      {!loading && !isError && entries.length === 0 && (
+        <div className="py-16 text-center opacity-60">
+          {keyword ? `没有匹配的${label}` : `暂无${label}`}
+        </div>
+      )}
+    </div>
+  );
 }
