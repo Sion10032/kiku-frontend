@@ -39,7 +39,7 @@ const listRoute = createRoute({
   },
 });
 
-// 收藏
+// 收藏（我的评价 / 我的进度 / 分类整理 三视图，见 pages/Favourites.tsx）
 const favouritesRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/favourites',
@@ -50,13 +50,27 @@ const favouritesReviewRoute = createRoute({
   path: '/favourites/review',
   component: () => <Favourites route="review" />,
 });
+
+// /favourites/progress → 默认标记进度 marked（对齐原项目路由语义）
+const favouritesProgressIndexRoute = createRoute({
+  getParentRoute: () => mainLayoutRoute,
+  path: '/favourites/progress',
+  beforeLoad: () => {
+    throw redirect({
+      to: '/favourites/progress/$status',
+      params: { status: 'marked' },
+    });
+  },
+});
+
+// 进度 5 值枚举：marked/listening/listened/replay/postponed（对齐后端 reviewSchema.progress）
 const favouritesProgressRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/favourites/progress/$status',
   params: {
     parse: (raw) => ({
       status: z
-        .enum(['not-started', 'in-progress', 'done'])
+        .enum(['marked', 'listening', 'listened', 'replay', 'postponed'])
         .parse(raw.status),
     }),
     stringify: ({ status }) => ({ status }),
@@ -65,6 +79,13 @@ const favouritesProgressRoute = createRoute({
     const { status } = favouritesProgressRoute.useParams();
     return <Favourites route="progress" status={status} />;
   },
+});
+
+// /favourites/folder（路由收藏夹，原项目语义：分类整理视图）
+const favouritesFolderRoute = createRoute({
+  getParentRoute: () => mainLayoutRoute,
+  path: '/favourites/folder',
+  component: () => <Favourites route="folder" />,
 });
 
 // 管理后台
@@ -109,7 +130,9 @@ export const routeTree = rootRoute.addChildren([
     listRoute,
     favouritesRoute,
     favouritesReviewRoute,
+    favouritesProgressIndexRoute,
     favouritesProgressRoute,
+    favouritesFolderRoute,
   ]),
   dashboardLayoutRoute.addChildren([
     foldersRoute,
