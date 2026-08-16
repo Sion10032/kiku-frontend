@@ -23,7 +23,8 @@ const NAV_ENTRIES: NavEntry[] = [
  * 主布局：顶部应用栏 + 侧栏导航 + 内容区 + 底部播放条。
  *
  * AudioElement 承载 Howler 实例（无 UI）；AudioPlayer 为全屏覆盖层
- * （fixed 定位，不占 grid 行）；移动端底部导航栏在步骤 15 接入。
+ * （fixed 定位，不占 grid 行）；LyricsBar 在 PlayerBar 内部（浮动歌词）；
+ * 移动端底部导航栏在步骤 15 接入。
  */
 export default function MainLayout() {
   const navigate = useNavigate();

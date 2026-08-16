@@ -6,12 +6,14 @@ import '@m3e/icons/outlined/skip_next';
 import '@m3e/icons/outlined/keyboard_arrow_up';
 import { usePlayerStore } from '../stores/playerStore';
 import { formatDuration } from '../utils/format';
+import LyricsBar from './LyricsBar';
 
 /**
  * 迷你播放条：常驻 MainLayout 底部（grid 第三行）。
  *
  * - 队列为空时渲染 null（对应 grid 行高度为 0）
  * - 展示当前曲目、细进度条与时间，播放/暂停、下一首、展开全屏播放器
+ * - 内部渲染 LyricsBar（悬浮于播放条上方的浮动歌词）
  */
 export default function PlayerBar() {
   const queue = usePlayerStore((s) => s.queue);
@@ -31,8 +33,10 @@ export default function PlayerBar() {
 
   return (
     <footer
-      className="[grid-area:player] flex items-center gap-2 border-t border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] px-4 py-2"
+      className="[grid-area:player] relative flex items-center gap-2 border-t border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] px-4 py-2"
     >
+      {/* 浮动歌词（悬浮于播放条上方，绝对定位） */}
+      <LyricsBar />
       <M3eIconButton
         aria-label={playing ? '暂停' : '播放'}
         onClick={togglePlaying}

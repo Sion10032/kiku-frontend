@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Howl } from 'howler';
 import { usePlayerStore, type Track } from '../stores/playerStore';
-import { streamUrl } from '../api/media';
+import { streamUrl, checkLrc } from '../api/media';
+import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 
 /**
  * 模块级 Howl 单例。
@@ -10,6 +11,26 @@ import { streamUrl } from '../api/media';
  * 通过导出的 seekTo 间接操作音频实例。
  */
 let howl: Howl | null = null;
+
+/**
+ * 当前曲目的歌词行与最近一次激活行号。
+ *
+ * 行号变化才写 store（setCurrentLyric），
+ * 避免 250ms 轮询无脑写入引起重渲染。
+ */
+let lyricLines: LyricLine[] = [];
+let lastLyricIndex = -1;
+
+/** 按播放位置同步当前歌词行（无歌词/行号未变时无操作）。 */
+function syncLyric(time: number): void {
+  if (lyricLines.length === 0) return;
+  const index = findActiveLineIndex(lyricLines, time);
+  if (index === lastLyricIndex) return;
+  lastLyricIndex = index;
+  usePlayerStore
+    .getState()
+    .setCurrentLyric(index === -1 ? '' : lyricLines[index].text);
+}
 
 /**
  * 拖动进度条 seek：clamp 到 [0, duration] 后写回 store，
@@ -35,7 +56,8 @@ function resolveSrc(track: Track): string | undefined {
  *
  * - store 为唯一数据源：Howl 由 playing/volume/muted 单向驱动，
  *   onplay/onpause 不回写 store（避免切曲时 unload 触发 onpause 干扰状态）
- * - 切曲（queue/queueIndex 变化 → currentTrack 引用变化）时卸载重建 Howl
+ * - 切曲（queue/queueIndex 变化 → currentTrack 引用变化）时卸载重建 Howl，
+ *   并重新加载歌词（check-lrc）：轮询中行号变化才写 currentLyric
  * - onend 按 playMode 处理：repeatOne 原地重播；order 到末尾 nextTrack
  *   内部置 playing=false；shuffle 随机回当前曲目（store 无变化、不重建）
  *   时原地重播兜底
@@ -58,6 +80,23 @@ export function usePlayer(): void {
 
   useEffect(() => {
     if (!currentTrack) return;
+
+    // —— 歌词：切曲时先清空，再按新曲目异步加载 ——
+    lyricLines = [];
+    lastLyricIndex = -1;
+    usePlayerStore.getState().setCurrentLyric('');
+    let lyricCancelled = false;
+    if (currentTrack.workId) {
+      checkLrc(currentTrack.workId, currentTrack.hash)
+        .then((res) => {
+          // 响应晚于切曲（含 StrictMode 双执行）时丢弃
+          if (lyricCancelled) return;
+          if (res.hasLrc && res.type && res.text) {
+            lyricLines = parseLyrics(res.type, res.text);
+          }
+        })
+        .catch(() => {}); // 无歌词属正常，静默
+    }
 
     const src = resolveSrc(currentTrack);
     if (!src) {
@@ -101,6 +140,7 @@ export function usePlayer(): void {
     if (initialPlaying) sound.play();
 
     return () => {
+      lyricCancelled = true;
       sound.unload();
       if (howl === sound) howl = null;
     };
@@ -129,7 +169,9 @@ export function usePlayer(): void {
     const timer = setInterval(() => {
       const sound = howl;
       if (sound && sound.playing()) {
-        usePlayerStore.getState().setCurrentTime(sound.seek() as number);
+        const t = sound.seek() as number;
+        usePlayerStore.getState().setCurrentTime(t);
+        syncLyric(t);
       }
     }, 250);
     return () => clearInterval(timer);

@@ -18,3 +18,13 @@ body {
 a {
   color: inherit;
 }
+
+/* 歌词行切换淡入（LyricsBar 用 tailwind animate-[fade-in_...] 引用） */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -253,6 +253,10 @@ export interface VersionResponse {
 export interface CheckLrcResponse {
   hasLrc: boolean;
   lrc?: string;
+  /** 歌词格式（未命中时缺省） */
+  type?: 'lrc' | 'vtt';
+  /** 歌词全文（未命中时缺省） */
+  text?: string;
 }
 
 // ---------- 扫描器 SSE ----------
