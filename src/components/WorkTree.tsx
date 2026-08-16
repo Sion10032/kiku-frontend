@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { M3eList, M3eListItem } from '@m3e/react/list';
+import { M3eList, M3eListAction } from '@m3e/react/list';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
@@ -13,6 +13,7 @@ import '@m3e/icons/outlined/download';
 import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/queue_music';
 import '@m3e/icons/outlined/open_in_new';
+import '@m3e/icons/outlined/arrow_right';
 import { usePlayerStore, type Track } from '../stores/playerStore';
 import { downloadUrl, streamUrl } from '../api/media';
 import type { TrackLeaf, TrackNode, Work } from '../types';
@@ -171,10 +172,10 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
       )}
 
       {!loading && fatherFolder.length > 0 && (
-        <M3eList>
+        <M3eList variant='segmented'>
           {fatherFolder.map((node) =>
             node.type === 'folder' ? (
-              <M3eListItem key={node.title} onClick={() => enterFolder(node)}>
+              <M3eListAction key={node.title} onClick={() => enterFolder(node)}>
                 <span slot="leading" className="me-3">
                   <M3eIcon name="folder" />
                 </span>
@@ -185,9 +186,12 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
                 >
                   {node.children.length} 个项目
                 </span>
-              </M3eListItem>
+                <span slot="trailing" className="me-3">
+                  <M3eIcon name="arrow_right" />
+                </span>
+              </M3eListAction>
             ) : (
-              <M3eListItem
+              <M3eListAction
                 key={node.hash}
                 onClick={() => node.type === 'audio' && playLeaf(node)}
                 onContextMenu={(e) => {
@@ -195,7 +199,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
                   openMenu(node, e);
                 }}
                 className={
-                  isCurrent(node) ? 'bg-[var(--md-sys-color-primary-container)]' : ''
+                  isCurrent(node) ? 'bg-(--md-sys-color-primary-container)' : ''
                 }
               >
                 <span slot="leading" className="me-3">
@@ -235,7 +239,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
                     <M3eIcon name="more_vert" />
                   </M3eIconButton>
                 </span>
-              </M3eListItem>
+              </M3eListAction>
             ),
           )}
         </M3eList>
@@ -252,7 +256,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
           }}
         >
           <div
-            className="absolute flex min-w-36 flex-col rounded-md border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] py-1 shadow-lg"
+            className="absolute flex min-w-36 flex-col rounded-md border border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface-container) py-1 shadow-lg"
             style={{ left: menu.x, top: menu.y }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -347,7 +351,7 @@ function MenuButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2 text-start text-sm hover:bg-[var(--md-sys-color-surface-container-high)]"
+      className="flex items-center gap-2 px-4 py-2 text-start text-sm hover:bg-(--md-sys-color-surface-container-high)"
     >
       <M3eIcon name={icon} />
       {label}
