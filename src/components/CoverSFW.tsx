@@ -3,7 +3,8 @@ import { Link } from '@tanstack/react-router';
 import { mediaUrl } from '../api/client';
 
 interface CoverSFWProps {
-  workId: number;
+  /** 作品 id，完整 RJ code（如 "RJ01173549"） */
+  workId: string;
   /** 是否为 NSFW 作品（PC 端默认模糊，hover 显示） */
   nsfw?: boolean;
   release?: string | null;
@@ -13,11 +14,11 @@ interface CoverSFWProps {
 
 /** 封面图加载失败时的占位（封面缺失时显示）。 */
 function CoverFallback({
-  rjcode,
+  rjId,
   release,
   thumbnail,
 }: {
-  rjcode: string;
+  rjId: string;
   release?: string | null;
   thumbnail?: boolean;
 }) {
@@ -28,7 +29,7 @@ function CoverFallback({
         thumbnail ? 'h-[60px] w-[60px]' : 'aspect-[4/3] w-full',
       ].join(' ')}
     >
-      <span className="font-mono">RJ{rjcode}</span>
+      <span className="font-mono">{rjId}</span>
       {release && !thumbnail && <span className="text-xs">{release}</span>}
     </div>
   );
@@ -51,7 +52,6 @@ export default function CoverSFW({
 }: CoverSFWProps) {
   const [blur, setBlur] = useState(true);
   const [failed, setFailed] = useState(false);
-  const rjcode = `000000${workId}`.slice(-6);
   const src = mediaUrl(`/api/cover/${workId}${thumbnail ? '?type=sam' : ''}`);
 
   const shouldBlur = nsfw && blur && !isMobile() && !thumbnail;
@@ -65,12 +65,12 @@ export default function CoverSFW({
       onMouseLeave={() => setBlur(true)}
     >
       {failed ? (
-        <CoverFallback rjcode={rjcode} release={release} thumbnail={thumbnail} />
+        <CoverFallback rjId={workId} release={release} thumbnail={thumbnail} />
       ) : (
         <>
           <img
             src={src}
-            alt={`RJ${rjcode}`}
+            alt={workId}
             loading="lazy"
             onError={() => setFailed(true)}
             className={[
@@ -80,7 +80,7 @@ export default function CoverSFW({
             ].join(' ')}
           />
           <span className="absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white">
-            RJ{rjcode}
+            {workId}
           </span>
           {release && !thumbnail && (
             <span className="absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white">

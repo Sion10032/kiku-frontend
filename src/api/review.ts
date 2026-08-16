@@ -2,7 +2,7 @@ import { apiFetch } from './client';
 import type { Review, SubmitReviewInput } from '../types';
 
 /** 按作品查询评价：GET /api/review?work_id=:id */
-export function getReviewsByWork(workId: number): Promise<Review[]> {
+export function getReviewsByWork(workId: string): Promise<Review[]> {
   return apiFetch<Review[]>('review', {
     searchParams: { work_id: workId },
   });
@@ -24,7 +24,7 @@ export function submitReview(input: SubmitReviewInput): Promise<Review | null> {
 }
 
 /** 删除评价：DELETE /api/review */
-export function deleteReview(workId: number): Promise<{ message: string }> {
+export function deleteReview(workId: string): Promise<{ message: string }> {
   return apiFetch<{ message: string }>('review', {
     method: 'DELETE',
     json: { work_id: workId },

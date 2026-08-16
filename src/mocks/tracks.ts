@@ -11,8 +11,9 @@ import type { Tracks, TrackFolder } from '../types';
  * `buildMockTracks`。后端实现 `/tracks/:id` 后，删除 getTracks 中的 fallback
  * 与本文件即可（不影响其他代码）。
  */
-export function buildMockTracks(workId: number): Tracks {
-  const seed = workId % 7; // 按作品 id 取一个稳定的伪随机偏移，保证每次渲染一致
+export function buildMockTracks(workId: string): Tracks {
+  // RJ code 数字部分取稳定的伪随机偏移，保证每次渲染一致
+  const seed = parseInt(workId.replace(/\D/g, ''), 10) % 7;
 
   return [
     buildFolder('01_本編', 6 + seed),

@@ -9,8 +9,8 @@ export interface Track {
   title: string;
   /** 所属作品标题（UI 展示） */
   workTitle: string;
-  /** 所属作品 id（动态取色用） */
-  workId?: number;
+  /** 所属作品 id（完整 RJ code，动态取色用） */
+  workId?: string;
   /** 流媒体 URL（不传则由 usePlayer 用 hash 构造） */
   mediaStreamUrl?: string;
   /** 下载 URL */

@@ -98,7 +98,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   );
 }
 
-function dlsiteUrl(workId: number): string {
-  const rj = String(workId).padStart(6, '0');
-  return `https://www.dlsite.com/home/work/=/product_id/RJ${rj}.html`;
+/** DLsite 作品页链接（id 为完整 RJ code） */
+function dlsiteUrl(workId: string): string {
+  return `https://www.dlsite.com/home/work/=/product_id/${workId}.html`;
 }

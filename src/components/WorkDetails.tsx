@@ -174,8 +174,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   );
 }
 
-/** DLsite 作品页链接（与 WorkCard 保持一致）。 */
-function dlsiteUrl(workId: number): string {
-  const rj = String(workId).padStart(6, '0');
-  return `https://www.dlsite.com/home/work/=/product_id/RJ${rj}.html`;
+/** DLsite 作品页链接（与 WorkCard 保持一致；id 为完整 RJ code） */
+function dlsiteUrl(workId: string): string {
+  return `https://www.dlsite.com/home/work/=/product_id/${workId}.html`;
 }

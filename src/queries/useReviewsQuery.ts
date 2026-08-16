@@ -25,7 +25,7 @@ export function useReviewsByUser(username: string | undefined) {
  *
  * 返回 id → Work 的映射（加载中/失败的项不在映射内，由调用方据此判断缺失）。
  */
-export function useWorkMap(workIds: number[]) {
+export function useWorkMap(workIds: string[]) {
   const ids = useMemo(() => [...new Set(workIds)], [workIds]);
   const results = useQueries({
     queries: ids.map((id) => ({
@@ -34,7 +34,7 @@ export function useWorkMap(workIds: number[]) {
     })),
   });
 
-  const works = new Map<number, Work>();
+  const works = new Map<string, Work>();
   ids.forEach((id, i) => {
     const data = results[i]?.data;
     if (data) works.set(id, data);

@@ -25,7 +25,8 @@ export interface Va {
  * 字段命名与后端响应保持一致（snake_case）。
  */
 export interface Work {
-  id: number;
+  /** 作品 id，完整 RJ code（如 "RJ01173549"） */
+  id: string;
   rootFolder: string;
   dir: string;
   title: string;
@@ -125,7 +126,8 @@ export type Progress =
 /** 评价项（reviewResponseSchema） */
 export interface Review {
   userName: string;
-  workId: number;
+  /** 作品 id，完整 RJ code */
+  workId: string;
   rating: number | null;
   reviewText: string | null;
   progress: Progress | null;
@@ -135,7 +137,8 @@ export interface Review {
 
 /** PUT /review 请求体 */
 export interface SubmitReviewInput {
-  work_id: number;
+  /** 作品 id，完整 RJ code */
+  work_id: string;
   rating?: number;
   review_text?: string;
   progress?: Progress;

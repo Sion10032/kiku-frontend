@@ -34,8 +34,8 @@ export function getWorks(params: WorksParams = {}): Promise<WorksPage> {
   });
 }
 
-/** 作品详情：GET /api/work/:id */
-export function getWork(id: number): Promise<Work> {
+/** 作品详情：GET /api/work/:id（id 为完整 RJ code） */
+export function getWork(id: string): Promise<Work> {
   return apiFetch<Work>(`work/${id}`);
 }
 
@@ -46,7 +46,7 @@ export function getWork(id: number): Promise<Work> {
  * 请求失败（501/404）时回退到 mock 文件树（mocks/tracks.ts），保证 WorkTree
  * 可渲染、可播放；后端实现后移除该 fallback 与 mock 模块。
  */
-export async function getTracks(id: number): Promise<Tracks> {
+export async function getTracks(id: string): Promise<Tracks> {
   try {
     return await apiFetch<Tracks>(`tracks/${id}`);
   } catch (err) {

@@ -72,7 +72,7 @@ export function useSearchWorks(keyword: string | undefined) {
 }
 
 /** 作品详情（步骤 7 使用，此处一并导出）。 */
-export function useWorkQuery(id: number) {
+export function useWorkQuery(id: string) {
   return useQuery({
     queryKey: ['work', id],
     queryFn: () => getWork(id),
@@ -81,7 +81,7 @@ export function useWorkQuery(id: number) {
 }
 
 /** 作品文件树（步骤 7 使用）。后端 501 时由 getTracks 内部回退 mock。 */
-export function useTracksQuery(id: number) {
+export function useTracksQuery(id: string) {
   return useQuery({
     queryKey: ['tracks', id],
     queryFn: () => getTracks(id),

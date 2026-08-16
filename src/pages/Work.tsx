@@ -7,7 +7,7 @@ import WorkTree from '../components/WorkTree';
 /**
  * 作品详情页。
  *
- * - 路由参数 id（number）→ useWorkQuery(id) 拉取作品元数据
+ * - 路由参数 id（完整 RJ code，如 "RJ01173549"）→ useWorkQuery(id) 拉取作品元数据
  * - useTracksQuery(id) 拉取文件树（后端 501 时内部回退 mock，见 api/works.ts）
  * - 左侧 WorkDetails 信息卡，右侧 WorkTree 文件树
  */
