@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { M3eCard } from '@m3e/react/card';
 import { M3eChip } from '@m3e/react/chips';
@@ -9,6 +9,7 @@ import '@m3e/icons/outlined/chat';
 import '@m3e/icons/outlined/open_in_new';
 import type { Work } from '../types';
 import CoverSFW from './CoverSFW';
+import WriteReview from './WriteReview';
 
 interface WorkDetailsProps {
   work: Work;
@@ -17,10 +18,12 @@ interface WorkDetailsProps {
 /**
  * 作品详情信息卡：封面、标题、圈子、评分（平均分 + 分布）、价格/售出/发售日、
  * 标签、声优、DLsite 链接与「我的评价」入口。
- *
- * 「我的评价」入口在步骤 12 接入 WriteReview 对话框，当前为占位按钮。
+ * 「我的评价」入口打开 WriteReview 对话框（星级 + 短评 + 进度，见步骤 12）。
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
+  // 写评价对话框开关
+  const [reviewOpen, setReviewOpen] = useState(false);
+
   // 评分分布：1-5 星各有多少人（rate_count_detail 的 key 为 '1'..'5'）
   const ratingDistribution = useMemo(() => {
     const counts = [5, 4, 3, 2, 1].map((point) => ({
@@ -32,6 +35,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   }, [work.rate_count_detail]);
 
   return (
+    <Fragment>
     <M3eCard className="overflow-hidden">
       <div slot="header" className="p-0">
         <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
@@ -146,14 +150,9 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           </div>
         )}
 
-        {/* 我的评价入口（步骤 12 接入 WriteReview 对话框，当前占位） */}
+        {/* 我的评价入口（打开 WriteReview 对话框） */}
         <div className="mt-1">
-          <M3eButton
-            variant="tonal"
-            onClick={() => {
-              /* 步骤 12：打开评价对话框 */
-            }}
-          >
+          <M3eButton variant="tonal" onClick={() => setReviewOpen(true)}>
             {work.userRating != null
               ? `我的评价：${'★'.repeat(work.userRating)}`
               : '写评价'}
@@ -161,6 +160,17 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         </div>
       </div>
     </M3eCard>
+
+    {/**
+     * WriteReview 必须渲染在 M3eCard 外部——M3eCard 有 shadow DOM，
+     * <dialog> showModal() 在 shadow DOM 内会导致焦点陷阱冲突，页面卡死。
+     */}
+    <WriteReview
+      work={work}
+      open={reviewOpen}
+      onClose={() => setReviewOpen(false)}
+    />
+    </Fragment>
   );
 }
 
