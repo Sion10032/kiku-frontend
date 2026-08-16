@@ -1,76 +1,98 @@
-import { Outlet, Link, useNavigate } from '@tanstack/react-router';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Outlet } from '@tanstack/react-router';
 import { M3eAppBar } from '@m3e/react/app-bar';
-import { M3eButton } from '@m3e/react/button';
-import { useAuth } from '../hooks/useAuth';
+import { M3eIcon } from '@m3e/react/icon';
+import { M3eIconButton } from '@m3e/react/icon-button';
+import '@m3e/icons/outlined/menu';
+import NavDrawer from '../components/NavDrawer';
 import AudioElement from '../components/AudioElement';
 import AudioPlayer from '../components/AudioPlayer';
 import PlayerBar from '../components/PlayerBar';
+import { useUiStore } from '../stores/uiStore';
 
-interface NavEntry {
-  to: string;
-  label: string;
+/** 视口 ≥1024px（lg 断点）视为宽屏；窄屏时侧栏自动收起。 */
+const WIDE_QUERY = '(min-width: 1024px)';
+let wideMq: MediaQueryList | null = null;
+function getWideMq(): MediaQueryList {
+  return (wideMq ??= window.matchMedia(WIDE_QUERY));
+}
+function subscribeNarrow(callback: () => void): () => void {
+  const mq = getWideMq();
+  mq.addEventListener('change', callback);
+  return () => mq.removeEventListener('change', callback);
+}
+/** 是否窄屏（<1024px）：窄屏下侧栏强制隐藏，菜单按钮改以浮层抽屉打开。 */
+function isNarrowViewport(): boolean {
+  return !getWideMq().matches;
 }
 
-const NAV_ENTRIES: NavEntry[] = [
-  { to: '/works', label: '作品库' },
-  { to: '/favourites', label: '收藏' },
-  { to: '/list/circles', label: '圈子' },
-  { to: '/list/tags', label: '标签' },
-  { to: '/list/vas', label: '声优' },
-];
-
 /**
- * 主布局：顶部应用栏 + 侧栏导航 + 内容区 + 底部播放条。
+ * 主布局（方案 B，YT Music 式）：侧栏通顶到底，顶栏与播放条只跨内容区。
+ *
+ * grid 两列三行：drawer 列（跨三行通顶，宽度 240px ↔ 0px 随隐藏状态切换，
+ * 品牌与主导航见 NavDrawer）+ 内容列（appbar / content / player）；
+ * 侧栏隐藏后内容区占满全宽，顶栏 leading 常驻菜单按钮负责显示/隐藏。
+ *
+ * 响应式：<1024px 时侧栏自动收起（不覆盖用户偏好，回到宽屏后还原），
+ * 菜单按钮此时以浮层抽屉（带遮罩）临时展开导航，点击抽屉或遮罩关闭。
  *
  * AudioElement 承载 Howler 实例（无 UI）；AudioPlayer 为全屏覆盖层
  * （fixed 定位，不占 grid 行）；LyricsBar 在 PlayerBar 内部（浮动歌词）；
- * 移动端底部导航栏在步骤 15 接入。
+ * 移动端正式适配在步骤 15 接入。
  */
 export default function MainLayout() {
-  const navigate = useNavigate();
-  const { name, isAdmin, logout } = useAuth();
+  const navHidden = useUiStore((s) => s.navHidden);
+  const toggleNavHidden = useUiStore((s) => s.toggleNavHidden);
+  const isNarrow = useSyncExternalStore(
+    subscribeNarrow,
+    isNarrowViewport,
+    () => false,
+  );
+  const [overlayOpen, setOverlayOpen] = useState(false);
 
-  function handleLogout() {
-    logout();
-    navigate({ to: '/login' });
-  }
+  // 回到宽屏时关掉可能残留的浮层抽屉
+  useEffect(() => {
+    if (!isNarrow) setOverlayOpen(false);
+  }, [isNarrow]);
+
+  // Esc 关闭浮层抽屉（开启时监听）
+  useEffect(() => {
+    if (!overlayOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOverlayOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [overlayOpen]);
+
+  // 窄屏强制隐藏；宽屏尊重用户偏好
+  const drawerHidden = isNarrow || navHidden;
 
   return (
     <>
-      <div className="grid h-dvh grid-cols-[240px_1fr] grid-rows-[auto_1fr_auto] overflow-hidden [grid-template-areas:'appbar_appbar''drawer_content''player_player']">
-        <M3eAppBar className="[grid-area:appbar]">
-          <span slot="headline" className="text-xl font-medium">
-            Kiku
-          </span>
-          <span slot="trailing" className="me-2 inline-flex items-center gap-2">
-            {name}
-            <M3eButton variant="text" onClick={handleLogout}>
-              退出
-            </M3eButton>
-          </span>
-        </M3eAppBar>
+      <div
+        className={[
+          'grid h-dvh grid-rows-[auto_1fr_auto] overflow-hidden transition-[grid-template-columns] duration-200',
+          "[grid-template-areas:'drawer_appbar''drawer_content''drawer_player']",
+          drawerHidden ? 'grid-cols-[0px_1fr]' : 'grid-cols-[240px_1fr]',
+        ].join(' ')}
+      >
+        <div className="[grid-area:drawer] min-h-0 overflow-hidden">
+          <NavDrawer />
+        </div>
 
-        <nav className="[grid-area:drawer] overflow-y-auto border-ie p-2">
-          {NAV_ENTRIES.map((entry) => (
-            <Link
-              key={entry.to}
-              to={entry.to}
-              className="mb-0.5 block rounded-full px-4 py-3 text-[0.95rem] no-underline data-[active]:font-semibold"
-              activeProps={{ 'data-active': '' }}
-            >
-              {entry.label}
-            </Link>
-          ))}
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className="mb-0.5 block rounded-full px-4 py-3 text-[0.95rem] no-underline data-[active]:font-semibold"
-              activeProps={{ 'data-active': '' }}
-            >
-              管理后台
-            </Link>
-          )}
-        </nav>
+        <M3eAppBar className="[grid-area:appbar]">
+          <M3eIconButton
+            slot="leading"
+            aria-label={isNarrow ? '打开导航' : navHidden ? '显示侧栏' : '隐藏侧栏'}
+            title={isNarrow ? '打开导航' : navHidden ? '显示侧栏' : '隐藏侧栏'}
+            onClick={() =>
+              isNarrow ? setOverlayOpen(true) : toggleNavHidden()
+            }
+          >
+            <M3eIcon name="menu" />
+          </M3eIconButton>
+        </M3eAppBar>
 
         <main className="[grid-area:content] overflow-y-auto p-4 px-6">
           <Outlet />
@@ -82,6 +104,31 @@ export default function MainLayout() {
 
       <AudioElement />
       <AudioPlayer />
+
+      {/* 窄屏浮层抽屉：悬浮于内容上方，滑入/淡出过渡（200ms）；
+          抽屉常挂载由 overlayOpen 控制位移，关闭态 pointer-events-none；
+          点击遮罩或抽屉内任意处（含导航跳转）关闭 */}
+      {isNarrow && (
+        <>
+          <div
+            aria-hidden="true"
+            className={[
+              'fixed inset-0 z-60 bg-black/40 transition-opacity duration-200',
+              overlayOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+            ].join(' ')}
+            onClick={() => setOverlayOpen(false)}
+          />
+          <div
+            className={[
+              'fixed inset-y-0 left-0 z-70 shadow-2xl transition-transform duration-200',
+              overlayOpen ? 'translate-x-0' : 'pointer-events-none -translate-x-full',
+            ].join(' ')}
+            onClickCapture={() => setOverlayOpen(false)}
+          >
+            <NavDrawer />
+          </div>
+        </>
+      )}
     </>
   );
 }
