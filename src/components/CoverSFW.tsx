@@ -29,7 +29,7 @@ export default function CoverSFW({
 }: CoverSFWProps) {
   const [blur, setBlur] = useState(true);
   const [failed, setFailed] = useState(false);
-  const src = mediaUrl(`/api/cover/${workId}${thumbnail ? '?type=sam' : ''}`);
+  const src = mediaUrl(`/api/cover/${workId}/file${thumbnail ? '?type=sam' : ''}`);
 
   const shouldBlur = nsfw && blur && !isMobile() && !thumbnail;
 
