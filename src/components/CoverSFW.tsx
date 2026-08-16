@@ -12,35 +12,12 @@ interface CoverSFWProps {
   thumbnail?: boolean;
 }
 
-/** 封面图加载失败时的占位（封面缺失时显示）。 */
-function CoverFallback({
-  rjId,
-  release,
-  thumbnail,
-}: {
-  rjId: string;
-  release?: string | null;
-  thumbnail?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        'flex flex-col items-center justify-center bg-black/10 text-sm opacity-50',
-        thumbnail ? 'h-[60px] w-[60px]' : 'aspect-[4/3] w-full',
-      ].join(' ')}
-    >
-      <span className="font-mono">{rjId}</span>
-      {release && !thumbnail && <span className="text-xs">{release}</span>}
-    </div>
-  );
-}
-
 /**
  * 封面图（NSFW 模糊）。
  *
- * - 显示 RJ 编号角标与发售日期
- * - PC 端 NSFW 封面默认模糊，鼠标悬停显示
- * - 移动端始终清晰显示
+ * - 显示 RJ 编号角标与发售日期（加载失败时同样显示）
+ * - 加载失败时仅用同尺寸占位替换 img，角标/日期 overlay 不受影响
+ * - PC 端 NSFW 封面默认模糊，鼠标悬停显示；移动端始终清晰显示
  *
  * 后端 cover 端点：/api/cover/:id（?type=sam 缩略图）。
  */
@@ -56,38 +33,48 @@ export default function CoverSFW({
 
   const shouldBlur = nsfw && blur && !isMobile() && !thumbnail;
 
+  // img 与占位共享的尺寸类，失败时占位保持与封面相同的占位大小
+  const frameClass = thumbnail ? 'h-[60px] w-[60px]' : 'aspect-[4/3] w-full';
+
   return (
     <Link
       to="/work/$id"
       params={{ id: workId }}
-      className="relative block"
+      // w-full：m3e-card 会把 slotted 的 header 强制为 flex 容器
+      // （::slotted([slot=header]) { display: flex }），Link 作为 flex item
+      // 默认收缩到内容宽度，封面/占位会缩成小块，需显式占满。
+      // 非 thumbnail：顶部圆角对齐卡片圆角（corner-medium 12px）并裁剪
+      // NSFW 模糊时 filter 的边缘溢出
+      className={[
+        'relative block w-full',
+        thumbnail ? '' : 'overflow-hidden rounded-t-xl',
+      ].join(' ')}
       onMouseEnter={() => setBlur(false)}
       onMouseLeave={() => setBlur(true)}
     >
       {failed ? (
-        <CoverFallback rjId={workId} release={release} thumbnail={thumbnail} />
+        <div className={['bg-black/10', frameClass].join(' ')} />
       ) : (
-        <>
-          <img
-            src={src}
-            alt={workId}
-            loading="lazy"
-            onError={() => setFailed(true)}
-            className={[
-              'w-full bg-black/5 object-cover transition-[filter] duration-200',
-              thumbnail ? 'h-[60px] w-[60px]' : 'aspect-[4/3]',
-              shouldBlur ? 'blur-[10px]' : '',
-            ].join(' ')}
-          />
-          <span className="absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white">
-            {workId}
-          </span>
-          {release && !thumbnail && (
-            <span className="absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white">
-              {release}
-            </span>
-          )}
-        </>
+        <img
+          src={src}
+          alt={workId}
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className={[
+            'w-full bg-black/5 object-cover transition-[filter] duration-200',
+            frameClass,
+            shouldBlur ? 'blur-[10px]' : '',
+          ].join(' ')}
+        />
+      )}
+
+      <span className="absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white">
+        {workId}
+      </span>
+      {release && !thumbnail && (
+        <span className="absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white">
+          {release}
+        </span>
       )}
     </Link>
   );

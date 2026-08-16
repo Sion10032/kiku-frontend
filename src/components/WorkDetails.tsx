@@ -36,12 +36,12 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
 
   return (
     <Fragment>
-    <M3eCard className="overflow-hidden">
+    <M3eCard className="overflow-hidden [--m3e-card-padding:0px]">
       <div slot="header" className="p-0">
         <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
       </div>
 
-      <div slot="content" className="flex flex-col gap-3">
+      <div slot="content" className="flex flex-col gap-3 p-4">
         {/* 标题 */}
         <h1 className="m-0 text-xl font-normal leading-snug">{work.title}</h1>
 

@@ -17,14 +17,23 @@ interface WorkCardProps {
  * 价格、售出数、NSFW 标记、标签。
  */
 export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
+  // m3e-card 的 slot 边距全部来自 --m3e-card-padding（默认 16px）：
+  // 非媒体 header（header slot 直接子节点非 img/video）会被 shadow DOM
+  // 加上 margin-inline/block-start 导致封面占不满卡片宽度，此即本卡片的
+  // 场景（封面需要 Link 包裹跳转/NSFW 模糊/回退，无法用裸 img 入 slot）。
+  // 归零变量后由 content/actions 自行补边距，封面即可铺满全宽。
+  const cardVars = thumbnail ? '' : '[--m3e-card-padding:0px]';
+  // 对齐原 slot 边距规则：content 仅在没有 actions（tags）时需要底部边距
+  const contentPadding = !thumbnail && work.tags.length > 0 ? 'px-4 pt-4' : 'px-4 py-4';
+
   return (
-    <M3eCard className="h-full">
+    <M3eCard className={['h-full', cardVars].join(' ')}>
       <div slot="header" className="p-0">
         <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
       </div>
 
       {!thumbnail && (
-        <div slot="content" className="flex flex-col gap-2">
+        <div slot="content" className={['flex flex-col gap-2', contentPadding].join(' ')}>
           <Link
             to="/work/$id"
             params={{ id: work.id }}
@@ -86,7 +95,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
       )}
 
       {!thumbnail && work.tags.length > 0 && (
-        <div slot="actions" className="flex flex-wrap gap-1">
+        <div slot="actions" className="flex flex-wrap gap-1 p-4">
           {work.tags.slice(0, 6).map((tag) => (
             <Link key={tag.id} to="/works" search={{ tagId: tag.id }}>
               <M3eChip>{tag.name}</M3eChip>
