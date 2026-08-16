@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate } from '@tanstack/react-router';
 import { M3eAppBar } from '@m3e/react/app-bar';
-import { useAuth } from '../hooks/useAuth';
 import { M3eButton } from '@m3e/react/button';
+import { useAuth } from '../hooks/useAuth';
 
 interface NavEntry {
   to: string;
@@ -24,7 +24,7 @@ const NAV_ENTRIES: NavEntry[] = [
  */
 export default function MainLayout() {
   const navigate = useNavigate();
-  const { name, logout } = useAuth();
+  const { name, isAdmin, logout } = useAuth();
 
   function handleLogout() {
     logout();
@@ -56,6 +56,15 @@ export default function MainLayout() {
             {entry.label}
           </Link>
         ))}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className="mb-0.5 block rounded-full px-4 py-3 text-[0.95rem] no-underline data-[active]:font-semibold"
+            activeProps={{ 'data-active': '' }}
+          >
+            管理后台
+          </Link>
+        )}
       </nav>
 
       <main className="[grid-area:content] overflow-y-auto p-4 px-6">
