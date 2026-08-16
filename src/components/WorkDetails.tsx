@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { M3eCard } from '@m3e/react/card';
 import { M3eChip } from '@m3e/react/chips';
@@ -8,6 +8,8 @@ import '@m3e/icons/outlined/star';
 import '@m3e/icons/outlined/chat';
 import '@m3e/icons/outlined/open_in_new';
 import type { Work } from '../types';
+import { useThemeStore } from '../stores/themeStore';
+import { getSeedColorForWork } from '../utils/theme';
 import CoverSFW from './CoverSFW';
 import WriteReview from './WriteReview';
 
@@ -23,6 +25,19 @@ interface WorkDetailsProps {
 export default function WorkDetails({ work }: WorkDetailsProps) {
   // 写评价对话框开关
   const [reviewOpen, setReviewOpen] = useState(false);
+
+  // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
+  // cancelled 守卫防止快速切换作品时旧请求晚到覆盖新主题；
+  // 用 getState() 而非 hook 订阅，避免组件因 seed 变化重渲。
+  useEffect(() => {
+    let cancelled = false;
+    getSeedColorForWork(work.id).then((color) => {
+      if (color && !cancelled) useThemeStore.getState().setSeed(color);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [work.id]);
 
   // 评分分布：1-5 星各有多少人（rate_count_detail 的 key 为 '1'..'5'）
   const ratingDistribution = useMemo(() => {
