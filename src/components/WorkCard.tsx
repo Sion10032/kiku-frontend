@@ -53,7 +53,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             {/* 平均评分 */}
             {work.rate_average_2dp != null && (
-              <span className="font-medium text-[var(--m3e-error)]">
+              <span className="font-medium text-(--m3e-error)">
                 ★ {work.rate_average_2dp.toFixed(1)}
                 <span className="font-normal opacity-60">
                   {' '}
@@ -78,7 +78,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
 
           <div className="flex flex-wrap items-center gap-x-2 text-sm">
             {work.price != null && (
-              <span className="font-medium text-[var(--m3e-error)]">
+              <span className="font-medium text-(--m3e-error)">
                 {work.price} 日元
               </span>
             )}
@@ -86,7 +86,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
               <span className="opacity-70">售出 {work.dl_count}</span>
             )}
             {!work.nsfw && (
-              <span className="rounded-sm bg-[var(--m3e-primary-container)] px-1.5 py-0.5 text-xs">
+              <span className="rounded-sm bg-(--m3e-primary-container) px-1.5 py-0.5 text-xs">
                 全年龄
               </span>
             )}

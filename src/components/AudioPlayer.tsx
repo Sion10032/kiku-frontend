@@ -110,7 +110,7 @@ export default function AudioPlayer() {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-[var(--md-sys-color-surface)]">
+    <div className="fixed inset-0 z-40 flex flex-col bg-(--md-sys-color-surface)">
       {/* 顶栏：折叠 + 播放列表 / 睡眠定时 */}
       <div className="flex items-center justify-between p-4">
         <M3eIconButton aria-label="折叠播放器" onClick={toggleHide}>
@@ -141,7 +141,7 @@ export default function AudioPlayer() {
             className="max-h-[38vh] w-auto max-w-[min(80vw,420px)] rounded-2xl object-contain"
           />
         ) : (
-          <div className="flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-[var(--md-sys-color-surface-container)] text-[var(--md-sys-color-on-surface-variant)]">
+          <div className="flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)">
             <M3eIcon name="music_note" />
           </div>
         )}
@@ -332,8 +332,8 @@ function QueueRow({
       className={[
         'flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2',
         active
-          ? 'bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)]'
-          : 'hover:bg-[var(--md-sys-color-surface-container-high)]',
+          ? 'bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container)'
+          : 'hover:bg-(--md-sys-color-surface-container-high)',
       ].join(' ')}
       {...attributes}
       {...listeners}

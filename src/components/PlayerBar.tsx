@@ -33,7 +33,7 @@ export default function PlayerBar() {
 
   return (
     <footer
-      className="[grid-area:player] relative flex items-center gap-2 border-t border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] px-4 py-2"
+      className="[grid-area:player] relative flex items-center gap-2 border-t border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface-container) px-4 py-2"
     >
       {/* 浮动歌词（悬浮于播放条上方，绝对定位） */}
       <LyricsBar />
@@ -51,9 +51,9 @@ export default function PlayerBar() {
         <div className="truncate text-sm font-medium">{track.title}</div>
         <div className="truncate text-xs opacity-70">{track.workTitle}</div>
         {/* 细进度条（不可交互，seek 在全屏播放器） */}
-        <div className="mt-1 h-1 overflow-hidden rounded-full bg-[var(--md-sys-color-surface-container-highest)]">
+        <div className="mt-1 h-1 overflow-hidden rounded-full bg-(--md-sys-color-surface-container-highest)">
           <div
-            className="h-full bg-[var(--md-sys-color-primary)]"
+            className="h-full bg-(--md-sys-color-primary)"
             style={{ width: `${progress}%` }}
           />
         </div>

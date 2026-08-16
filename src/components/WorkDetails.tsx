@@ -72,7 +72,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         {/* 评分 / 评论 / DLsite */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           {work.rate_average_2dp != null && (
-            <span className="font-medium text-[var(--md-sys-color-primary)]">
+            <span className="font-medium text-(--md-sys-color-primary)">
               ★ {work.rate_average_2dp.toFixed(1)}
               <span className="font-normal opacity-60">
                 {' '}
@@ -90,7 +90,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             href={dlsiteUrl(work.id)}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-0.5 no-underline text-[var(--md-sys-color-primary)]"
+            className="inline-flex items-center gap-0.5 no-underline text-(--md-sys-color-primary)"
           >
             DLsite
             <M3eIcon name="open_in_new" />
@@ -109,9 +109,9 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                   <span className="w-8 shrink-0 text-right opacity-70">
                     {point}星
                   </span>
-                  <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--md-sys-color-surface-container-high)]">
+                  <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-(--md-sys-color-surface-container-high)">
                     <div
-                      className="h-full rounded-full bg-[var(--md-sys-color-primary)]"
+                      className="h-full rounded-full bg-(--md-sys-color-primary)"
                       style={{
                         width: `${(count / ratingDistribution.max) * 100}%`,
                       }}
@@ -126,7 +126,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         {/* 价格 / 售出 / 发售日 */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           {work.price != null && (
-            <span className="font-medium text-[var(--md-sys-color-error)]">
+            <span className="font-medium text-(--md-sys-color-error)">
               {work.price} 日元
             </span>
           )}
@@ -135,7 +135,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           )}
           {work.release && <span className="opacity-70">{work.release}</span>}
           {!work.nsfw && (
-            <span className="rounded-sm bg-[var(--md-sys-color-primary-container)] px-1.5 py-0.5 text-xs">
+            <span className="rounded-sm bg-(--md-sys-color-primary-container) px-1.5 py-0.5 text-xs">
               全年龄
             </span>
           )}
@@ -157,7 +157,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           <div className="flex flex-wrap gap-1">
             {work.vas.map((va) => (
               <Link key={va.id} to="/works" search={{ vaId: va.id }}>
-                <M3eChip className="text-[var(--md-sys-color-primary)]">
+                <M3eChip className="text-(--md-sys-color-primary)">
                   {va.name}
                 </M3eChip>
               </Link>

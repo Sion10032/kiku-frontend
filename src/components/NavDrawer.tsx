@@ -43,7 +43,7 @@ export default function NavDrawer() {
   const initial = name.trim().charAt(0).toUpperCase();
 
   return (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col border-e border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]">
+    <aside className="flex h-full w-60 shrink-0 flex-col border-e border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
       {/* 品牌头部 */}
       <div className="px-5 pb-2 pt-5 text-xl font-medium">Kiku</div>
 
@@ -135,7 +135,7 @@ export default function NavDrawer() {
 
       {/* 用户区（钉在底部） */}
       <div className="mt-auto flex items-center gap-3 border-t border-(--md-sys-color-outline-variant) px-4 py-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-base font-medium text-[var(--md-sys-color-on-primary-container)]">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-base font-medium text-(--md-sys-color-on-primary-container)">
           {initial || <M3eIcon name="person" />}
         </span>
         <span className="min-w-0 flex-1 truncate">{name}</span>

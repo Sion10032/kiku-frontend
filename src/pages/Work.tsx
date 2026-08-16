@@ -33,8 +33,8 @@ export default function Work() {
   const work = workQuery.data;
 
   return (
-    <div className="mx-auto flex max-w-[1400px] flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="w-full shrink-0 lg:w-[360px]">
+    <div className="mx-auto flex max-w-350 flex-col gap-6 lg:flex-row lg:items-start">
+      <div className="w-full shrink-0 lg:w-90">
         <WorkDetails work={work} />
       </div>
       <div className="min-w-0 flex-1">
