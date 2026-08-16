@@ -126,7 +126,7 @@ export default function List({ type }: { type: ListType }) {
       {/* 搜索（客户端过滤；m3e SearchBar 的 input 由调用方提供） */}
       <M3eSearchBar
         clearable
-        className="mb-4 block max-w-md"
+        className="mb-4 block w-full"
         onClear={() => setKeyword('')}
       >
         <M3eIcon slot="leading" name="search" />

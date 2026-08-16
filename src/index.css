@@ -1,4 +1,9 @@
-@import 'tailwindcss';
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+/* @import 'tailwindcss/preflight.css' layer(base); */
+/* @import '@/css/preflight.css' layer(base); */
+@import 'tailwindcss/utilities.css' layer(utilities);
 
 /* 让浏览器原生 UI（滚动条、表单控件）跟随系统亮/暗色偏好 */
 :root {
