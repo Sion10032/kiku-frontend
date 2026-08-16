@@ -98,7 +98,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         </div>
 
         {/* 评分分布 */}
-        {work.rate_count_detail &&
+        {/*{work.rate_count_detail &&
           Object.keys(work.rate_count_detail).length > 0 && (
             <div className="flex flex-col gap-1">
               {ratingDistribution.counts.map(({ point, count }) => (
@@ -121,7 +121,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                 </div>
               ))}
             </div>
-          )}
+          )}*/}
 
         {/* 价格 / 售出 / 发售日 */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
