@@ -55,17 +55,12 @@ export interface Pagination {
 
 // ---------- 作品列表 / 筛选 ----------
 
-/** /works 排序字段（对齐原 kikoeru-quasar 的排序选项） */
+/** /works 排序字段（对齐后端 schema） */
 export type WorksOrder =
   | 'release'
-  | 'rating' // 我的评价（userRating）
-  | 'dl_count'
-  | 'price'
-  | 'rate_average_2dp'
-  | 'review_count'
   | 'id'
-  | 'nsfw'
-  | 'random';
+  | 'random'
+  | 'betterRandom';
 
 export type WorksSort = 'desc' | 'asc';
 

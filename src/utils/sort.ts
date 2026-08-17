@@ -7,20 +7,14 @@ export interface SortOption {
   sort: WorksSort;
 }
 
-/** 作品库排序选项（对齐原 kikoeru-quasar）。 */
+/** 作品库排序选项（对齐后端 schema）。 */
 export const SORT_OPTIONS: SortOption[] = [
   { label: '按照发售日期新到老的顺序', order: 'release', sort: 'desc' },
-  { label: '按照我的评价排序', order: 'rating', sort: 'desc' },
   { label: '按照发售日期老到新的顺序', order: 'release', sort: 'asc' },
-  { label: '按照售出数量多到少的顺序', order: 'dl_count', sort: 'desc' },
-  { label: '按照价格便宜到贵的顺序', order: 'price', sort: 'asc' },
-  { label: '按照价格贵到便宜的顺序', order: 'price', sort: 'desc' },
-  { label: '按照评价高到低的顺序', order: 'rate_average_2dp', sort: 'desc' },
-  { label: '按照评论多到少的顺序', order: 'review_count', sort: 'desc' },
   { label: '按照RJ号大到小的顺序', order: 'id', sort: 'desc' },
   { label: '按照RJ号小到大的顺序', order: 'id', sort: 'asc' },
-  { label: '按照全年龄新作优先的顺序', order: 'nsfw', sort: 'asc' },
   { label: '随机排序', order: 'random', sort: 'desc' },
+  { label: '更好的随机排序', order: 'betterRandom', sort: 'desc' },
 ];
 
 export const DEFAULT_SORT: SortOption = SORT_OPTIONS[0];

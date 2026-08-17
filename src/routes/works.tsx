@@ -8,7 +8,7 @@ import { getWorks } from '../api/works';
  * 作品库路由。
  *
  * Search params 用 zod 校验，跳转/读取全程类型安全：
- *   <Link to="/works" search={{ order: 'rating', sort: 'desc' }} />
+ *   <Link to="/works" search={{ order: 'release', sort: 'desc' }} />
  *   const { order, sort } = worksRoute.useSearch();
  *
  * 数据预取（loader + ensureQueryData）：进入页面时提前写入 QueryClient 缓存。
@@ -20,14 +20,9 @@ export const worksRoute = createRoute({
     order: z
       .enum([
         'release',
-        'rating',
-        'dl_count',
-        'price',
-        'rate_average_2dp',
-        'review_count',
         'id',
-        'nsfw',
         'random',
+        'betterRandom',
       ])
       .optional(),
     sort: z.enum(['desc', 'asc']).optional(),
@@ -53,9 +48,14 @@ export const worksRoute = createRoute({
       sort: deps.sort,
       seed: deps.seed,
     };
+    const page = deps.page ?? 1;
     return context.queryClient.ensureQueryData({
       queryKey: ['works', params],
-      queryFn: () => getWorks({ ...params, page: deps.page ?? 1 }),
+      queryFn: async () => {
+        const result = await getWorks({ ...params, page });
+        // 包装为 useInfiniteQuery 期望的 { pages, pageParams } 结构
+        return { pages: [result], pageParams: [page] };
+      },
     });
   },
   component: Works,

@@ -76,7 +76,7 @@ export default function Works() {
   const infinite = useWorksInfinite({
     order: sortOption.order,
     sort: sortOption.sort,
-    seed: sortOption.order === 'random' ? seed : undefined,
+    seed: (sortOption.order === 'random' || sortOption.order === 'betterRandom') ? seed : undefined,
   });
 
   const circleWorks = useCircleWorks(search.circleId);
@@ -150,7 +150,7 @@ export default function Works() {
 
   // 切到随机排序时若未设 seed，生成一个
   useEffect(() => {
-    if (sortOption.order === 'random' && search.seed == null) {
+    if ((sortOption.order === 'random' || sortOption.order === 'betterRandom') && search.seed == null) {
       navigate({
         search: (prev) => ({ ...prev, seed: Math.floor(Math.random() * 100) }),
       });
