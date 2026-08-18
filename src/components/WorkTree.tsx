@@ -1,5 +1,6 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { M3eList, M3eListAction } from '@m3e/react/list';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { M3eListOption, M3eSelectionList } from '@m3e/react/list';
+import { M3eMenu, M3eMenuItem, type M3eMenuElement } from '@m3e/react/menu';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
@@ -16,7 +17,9 @@ import '@m3e/icons/outlined/open_in_new';
 import '@m3e/icons/outlined/arrow_right';
 import { usePlayerStore, type Track } from '../stores/playerStore';
 import { downloadUrl, streamUrl } from '../api/media';
-import type { TrackLeaf, TrackNode, Work } from '../types';
+import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../types';
+import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
+import { useM3eListOptionStyle } from '../hooks/useM3eListOptionStyle';
 
 interface WorkTreeProps {
   work: Work;
@@ -25,18 +28,17 @@ interface WorkTreeProps {
   loading?: boolean;
 }
 
-/** 右键/更多菜单项。 */
+/** ⋮ 菜单状态：目标叶子节点 + 触发菜单的按钮（作为定位锚点）。 */
 interface MenuState {
   node: TrackLeaf;
-  x: number;
-  y: number;
+  anchor: HTMLElement;
 }
 
 /**
  * 文件树浏览器 + 面包屑导航。
  *
  * - 文件夹：点击进入（面包屑可回退）
- * - 音频：点击 → setQueue 播放当前目录音频；右键/⋮ 菜单：添加到队列、下一首播放、下载
+ * - 音频：点击 → setQueue 播放当前目录音频；⋮ 菜单：添加到队列、下一首播放、下载
  * - 文本/图片：菜单「打开文件」（新标签页流式打开）；other 类型：下载
  *
  * 播放器（Howler）在步骤 8 实现；此处仅负责写入 playerStore 队列。
@@ -45,14 +47,13 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   // 面包屑路径（文件夹标题数组）
   const [path, setPath] = useState<string[]>([]);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const menuRef = useRef<M3eMenuElement>(null);
 
   const queue = usePlayerStore((s) => s.queue);
   const queueIndex = usePlayerStore((s) => s.queueIndex);
-  const playing = usePlayerStore((s) => s.playing);
   const setQueue = usePlayerStore((s) => s.setQueue);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
-  const togglePlaying = usePlayerStore((s) => s.togglePlaying);
 
   // 单目录作品自动进入根目录（对齐原 kikoeru-quasar 行为）
   useEffect(() => {
@@ -102,10 +103,6 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
     setQueue(queueTracks, index === -1 ? 0 : index);
   }
 
-  function toggleCurrent() {
-    togglePlaying();
-  }
-
   function downloadLeaf(leaf: TrackLeaf) {
     const a = document.createElement('a');
     a.href = downloadUrl(work.id, leaf.hash);
@@ -120,14 +117,15 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
     window.open(streamUrl(work.id, leaf.hash), '_blank', 'noopener');
   }
 
-  /** 打开菜单：右键以光标定位，⋮ 按钮以按钮左下角定位。 */
-  function openMenu(leaf: TrackLeaf, e: { clientX: number; clientY: number }) {
-    setMenu({
-      node: leaf,
-      x: Math.min(e.clientX, window.innerWidth - 180),
-      y: Math.min(e.clientY, window.innerHeight - 140),
-    });
+  /** 打开菜单：以 ⋮ 按钮为锚点（m3e-menu 自动翻转防溢出）。 */
+  function openMenu(leaf: TrackLeaf, anchor: HTMLElement) {
+    setMenu({ node: leaf, anchor });
   }
+
+  // 每次 openMenu 都产生新的 menu 对象，确保重复点击同一行的 ⋮ 也会重新 show
+  useEffect(() => {
+    if (menu) void menuRef.current?.show(menu.anchor);
+  }, [menu]);
 
   function isCurrent(leaf: TrackLeaf): boolean {
     return currentTrack?.hash === leaf.hash;
@@ -136,27 +134,18 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   return (
     <div className="flex flex-col gap-3">
       {/* 面包屑 */}
-      <nav className="flex flex-wrap items-center gap-1">
-        <button
-          type="button"
-          onClick={() => setPath([])}
-          className={crumbClass(path.length === 0)}
-        >
+      <M3eBreadcrumb>
+        <M3eBreadcrumbItem onClick={() => setPath([])}>
           ROOT
-        </button>
+        </M3eBreadcrumbItem>
         {path.map((name, i) => (
-          <Fragment key={`${name}-${i}`}>
-            <span className="opacity-40">/</span>
-            <button
-              type="button"
-              onClick={() => setPath(path.slice(0, i + 1))}
-              className={crumbClass(i === path.length - 1)}
-            >
-              {name}
-            </button>
-          </Fragment>
+          <M3eBreadcrumbItem
+            key={`${name}-${i}`}
+            onClick={() => setPath(path.slice(0, i + 1))}>
+            {name}
+          </M3eBreadcrumbItem>
         ))}
-      </nav>
+      </M3eBreadcrumb>
 
       {/* 文件列表 */}
       {loading && (
@@ -172,136 +161,140 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
       )}
 
       {!loading && fatherFolder.length > 0 && (
-        <M3eList variant='segmented'>
+        <M3eSelectionList variant='segmented' hide-selection-indicator>
           {fatherFolder.map((node) =>
             node.type === 'folder' ? (
-              <M3eListAction key={node.title} onClick={() => enterFolder(node)}>
-                <span slot="leading" className="me-3">
-                  <M3eIcon name="folder" />
-                </span>
-                <span className="min-w-0 flex-1 truncate">{node.title}</span>
-                <span
-                  slot="supporting-text"
-                  className="text-xs opacity-60"
-                >
-                  {node.children.length} 个项目
-                </span>
-                <span slot="trailing" className="me-3">
-                  <M3eIcon name="arrow_right" />
-                </span>
-              </M3eListAction>
+              <TrackFolderListItem
+                key={node.title}
+                node={node}
+                onEnter={() => enterFolder(node)}
+              />
             ) : (
-              <M3eListAction
+              <TrackLeafListItem
                 key={node.hash}
-                onClick={() => node.type === 'audio' && playLeaf(node)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  openMenu(node, e);
-                }}
-                className={
-                  isCurrent(node) ? 'bg-(--md-sys-color-primary-container)' : ''
-                }
-              >
-                <span slot="leading" className="me-3">
-                  <M3eIcon name={leafIcon(node.type)} />
-                </span>
-                <span className="min-w-0 flex-1 truncate">{node.title}</span>
-                <span slot="trailing" className="flex items-center gap-1">
-                  {node.type === 'audio' && (
-                    <M3eIconButton
-                      aria-label={isCurrent(node) ? '暂停' : '播放'}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isCurrent(node)) toggleCurrent();
-                        else playLeaf(node);
-                      }}
-                    >
-                      <M3eIcon
-                        name={
-                          isCurrent(node) && playing ? 'pause' : 'play_arrow'
-                        }
-                      />
-                    </M3eIconButton>
-                  )}
-                  <M3eIconButton
-                    aria-label="更多操作"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const rect = (
-                        e.currentTarget as HTMLElement
-                      ).getBoundingClientRect();
-                      openMenu(node, {
-                        clientX: rect.left,
-                        clientY: rect.bottom,
-                      });
-                    }}
-                  >
-                    <M3eIcon name="more_vert" />
-                  </M3eIconButton>
-                </span>
-              </M3eListAction>
+                node={node}
+                current={isCurrent(node)}
+                onPlay={playLeaf}
+                onOpenMenu={openMenu}
+              />
             ),
           )}
-        </M3eList>
+        </M3eSelectionList>
       )}
 
-      {/* 上下文菜单（右键 / ⋮ 按钮触发） */}
-      {menu && (
-        <div
-          className="fixed inset-0 z-50"
-          onClick={() => setMenu(null)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setMenu(null);
+      {/* 上下文菜单（⋮ 按钮触发；定位 / 翻转 / 关闭均由 m3e-menu 处理） */}
+      <M3eMenu ref={menuRef}>
+        {menu && menu.node.type === 'audio' && (
+          <>
+            <M3eMenuItem onClick={() => addToQueue(toTrack(work, menu.node))}>
+              <span slot="icon">
+                <M3eIcon name="play_arrow" />
+              </span>
+              添加到队列
+            </M3eMenuItem>
+            <M3eMenuItem onClick={() => playNext(toTrack(work, menu.node))}>
+              <span slot="icon">
+                <M3eIcon name="queue_music" />
+              </span>
+              下一首播放
+            </M3eMenuItem>
+          </>
+        )}
+        {menu && (menu.node.type === 'text' || menu.node.type === 'image') && (
+          <M3eMenuItem onClick={() => openLeaf(menu.node)}>
+            <span slot="icon">
+              <M3eIcon name="open_in_new" />
+            </span>
+            打开文件
+          </M3eMenuItem>
+        )}
+        {menu && (
+          <M3eMenuItem onClick={() => downloadLeaf(menu.node)}>
+            <span slot="icon">
+              <M3eIcon name="download" />
+            </span>
+            下载文件
+          </M3eMenuItem>
+        )}
+      </M3eMenu>
+    </div>
+  );
+}
+
+/** 文件夹行：folder 图标 + 标题 + 子项数。 */
+function TrackFolderListItem({ node, onEnter }: { node: TrackFolder; onEnter: () => void }) {
+  const ref = useM3eListOptionStyle({
+    style: {
+      '.content': {
+        flex: '1 !important',
+      },
+    },
+  });
+
+  return (
+    <M3eListOption ref={ref} onClick={onEnter}>
+      <span slot="leading" className="me-3">
+        <M3eIcon name="folder" />
+      </span>
+      <span className="min-w-0 flex-1 truncate">{node.title}</span>
+      <span
+        slot="supporting-text"
+        className="truncate text-xs opacity-60"
+      >
+        {node.children.length} 个项目
+      </span>
+      <span slot="trailing" className="me-3">
+        <M3eIcon name="arrow_right" />
+      </span>
+    </M3eListOption>
+  );
+}
+
+interface TrackLeafListItemProps {
+  node: TrackLeaf;
+  /** 是否为当前播放曲目（高亮显示）。 */
+  current: boolean;
+  onPlay: (node: TrackLeaf) => void;
+  onOpenMenu: (node: TrackLeaf, anchor: HTMLElement) => void;
+}
+
+/** 叶子文件行：类型图标 + 标题 + 播放/暂停 + ⋮ 更多操作。 */
+function TrackLeafListItem({
+  node,
+  current,
+  onPlay,
+  onOpenMenu,
+}: TrackLeafListItemProps) {
+  const ref = useM3eListOptionStyle({
+    style: {
+      '.content': {
+        flex: '1 !important',
+      },
+    },
+  });
+
+  return (
+    <M3eListOption
+      ref={ref}
+      onClick={() => node.type === 'audio' && onPlay(node)}
+      selected={current}
+    >
+      <span slot="leading" className="me-3">
+        <M3eIcon name={leafIcon(node.type)} />
+      </span>
+      <span className="min-w-0 flex-1 truncate">{node.title}</span>
+      <span slot="trailing" className="flex items-center gap-1">
+        <M3eIconButton
+          aria-label="更多操作"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenMenu(node, e.currentTarget as HTMLElement);
           }}
         >
-          <div
-            className="absolute flex min-w-36 flex-col rounded-md border border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface-container) py-1 shadow-lg"
-            style={{ left: menu.x, top: menu.y }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {menu.node.type === 'audio' && (
-              <>
-                <MenuButton
-                  icon="play_arrow"
-                  label="添加到队列"
-                  onClick={() => {
-                    addToQueue(toTrack(work, menu.node));
-                    setMenu(null);
-                  }}
-                />
-                <MenuButton
-                  icon="queue_music"
-                  label="下一首播放"
-                  onClick={() => {
-                    playNext(toTrack(work, menu.node));
-                    setMenu(null);
-                  }}
-                />
-              </>
-            )}
-            {(menu.node.type === 'text' || menu.node.type === 'image') && (
-              <MenuButton
-                icon="open_in_new"
-                label="打开文件"
-                onClick={() => {
-                  openLeaf(menu.node);
-                  setMenu(null);
-                }}
-              />
-            )}
-            <MenuButton
-              icon="download"
-              label="下载文件"
-              onClick={() => {
-                downloadLeaf(menu.node);
-                setMenu(null);
-              }}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+          <M3eIcon name="more_vert" />
+        </M3eIconButton>
+      </span>
+    </M3eListOption>
   );
 }
 
@@ -317,16 +310,6 @@ function toTrack(work: Work, leaf: TrackLeaf): Track {
   };
 }
 
-/** 面包屑按钮样式。 */
-function crumbClass(active: boolean): string {
-  return [
-    'rounded-full px-2 py-1 text-sm no-underline',
-    active
-      ? 'text-[var(--md-sys-color-primary)]'
-      : 'opacity-70 hover:opacity-100',
-  ].join(' ');
-}
-
 function leafIcon(type: TrackLeaf['type']): string {
   switch (type) {
     case 'audio':
@@ -336,25 +319,4 @@ function leafIcon(type: TrackLeaf['type']): string {
     default:
       return 'description';
   }
-}
-
-function MenuButton({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: string;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2 text-start text-sm hover:bg-(--md-sys-color-surface-container-high)"
-    >
-      <M3eIcon name={icon} />
-      {label}
-    </button>
-  );
 }

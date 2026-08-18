@@ -17,7 +17,6 @@ export function useM3eListActionStyle({ actionStyle, buttonStyle }: M3eListActio
       }
 
       await ref.current.updateComplete;
-      console.log(2222222);
 
       const outerRoot = ref.current.shadowRoot;
       if (actionStyle && outerRoot && outerRoot.querySelector('style') === null) {
