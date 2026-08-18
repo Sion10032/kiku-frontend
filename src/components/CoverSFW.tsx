@@ -9,7 +9,6 @@ interface CoverSFWProps {
   nsfw?: boolean;
   release?: string | null;
   /** 缩略图模式（列表用，固定小尺寸） */
-  thumbnail?: boolean;
 }
 
 /**
@@ -25,16 +24,15 @@ export default function CoverSFW({
   workId,
   nsfw = true,
   release,
-  thumbnail = false,
 }: CoverSFWProps) {
   const [blur, setBlur] = useState(true);
   const [failed, setFailed] = useState(false);
-  const src = mediaUrl(`/api/cover/${workId}/file${thumbnail ? '?type=sam' : ''}`);
+  const src = mediaUrl(`/api/cover/${workId}/file`);
 
-  const shouldBlur = nsfw && blur && !isMobile() && !thumbnail;
+  const shouldBlur = nsfw && blur && !isMobile();
 
   // img 与占位共享的尺寸类，失败时占位保持与封面相同的占位大小
-  const frameClass = thumbnail ? 'h-[60px] w-[60px]' : 'aspect-[4/3] w-full';
+  const frameClass = 'aspect-[4/3] w-full';
 
   return (
     <Link
@@ -47,7 +45,7 @@ export default function CoverSFW({
       // NSFW 模糊时 filter 的边缘溢出
       className={[
         'relative block w-full',
-        thumbnail ? '' : 'overflow-hidden rounded-t-xl',
+        'overflow-hidden rounded-t-xl',
       ].join(' ')}
       onMouseEnter={() => setBlur(false)}
       onMouseLeave={() => setBlur(true)}
@@ -71,7 +69,7 @@ export default function CoverSFW({
       <span className="absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white">
         {workId}
       </span>
-      {release && !thumbnail && (
+      {release && (
         <span className="absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white">
           {release}
         </span>

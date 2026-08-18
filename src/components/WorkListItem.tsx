@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { M3eListItem } from '@m3e/react/list';
+import { M3eListAction } from '@m3e/react/list';
 import type { Work } from '../types';
-import CoverSFW from './CoverSFW';
+import CoverThumbnail from './CoverThumbnail';
+import { useM3eListActionStyle } from '../hooks/useM3eListActionStyle';
 
 interface WorkListItemProps {
   work: Work;
@@ -18,19 +19,28 @@ export default function WorkListItem({
   work,
   showLabel = true,
 }: WorkListItemProps) {
+  const ref = useM3eListActionStyle({
+    buttonStyle: {
+      'slot[name="leading"]': {
+        alignSelf: 'center',
+      },
+      '.content': {
+        flex: '1 !important',
+      },
+    },
+  });
+
   return (
-    <M3eListItem>
-      <span slot="leading" className="me-3 shrink-0">
-        <Link to="/work/$id" params={{ id: work.id }}>
-          <CoverSFW workId={work.id} nsfw={work.nsfw} thumbnail />
-        </Link>
-      </span>
+    <M3eListAction ref={ref}>
+      <div slot="leading">
+        <CoverThumbnail workId={work.id} size='lg'/>
+      </div>
 
       <div className="min-w-0 flex-1">
         <Link
           to="/work/$id"
           params={{ id: work.id }}
-          className="line-clamp-2 block text-base no-underline"
+          className="line-clamp-2 text-base no-underline"
         >
           {work.title}
         </Link>
@@ -71,6 +81,6 @@ export default function WorkListItem({
           </div>
         )}
       </div>
-    </M3eListItem>
+    </M3eListAction>
   );
 }

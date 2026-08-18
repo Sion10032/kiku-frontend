@@ -4,7 +4,7 @@ import { M3eIcon } from '@m3e/react/icon';
 import { M3eChip } from '@m3e/react/chips';
 import '@m3e/icons/outlined/star';
 import type { Progress, Review, Work } from '../types';
-import CoverSFW from './CoverSFW';
+import CoverThumbnail from './CoverThumbnail';
 
 /** 进度状态 → 中文标签（对齐原 kikoeru-quasar 的进度筛选文案）。 */
 export const PROGRESS_LABELS: Record<Progress, string> = {
@@ -39,8 +39,8 @@ export default function FavListItem({ work, review, mode }: FavListItemProps) {
 
   return (
     <M3eListItem onClick={openWork}>
-      <span slot="leading" className="me-3 shrink-0">
-        <CoverSFW workId={work.id} nsfw={work.nsfw} thumbnail />
+      <span slot="leading">
+        <CoverThumbnail workId={work.id} />
       </span>
 
       <div className="min-w-0 flex-1">
