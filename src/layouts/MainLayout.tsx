@@ -4,6 +4,7 @@ import { M3eAppBar } from '@m3e/react/app-bar';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import '@m3e/icons/outlined/menu';
+import GlobalSearchBar from '../components/GlobalSearchBar';
 import NavDrawer from '../components/NavDrawer';
 import AudioElement from '../components/AudioElement';
 import AudioPlayer from '../components/AudioPlayer';
@@ -92,6 +93,10 @@ export default function MainLayout() {
           >
             <M3eIcon name="menu" />
           </M3eIconButton>
+          {/* 全局搜索：任意页面输入即跳 /works 搜索（详见组件注释） */}
+          <div slot="title" className="mx-auto w-full max-w-xl">
+            <GlobalSearchBar />
+          </div>
         </M3eAppBar>
 
         <main className="[grid-area:content] overflow-y-auto p-4 px-6">

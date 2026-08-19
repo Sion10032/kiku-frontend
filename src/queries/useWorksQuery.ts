@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query';
@@ -62,12 +63,14 @@ export function useVaWorks(vaId: string | undefined) {
   });
 }
 
-/** 搜索结果（一次拉全，后端无分页）。 */
+/** 搜索结果（一次拉全，后端无分页）。保留旧结果避免关键词变化时闪 loading。 */
 export function useSearchWorks(keyword: string | undefined) {
   return useQuery({
     queryKey: ['works', 'search', keyword],
     queryFn: () => searchWorks(keyword!),
     enabled: !!keyword,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
 }
 

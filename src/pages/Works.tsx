@@ -36,6 +36,7 @@ const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'
  * - URL search params（类型安全）：order/sort/page/seed + circleId/tagId/vaId/keyword
  * - 无筛选：无限滚动分页（useWorksInfinite）
  * - 筛选：一次拉全（后端筛选端点无分页）
+ * - 搜索输入在顶栏（GlobalSearchBar），写 URL keyword；排序不支持搜索结果，搜索时隐藏排序控件
  * - 网格 / 列表切换，排序与视图模式持久化到 localStorage
  */
 export default function Works() {
@@ -169,23 +170,26 @@ export default function Works() {
         </h1>
 
         <div className="ms-auto flex items-center gap-2">
-          <M3eFormField variant="outlined" hideSubscript='always' className="min-w-48">
-            <label slot="label">排序</label>
-            <M3eSelect onChange={onSortChange}>
-              {SORT_OPTIONS.map((o) => {
-                const v = `${o.order}:${o.sort}`;
-                return (
-                  <M3eOption
-                    key={v}
-                    value={v}
-                    selected={v === `${sortOption.order}:${sortOption.sort}`}
-                  >
-                    {o.label}
-                  </M3eOption>
-                );
-              })}
-            </M3eSelect>
-          </M3eFormField>
+          {/* 搜索结果不支持排序，搜索时隐藏排序控件 */}
+          {!search.keyword && (
+            <M3eFormField variant="outlined" hideSubscript='always' className="min-w-48">
+              <label slot="label">排序</label>
+              <M3eSelect onChange={onSortChange}>
+                {SORT_OPTIONS.map((o) => {
+                  const v = `${o.order}:${o.sort}`;
+                  return (
+                    <M3eOption
+                      key={v}
+                      value={v}
+                      selected={v === `${sortOption.order}:${sortOption.sort}`}
+                    >
+                      {o.label}
+                    </M3eOption>
+                  );
+                })}
+              </M3eSelect>
+            </M3eFormField>
+          )}
 
           <M3eIconButton onClick={toggleView} aria-label="切换视图">
             <M3eIcon name={viewMode === 'grid' ? 'view_list' : 'apps'} />
@@ -236,7 +240,11 @@ export default function Works() {
 
       {/* 空状态 */}
       {!loading && works.length === 0 && (
-        <div className="py-16 text-center opacity-60">暂无作品</div>
+        <div className="py-16 text-center opacity-60">
+          {search.keyword
+            ? `未找到与「${search.keyword}」相关的作品`
+            : '暂无作品'}
+        </div>
       )}
 
       {/* 无限滚动哨兵 */}
