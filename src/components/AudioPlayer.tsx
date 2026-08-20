@@ -38,7 +38,9 @@ import '@m3e/icons/outlined/volume_up';
 import '@m3e/icons/outlined/volume_off';
 import '@m3e/icons/outlined/music_note';
 import '@m3e/icons/outlined/drag_indicator';
+import '@m3e/icons/outlined/lyrics';
 import SleepMode from './SleepMode';
+import LyricsPanel from './LyricsPanel';
 import { usePlayerStore, type PlayMode, type Track } from '../stores/playerStore';
 import { mediaUrl } from '../api/client';
 import { seekTo } from '../hooks/usePlayer';
@@ -89,9 +91,11 @@ export default function AudioPlayer() {
   const triggerRewind = usePlayerStore((s) => s.triggerRewind);
   const triggerForward = usePlayerStore((s) => s.triggerForward);
   const toggleHide = usePlayerStore((s) => s.toggleHide);
+  const lyricLines = usePlayerStore((s) => s.lyricLines);
 
   const [queueOpen, setQueueOpen] = useState(false);
   const [sleepOpen, setSleepOpen] = useState(false);
+  const [lyricsOpen, setLyricsOpen] = useState(true);
 
   if (hide || queue.length === 0) return null;
 
@@ -132,27 +136,65 @@ export default function AudioPlayer() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 pb-6">
-        {/* 封面 */}
-        {track.workId ? (
-          <img
-            src={mediaUrl(`/api/cover/${track.workId}/file`)}
-            alt={track.workTitle}
-            className="max-h-[38vh] w-auto max-w-[min(80vw,420px)] rounded-2xl object-contain"
-          />
-        ) : (
-          <div className="flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)">
-            <M3eIcon name="music_note" />
+      {/* 中部：封面/曲目信息 与 歌词（宽屏左右双栏；窄屏展开歌词时隐藏封面） */}
+      {lyricsOpen && (
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 lg:flex-row lg:items-stretch">
+          {/* 封面 + 曲目信息（窄屏展开歌词时隐藏） */}
+          <div className="flex hidden shrink-0 flex-col items-center justify-center gap-4 lg:flex lg:flex-1">
+            {track.workId ? (
+              <img
+                src={mediaUrl(`/api/cover/${track.workId}/file`)}
+                alt={track.workTitle}
+                className="max-h-[30vh] w-auto max-w-[min(80vw,360px)] rounded-2xl object-contain lg:max-h-[60vh]"
+              />
+            ) : (
+              <div className="flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)">
+                <M3eIcon name="music_note" />
+              </div>
+            )}
+
+            <div className="max-w-full text-center">
+              <h2 className="truncate text-xl font-medium">{track.title}</h2>
+              <p className="mt-1 text-sm opacity-70">{track.workTitle}</p>
+            </div>
           </div>
-        )}
 
-        {/* 曲目信息 */}
-        <div className="max-w-full text-center">
-          <h2 className="truncate text-xl font-medium">{track.title}</h2>
-          <p className="mt-1 text-sm opacity-70">{track.workTitle}</p>
+          {/* 歌词面板（窄屏限高，避免挢压控制区） */}
+          <div className="flex min-h-0 flex-col py-8 lg:flex-1">
+            {lyricLines.length > 0 ? (
+              <LyricsPanel />
+            ) : (
+              <div className="flex h-full min-h-24 items-center justify-center text-sm text-(--md-sys-color-on-surface-variant)">
+                当前曲目无歌词
+              </div>
+            )}
+          </div>
         </div>
+      )}
 
-        {/* 进度条 */}
+      {/* 折叠态：仅封面 + 曲目信息 */}
+      {!lyricsOpen && (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto px-6 pb-6">
+          {track.workId ? (
+            <img
+              src={mediaUrl(`/api/cover/${track.workId}/file`)}
+              alt={track.workTitle}
+              className="max-h-[38vh] w-auto max-w-[min(80vw,420px)] rounded-2xl object-contain"
+            />
+          ) : (
+            <div className="flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)">
+              <M3eIcon name="music_note" />
+            </div>
+          )}
+          <div className="max-w-full text-center">
+            <h2 className="truncate text-xl font-medium">{track.title}</h2>
+            <p className="mt-1 text-sm opacity-70">{track.workTitle}</p>
+          </div>
+        </div>
+      )}
+
+      {/* 底部：进度条 + 控制区（不随歌词滚动） */}
+      <div className="flex shrink-0 flex-col items-center gap-6 px-6 pb-6">
         <div className="flex w-full max-w-xl items-center gap-3">
           <span className="shrink-0 text-xs tabular-nums opacity-70">
             {formatDuration(currentTime)}
@@ -204,6 +246,13 @@ export default function AudioPlayer() {
             onClick={triggerForward}
           >
             <M3eIcon name="fast_forward" />
+          </M3eIconButton>
+          <M3eIconButton
+            aria-label={lyricsOpen ? '隐藏歌词' : '显示歌词'}
+            disabled={lyricLines.length === 0}
+            onClick={() => setLyricsOpen((v) => !v)}
+          >
+            <M3eIcon name="lyrics" />
           </M3eIconButton>
         </div>
 

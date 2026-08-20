@@ -28,9 +28,9 @@ function syncLyric(time: number): void {
   const index = findActiveLineIndex(lyricLines, time);
   if (index === lastLyricIndex) return;
   lastLyricIndex = index;
-  usePlayerStore
-    .getState()
-    .setCurrentLyric(index === -1 ? '' : lyricLines[index].text);
+  const store = usePlayerStore.getState();
+  store.setActiveLyricIndex(index);
+  store.setCurrentLyric(index === -1 ? '' : lyricLines[index].text);
 }
 
 /**
@@ -85,6 +85,7 @@ export function usePlayer(): void {
     // —— 歌词：切曲时先清空，再按新曲目异步加载 ——
     lyricLines = [];
     lastLyricIndex = -1;
+    usePlayerStore.getState().setLyrics([]);
     usePlayerStore.getState().setCurrentLyric('');
     let lyricCancelled = false;
     if (currentTrack.workId) {
@@ -94,6 +95,7 @@ export function usePlayer(): void {
           if (lyricCancelled) return;
           if (res.hasLrc && res.type && res.text) {
             lyricLines = parseLyrics(res.type, res.text);
+            usePlayerStore.getState().setLyrics(lyricLines);
           }
         })
         .catch(() => {}); // 无歌词属正常，静默

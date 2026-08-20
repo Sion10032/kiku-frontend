@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { LyricLine } from '../utils/lrc';
 
 /** 队列中的音轨。 */
 export interface Track {
@@ -38,6 +39,10 @@ interface PlayerState {
   volume: number;
   /** 当前歌词行 */
   currentLyric: string;
+  /** 当前曲目完整歌词行 */
+  lyricLines: LyricLine[];
+  /** 当前激活歌词行下标（-1 表示无） */
+  activeLyricIndex: number;
   /** 睡眠定时器目标时刻（"HH:MM"），null 表示未设置 */
   sleepTime: string | null;
   sleepMode: boolean;
@@ -69,6 +74,9 @@ interface PlayerActions {
   toggleMuted: () => void;
   setVolume: (vol: number) => void;
   setCurrentLyric: (lyric: string) => void;
+  /** 切曲时写入/清空完整歌词行。 */
+  setLyrics: (lines: LyricLine[]) => void;
+  setActiveLyricIndex: (index: number) => void;
   toggleHide: () => void;
   setRewindSeekTime: (time: number) => void;
   setForwardSeekTime: (time: number) => void;
@@ -99,6 +107,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       muted: false,
       volume: 0.8,
       currentLyric: '',
+      lyricLines: [],
+      activeLyricIndex: -1,
       sleepTime: null,
       sleepMode: false,
       rewindSeekTime: 5,
@@ -183,6 +193,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       toggleMuted: () => set((s) => ({ muted: !s.muted })),
       setVolume: (vol) => set({ volume: vol }),
       setCurrentLyric: (lyric) => set({ currentLyric: lyric }),
+      setLyrics: (lines) => set({ lyricLines: lines, activeLyricIndex: -1 }),
+      setActiveLyricIndex: (index) => set({ activeLyricIndex: index }),
       toggleHide: () => set((s) => ({ hide: !s.hide })),
 
       setRewindSeekTime: (time) => set({ rewindSeekTime: time }),
