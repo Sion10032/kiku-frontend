@@ -56,6 +56,8 @@ export async function apiFetch<T>(
       | Record<string, string | number | boolean | undefined>
       | URLSearchParams;
     signal?: AbortSignal;
+    /** 页面卸载时仍发出请求（fetch RequestInit.keepalive） */
+    keepalive?: boolean;
   },
 ): Promise<T> {
   try {
@@ -64,6 +66,7 @@ export async function apiFetch<T>(
       json: opts?.json,
       searchParams: opts?.searchParams,
       signal: opts?.signal,
+      keepalive: opts?.keepalive,
     });
 
     if (res.status === 204) return undefined as T;

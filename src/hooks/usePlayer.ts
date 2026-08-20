@@ -3,6 +3,7 @@ import { Howl } from 'howler';
 import { usePlayerStore, type Track } from '../stores/playerStore';
 import { streamUrl, checkLrc } from '../api/media';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
+import { trackPlayback, flushProgress, reportTrackEnd } from '../utils/progressReporter';
 
 /**
  * 模块级 Howl 单例。
@@ -114,9 +115,23 @@ export function usePlayer(): void {
       src: [src],
       html5: true, // 流式播放，避免大文件全量下载
       volume: m ? 0 : v,
-      onload: () =>
-        usePlayerStore.getState().setDuration(sound.duration() || 0),
+      onload: () => {
+        const dur = sound.duration() || 0;
+        usePlayerStore.getState().setDuration(dur);
+        // 「继续播放」：加载完成后跳到上次位置（html5 模式 seek 需就绪后生效）
+        if (currentTrack.startAt != null && currentTrack.startAt > 0) {
+          const at = Math.min(currentTrack.startAt, dur > 0 ? dur : currentTrack.startAt);
+          sound.seek(at);
+          usePlayerStore.getState().setCurrentTime(at);
+        }
+      },
       onend: () => {
+        // 自然结束：上报 position=duration（计入已听轨数）后按播放模式继续
+        const dur = sound.duration() || 0;
+        reportTrackEnd(
+          { workId: currentTrack.workId!, hash: currentTrack.hash, title: currentTrack.title },
+          dur,
+        );
         const before = usePlayerStore.getState();
         if (before.playMode === 'repeatOne') {
           // 单曲循环：原地重播（queueIndex 不变，不会触发重建）
@@ -141,6 +156,8 @@ export function usePlayer(): void {
 
     return () => {
       lyricCancelled = true;
+      // 切曲/卸载前先把旧曲进度发出
+      flushProgress();
       sound.unload();
       if (howl === sound) howl = null;
     };
@@ -154,7 +171,11 @@ export function usePlayer(): void {
     const sound = howl;
     if (!sound || !currentTrack) return;
     if (playing && !sound.playing()) sound.play();
-    else if (!playing && sound.playing()) sound.pause();
+    else if (!playing && sound.playing()) {
+      sound.pause();
+      // 暂停即 flush 进度（页面可能一直停在暂停态）
+      flushProgress();
+    }
   }, [playing, currentTrack]);
 
   // —— 音量/静音同步 ——
@@ -163,7 +184,7 @@ export function usePlayer(): void {
     howl?.volume(muted ? 0 : volume);
   }, [volume, muted]);
 
-  // —— 时间轮询：播放中每 250ms 写回 currentTime ——
+  // —— 时间轮询：播放中每 250ms 写回 currentTime（并节流上报播放进度） ——
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -172,6 +193,12 @@ export function usePlayer(): void {
         const t = sound.seek() as number;
         usePlayerStore.getState().setCurrentTime(t);
         syncLyric(t);
+        // 动态进度上报（内部 10s 节流；仅登录且带 workId 的音轨生效）
+        const track = usePlayerStore.getState().queue[usePlayerStore.getState().queueIndex];
+        if (track?.workId) {
+          const dur = sound.duration();
+          trackPlayback({ workId: track.workId, hash: track.hash, title: track.title }, t, dur > 0 ? dur : null);
+        }
       }
     }, 250);
     return () => clearInterval(timer);

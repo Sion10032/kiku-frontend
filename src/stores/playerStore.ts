@@ -15,6 +15,8 @@ export interface Track {
   mediaStreamUrl?: string;
   /** 下载 URL */
   mediaDownloadUrl?: string;
+  /** 恢复播放的起始时间（秒）；仅「继续播放」时设置，加载完成后 seek */
+  startAt?: number;
 }
 
 export type PlayMode = 'order' | 'allRepeat' | 'repeatOne' | 'shuffle';

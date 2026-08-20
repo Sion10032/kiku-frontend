@@ -3,6 +3,8 @@ import { M3eListAction } from '@m3e/react/list';
 import type { Work } from '../types';
 import CoverThumbnail from './CoverThumbnail';
 import { useM3eListActionStyle } from '../hooks/useM3eListActionStyle';
+import { UnreadDot, ReadDot } from './WorkProgress';
+import { useUserStore } from '../stores/userStore';
 
 interface WorkListItemProps {
   work: Work;
@@ -30,10 +32,15 @@ export default function WorkListItem({
     },
   });
 
+  // 状态角标仅登录用户显示（未登录时 userProgress 恒 null，无法区分）
+  const authed = useUserStore((s) => s.auth);
+
   return (
     <M3eListAction ref={ref}>
-      <div slot="leading">
+      <div slot="leading" className="relative">
         <CoverThumbnail workId={work.id} size='lg'/>
+        {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
+        {authed && (work.userProgress ? <ReadDot /> : <UnreadDot />)}
       </div>
 
       <div className="min-w-0 flex-1">

@@ -45,6 +45,8 @@ export interface Work {
   vas: Va[];
   /** 当前用户对该作品的评分（1-5），未评分为 null */
   userRating: number | null;
+  /** 当前用户播放进度聚合（null = 未读/未登录） */
+  userProgress: UserWorkProgress | null;
 }
 
 export interface Pagination {
@@ -139,6 +141,41 @@ export interface SubmitReviewInput {
   progress?: Progress;
   starOnly?: boolean;
   progressOnly?: boolean;
+}
+
+// ---------- 播放进度 ----------
+
+/** works 列表注入的进度聚合（userProgressSchema） */
+export interface UserWorkProgress {
+  /** 上次播放的音轨（media index = 文件相对路径） */
+  mediaIndex: string;
+  trackTitle: string | null;
+  /** 上次播放到的时间（秒） */
+  position: number;
+  duration: number | null;
+  /** 已听完的轨数（position/duration ≥ 0.95） */
+  listenedCount: number;
+  updatedAt: string;
+}
+
+/** GET /api/progress/:workId 返回的进度行 */
+export interface ProgressRow {
+  userName: string;
+  workId: string;
+  mediaIndex: string;
+  trackTitle: string | null;
+  position: number;
+  duration: number | null;
+  updatedAt: string | null;
+}
+
+/** PUT /api/progress 请求体 */
+export interface ReportProgressInput {
+  work_id: string;
+  media_index: string;
+  track_title?: string;
+  position: number;
+  duration?: number | null;
 }
 
 // ---------- 认证 ----------

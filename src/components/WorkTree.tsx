@@ -15,11 +15,12 @@ import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/queue_music';
 import '@m3e/icons/outlined/open_in_new';
 import '@m3e/icons/outlined/arrow_right';
-import { usePlayerStore, type Track } from '../stores/playerStore';
+import { usePlayerStore } from '../stores/playerStore';
 import { downloadUrl, streamUrl } from '../api/media';
 import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../types';
 import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
 import { useM3eListOptionStyle } from '../hooks/useM3eListOptionStyle';
+import { toTrack } from '../utils/track';
 
 interface WorkTreeProps {
   work: Work;
@@ -296,18 +297,6 @@ function TrackLeafListItem({
       </span>
     </M3eListOption>
   );
-}
-
-/** 由叶子节点构造播放队列项（hash = media index，供 stream/download）。 */
-function toTrack(work: Work, leaf: TrackLeaf): Track {
-  return {
-    hash: leaf.hash,
-    title: leaf.title,
-    workTitle: work.title,
-    workId: work.id,
-    mediaStreamUrl: streamUrl(work.id, leaf.hash),
-    mediaDownloadUrl: downloadUrl(work.id, leaf.hash),
-  };
 }
 
 function leafIcon(type: TrackLeaf['type']): string {

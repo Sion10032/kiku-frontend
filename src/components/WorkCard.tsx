@@ -5,6 +5,8 @@ import '@m3e/icons/outlined/mic';
 import type { Work } from '../types';
 import CoverSFW from './CoverSFW';
 import { M3eIcon } from '@m3e/react/icon';
+import { UnreadDot, ReadDot } from './WorkProgress';
+import { useUserStore } from '../stores/userStore';
 
 interface WorkCardProps {
   work: Work;
@@ -20,6 +22,8 @@ interface WorkCardProps {
  */
 export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   const navigate = useNavigate();
+  // 未读角标仅登录用户显示（未登录时 userProgress 恒 null，无法区分）
+  const authed = useUserStore((s) => s.auth);
 
   // m3e-card 的 slot 边距全部来自 --m3e-card-padding（默认 16px）：
   // 非媒体 header（header slot 直接子节点非 img/video）会被 shadow DOM
@@ -30,8 +34,10 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
 
   return (
     <M3eCard className={['h-full', cardVars].join(' ')}>
-      <div slot="header" className="p-0">
+      <div slot="header" className="relative p-0">
         <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
+        {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
+        {authed && (work.userProgress ? <ReadDot /> : <UnreadDot />)}
       </div>
 
       {!thumbnail && (

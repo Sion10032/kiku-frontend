@@ -3,6 +3,7 @@ import { useWorkQuery, useTracksQuery } from '../queries/useWorksQuery';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import WorkDetails from '../components/WorkDetails';
 import WorkTree from '../components/WorkTree';
+import WorkResume from '../components/WorkResume';
 
 /**
  * 作品详情页。
@@ -38,6 +39,10 @@ export default function Work() {
         <WorkDetails work={work} />
       </div>
       <div className="min-w-0 flex-1">
+        {/* 继续播放/删除播放记录（登录且有进度时渲染） */}
+        <div className="mb-3">
+          <WorkResume work={work} tree={tracksQuery.data ?? []} />
+        </div>
         <WorkTree
           work={work}
           tree={tracksQuery.data ?? []}

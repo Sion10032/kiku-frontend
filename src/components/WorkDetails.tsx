@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { M3eCard } from '@m3e/react/card';
 import { M3eChip } from '@m3e/react/chips';
@@ -39,15 +39,8 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
     };
   }, [work.id]);
 
-  // 评分分布：1-5 星各有多少人（rate_count_detail 的 key 为 '1'..'5'）
-  const ratingDistribution = useMemo(() => {
-    const counts = [5, 4, 3, 2, 1].map((point) => ({
-      point,
-      count: work.rate_count_detail?.[String(point)] ?? 0,
-    }));
-    const max = Math.max(1, ...counts.map((c) => c.count));
-    return { counts, max };
-  }, [work.rate_count_detail]);
+  // 评分分布展示 JSX 暂被注释（原实现可从 git 历史/注释块恢复），
+  // 对应 useMemo 因 noUnusedLocals 报错已移除。
 
   return (
     <Fragment>
