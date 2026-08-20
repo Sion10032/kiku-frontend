@@ -8,7 +8,8 @@ import '@m3e/icons/outlined/star';
 import '@m3e/icons/outlined/chat';
 import '@m3e/icons/outlined/open_in_new';
 import type { Work } from '../types';
-import { useThemeStore } from '../stores/themeStore';
+import { useThemeStore, DEFAULT_SEED } from '../stores/themeStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { getSeedColorForWork } from '../utils/theme';
 import CoverSFW from './CoverSFW';
 import WriteReview from './WriteReview';
@@ -27,9 +28,15 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   const [reviewOpen, setReviewOpen] = useState(false);
 
   // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
+  // 设置中关闭动态取色时跳过提取并恢复默认色。
   // cancelled 守卫防止快速切换作品时旧请求晚到覆盖新主题；
   // 用 getState() 而非 hook 订阅，避免组件因 seed 变化重渲。
   useEffect(() => {
+    const { dynamicColor } = useSettingsStore.getState();
+    if (!dynamicColor) {
+      useThemeStore.getState().setSeed(DEFAULT_SEED);
+      return;
+    }
     let cancelled = false;
     getSeedColorForWork(work.id).then((color) => {
       if (color && !cancelled) useThemeStore.getState().setSeed(color);

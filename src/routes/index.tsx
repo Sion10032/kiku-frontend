@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { rootRoute, mainLayoutRoute, dashboardLayoutRoute } from './__root';
 import { worksRoute } from './works';
 import { workRoute } from './work';
+import { settingsRoute } from './settings';
 import List from '../pages/List';
 import Favourites from '../pages/Favourites';
 import Login from '../pages/Login';
@@ -133,6 +134,7 @@ export const routeTree = rootRoute.addChildren([
     favouritesProgressIndexRoute,
     favouritesProgressRoute,
     favouritesFolderRoute,
+    settingsRoute,
   ]),
   dashboardLayoutRoute.addChildren([
     foldersRoute,

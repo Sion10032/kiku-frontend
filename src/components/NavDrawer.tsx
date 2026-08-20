@@ -12,6 +12,7 @@ import '@m3e/icons/outlined/groups';
 import '@m3e/icons/outlined/tag';
 import '@m3e/icons/outlined/record_voice_over';
 import '@m3e/icons/outlined/admin_panel_settings';
+import '@m3e/icons/outlined/settings';
 import '@m3e/icons/outlined/person';
 import '@m3e/icons/outlined/logout';
 import { useAuth } from '../hooks/useAuth';
@@ -131,6 +132,20 @@ export default function NavDrawer() {
             </Link>
           </M3eNavMenuItemGroup>
         )}
+      </M3eNavMenu>
+
+      {/* 设置：钉在导航区底部 */}
+      <M3eNavMenu className="shrink-0 border-t border-(--md-sys-color-outline-variant)">
+        <M3eNavMenuItemGroup>
+          <Link to="/settings" className="block no-underline text-inherit" activeOptions={{ exact: true }}>
+            {({ isActive }) => (
+              <M3eNavMenuItem selected={isActive}>
+                <M3eIcon slot="icon" name="settings" />
+                <span slot="label">设置</span>
+              </M3eNavMenuItem>
+            )}
+          </Link>
+        </M3eNavMenuItemGroup>
       </M3eNavMenu>
 
       {/* 用户区（钉在底部） */}
