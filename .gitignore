@@ -29,3 +29,6 @@ bun.lockb
 # TS build info
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# Worktrees
+.worktrees/
