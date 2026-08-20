@@ -46,3 +46,22 @@ a {
     opacity: 1;
   }
 }
+
+/* 长标题 hover 跑马灯（MarqueeText 用 group-hover:animate-marquee 引用） */
+@theme {
+  --animate-marquee: marquee 12s linear infinite;
+}
+@keyframes marquee {
+  0%,
+  10% {
+    transform: translateX(0);
+  }
+  45%,
+  55% {
+    transform: translateX(-50%);
+  }
+  90%,
+  100% {
+    transform: translateX(0);
+  }
+}
