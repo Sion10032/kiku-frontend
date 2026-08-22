@@ -20,12 +20,15 @@ const COLOR_MODES: { value: ColorMode; label: string }[] = [
  * - 动态取色：开启后进入作品详情时从封面提取主题种子色；
  *   关闭瞬间恢复默认紫（#6750A4），详情页不再换色
  * - 颜色模式：auto / light / dark，经 ThemeRoot 传给 M3eTheme
+ * - 媒体通知：开关 MediaSession（锁屏/系统媒体面板），useMediaSession 读取
  */
 export default function Settings() {
   const dynamicColor = useSettingsStore((s) => s.dynamicColor);
   const colorMode = useSettingsStore((s) => s.colorMode);
   const setDynamicColor = useSettingsStore((s) => s.setDynamicColor);
   const setColorMode = useSettingsStore((s) => s.setColorMode);
+  const mediaNotification = useSettingsStore((s) => s.mediaNotification);
+  const setMediaNotification = useSettingsStore((s) => s.setMediaNotification);
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -68,6 +71,20 @@ export default function Settings() {
                 // 关闭瞬间回归默认紫，避免停留在最后一次取色结果
                 if (!on) useThemeStore.getState().setSeed(DEFAULT_SEED);
               }}
+            />
+          </div>
+
+          {/* 媒体通知 */}
+          <div className="flex cursor-pointer items-center justify-between gap-4">
+            <span className="flex flex-col">
+              <span>媒体通知</span>
+              <span className="text-sm opacity-70">在系统媒体面板 / 锁屏显示播放控制</span>
+            </span>
+            <M3eSwitch
+              checked={mediaNotification}
+              onInput={(e) =>
+                setMediaNotification((e.target as HTMLInputElement).checked)
+              }
             />
           </div>
         </div>
