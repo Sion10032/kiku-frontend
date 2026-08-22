@@ -31,10 +31,11 @@ import { formatDuration } from '../utils/format';
 /**
  * 全屏播放器覆盖层：hide=false 时显示。
  *
- * - 大封面（track.workId 缺失用占位）、标题/作品名
- * - 进度条（M3eSlider，拖动实时 seek）、播放控制、播放模式切换
- * - 快退/快进（triggerRewind/triggerForward toggle 值）
- * - 音量滑块 + 静音、播放列表对话框（dnd-kit 拖拽排序）、睡眠定时器
+ * - 顶栏仅折叠按钮；底部控制区自上而下：进度条（M3eSlider，拖动实时
+ *   seek）、传输控制（快退/上一首/播放/下一首/快进）、辅助开关
+ *   （播放模式/歌词/播放列表/睡眠定时）、音量滑块 + 静音
+ * - 窄屏（<640px）覆盖 M3E 按钮 token 缩小尺寸，防止控制行溢出
+ * - 播放列表对话框（dnd-kit 拖拽排序）、睡眠定时器
  */
 export default function AudioPlayer() {
   const hide = usePlayerStore((s) => s.hide);
@@ -81,25 +82,11 @@ export default function AudioPlayer() {
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-(--md-sys-color-surface)">
-      {/* 顶栏：折叠 + 播放列表 / 睡眠定时 */}
-      <div className="flex items-center justify-between p-4">
+      {/* 顶栏：仅折叠（播放列表/睡眠定时移至底部辅助行） */}
+      <div className="flex items-center p-4">
         <M3eIconButton aria-label="折叠播放器" onClick={toggleHide}>
           <M3eIcon name="keyboard_arrow_down" />
         </M3eIconButton>
-        <div className="flex items-center">
-          <M3eIconButton
-            aria-label="播放列表"
-            onClick={() => setQueueOpen(true)}
-          >
-            <M3eIcon name="queue_music" />
-          </M3eIconButton>
-          <M3eIconButton
-            aria-label="睡眠定时器"
-            onClick={() => setSleepOpen(true)}
-          >
-            <M3eIcon name="bedtime" />
-          </M3eIconButton>
-        </div>
       </div>
 
       {/* 中部：封面/曲目信息 与 歌词（宽屏左右双栏；窄屏展开歌词时隐藏封面） */}
@@ -159,8 +146,9 @@ export default function AudioPlayer() {
         </div>
       )}
 
-      {/* 底部：进度条 + 控制区（不随歌词滚动） */}
-      <div className="flex shrink-0 flex-col items-center gap-6 px-6 pb-6">
+      {/* 底部：进度条 + 控制区（不随歌词滚动）；窄屏覆盖按钮 token 缩为
+          medium 40px，宽度经 leading/trailing space 保持方形 */}
+      <div className="flex shrink-0 flex-col items-center gap-2 p-4 max-sm:[--m3e-icon-button-medium-container-height:2.5rem] max-sm:[--m3e-icon-button-medium-default-leading-space:0.5rem] max-sm:[--m3e-icon-button-medium-default-trailing-space:0.5rem]">
         <div className="flex w-full max-w-xl items-center gap-3">
           <span className="shrink-0 text-xs tabular-nums opacity-70">
             {formatDuration(currentTime)}
@@ -179,15 +167,12 @@ export default function AudioPlayer() {
           </span>
         </div>
 
-        {/* 播放控制 */}
+        {/* 传输控制 */}
         <div className="flex items-center gap-2">
+          {/* ⏪⏩ glyph 天生比 ⏮⏭ 宽 ~50%（808/753 vs 520 网格），
+              scale 2/3 拉齐视觉宽度（盒尺寸不变） */}
           <M3eIconButton
-            aria-label={`播放模式：${PLAY_MODE_LABEL[playMode]}`}
-            onClick={changePlayMode}
-          >
-            <M3eIcon name={PLAY_MODE_ICON[playMode]} />
-          </M3eIconButton>
-          <M3eIconButton
+            className="[&>m3e-icon]:scale-2/3"
             aria-label={`快退 ${rewindSeekTime} 秒`}
             onClick={triggerRewind}
           >
@@ -198,9 +183,9 @@ export default function AudioPlayer() {
           </M3eIconButton>
           <M3eIconButton
             variant="filled"
-            size="large"
             aria-label={playing ? '暂停' : '播放'}
             onClick={togglePlaying}
+            size='medium'
           >
             <M3eIcon name={playing ? 'pause' : 'play_arrow'} />
           </M3eIconButton>
@@ -208,10 +193,21 @@ export default function AudioPlayer() {
             <M3eIcon name="skip_next" />
           </M3eIconButton>
           <M3eIconButton
+            className="[&>m3e-icon]:scale-2/3"
             aria-label={`快进 ${forwardSeekTime} 秒`}
             onClick={triggerForward}
           >
             <M3eIcon name="fast_forward" />
+          </M3eIconButton>
+        </div>
+
+        {/* 辅助开关：播放模式 / 歌词 / 播放列表 / 睡眠定时 */}
+        <div className="flex items-center gap-4">
+          <M3eIconButton
+            aria-label={`播放模式：${PLAY_MODE_LABEL[playMode]}`}
+            onClick={changePlayMode}
+          >
+            <M3eIcon name={PLAY_MODE_ICON[playMode]} />
           </M3eIconButton>
           <M3eIconButton
             aria-label={lyricsOpen ? '隐藏歌词' : '显示歌词'}
@@ -219,6 +215,18 @@ export default function AudioPlayer() {
             onClick={() => setLyricsOpen((v) => !v)}
           >
             <M3eIcon name="lyrics" />
+          </M3eIconButton>
+          <M3eIconButton
+            aria-label="播放列表"
+            onClick={() => setQueueOpen(true)}
+          >
+            <M3eIcon name="queue_music" />
+          </M3eIconButton>
+          <M3eIconButton
+            aria-label="睡眠定时器"
+            onClick={() => setSleepOpen(true)}
+          >
+            <M3eIcon name="bedtime" />
           </M3eIconButton>
         </div>
 
