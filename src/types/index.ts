@@ -224,8 +224,11 @@ export interface DeleteUsersInput {
 
 export type TagLanguage = 'ja-jp' | 'zh-tw' | 'zh-cn';
 
+export type InstanceMode = 'private' | 'public';
+
 export interface SharedConfig {
-  auth: boolean;
+  instanceMode: InstanceMode;
+  allowRegistration: boolean;
   pageSize: number;
   tagLanguage: TagLanguage;
   enableGzip: boolean;

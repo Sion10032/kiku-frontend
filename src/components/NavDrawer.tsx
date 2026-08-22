@@ -34,7 +34,7 @@ import { useAuth } from '../hooks/useAuth';
  */
 export default function NavDrawer() {
   const navigate = useNavigate();
-  const { name, isAdmin, logout } = useAuth();
+  const { name, auth, isAdmin, logout } = useAuth();
 
   function handleLogout() {
     logout();
@@ -60,14 +60,17 @@ export default function NavDrawer() {
               </M3eNavMenuItem>
             )}
           </Link>
-          <Link to="/favourites" className="block no-underline text-inherit">
-            {({ isActive }) => (
-              <M3eNavMenuItem selected={isActive}>
-                <M3eIcon slot="icon" name="favorite" />
-                <span slot="label">收藏</span>
-              </M3eNavMenuItem>
-            )}
-          </Link>
+          {/* 收藏以用户名为主键，匿名态隐藏 */}
+          {auth && (
+            <Link to="/favourites" className="block no-underline text-inherit">
+              {({ isActive }) => (
+                <M3eNavMenuItem selected={isActive}>
+                  <M3eIcon slot="icon" name="favorite" />
+                  <span slot="label">收藏</span>
+                </M3eNavMenuItem>
+              )}
+            </Link>
+          )}
         </M3eNavMenuItemGroup>
 
         {/* 浏览 */}
@@ -148,20 +151,34 @@ export default function NavDrawer() {
         </M3eNavMenuItemGroup>
       </M3eNavMenu>
 
-      {/* 用户区（钉在底部） */}
-      <div className="mt-auto flex items-center gap-3 border-t border-(--md-sys-color-outline-variant) px-4 py-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-base font-medium text-(--md-sys-color-on-primary-container)">
-          {initial || <M3eIcon name="person" />}
-        </span>
-        <span className="min-w-0 flex-1 truncate">{name}</span>
-        <M3eIconButton
-          aria-label="退出登录"
-          title="退出登录"
-          onClick={handleLogout}
-        >
-          <M3eIcon name="logout" />
-        </M3eIconButton>
-      </div>
+      {/* 用户区（钉在底部）：公开模式匿名态显示登录入口 */}
+      {auth ? (
+        <div className="mt-auto flex items-center gap-3 border-t border-(--md-sys-color-outline-variant) px-4 py-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-base font-medium text-(--md-sys-color-on-primary-container)">
+            {initial || <M3eIcon name="person" />}
+          </span>
+          <span className="min-w-0 flex-1 truncate">{name}</span>
+          <M3eIconButton
+            aria-label="退出登录"
+            title="退出登录"
+            onClick={handleLogout}
+          >
+            <M3eIcon name="logout" />
+          </M3eIconButton>
+        </div>
+      ) : (
+        <div className="mt-auto border-t border-(--md-sys-color-outline-variant) px-4 py-3">
+          <Link
+            to="/login"
+            className="flex items-center gap-3 no-underline text-inherit"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container)">
+              <M3eIcon name="person" />
+            </span>
+            <span className="flex-1">登录</span>
+          </Link>
+        </div>
+      )}
     </aside>
   );
 }

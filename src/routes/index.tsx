@@ -7,11 +7,14 @@ import { settingsRoute } from './settings';
 import List from '../pages/List';
 import Favourites from '../pages/Favourites';
 import Login from '../pages/Login';
+import Setup from '../pages/Setup';
+import Register from '../pages/Register';
 import Error404 from '../pages/Error404';
 import Folders from '../pages/Dashboard/Folders';
 import Scanner from '../pages/Dashboard/Scanner';
 import Advanced from '../pages/Dashboard/Advanced';
 import UserManage from '../pages/Dashboard/UserManage';
+import { getCachedSharedConfig } from '../api/sharedConfig';
 
 // / → 重定向到 /works
 const indexRoute = createRoute({
@@ -111,11 +114,34 @@ const userManageRoute = createRoute({
   component: UserManage,
 });
 
-// 登录 / 404（无布局包裹）
+// 登录 / 初始化 / 注册 / 404（无布局包裹）
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: Login,
+});
+const setupRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/setup',
+  beforeLoad: async () => {
+    // 已初始化时访问 /setup → 回首页（此时已有登录态，无需要求再登录）
+    const { ensureSetupStatus } = await import('../api/sharedConfig');
+    if (!(await ensureSetupStatus())) {
+      throw redirect({ to: '/' });
+    }
+  },
+  component: Setup,
+});
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  beforeLoad: () => {
+    const shared = getCachedSharedConfig();
+    if (!shared?.allowRegistration) {
+      throw redirect({ to: '/login' });
+    }
+  },
+  component: Register,
 });
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -143,6 +169,8 @@ export const routeTree = rootRoute.addChildren([
     userManageRoute,
   ]),
   loginRoute,
+  setupRoute,
+  registerRoute,
   notFoundRoute,
 ]);
 

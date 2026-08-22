@@ -6,6 +6,7 @@ import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
 import { M3eOption } from '@m3e/react/option';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import { getAdminConfig, updateAdminConfig } from '../../api/config';
+import { refreshSharedConfig } from '../../api/sharedConfig';
 import type { AdminConfig } from '../../types';
 
 /**
@@ -69,6 +70,8 @@ export default function Advanced() {
       setConfig(updated);
       setForm({ ...updated });
       setSecret('');
+      // sharedConfig 变更（实例模式/注册开关等）后刷新前端缓存
+      refreshSharedConfig().catch(() => {});
       M3eSnackbar.open('保存成功');
     } catch (err) {
       M3eSnackbar.open(err instanceof Error ? err.message : '保存失败');
@@ -103,6 +106,16 @@ export default function Advanced() {
               label="标签语言"
               value={String(form.tagLanguage ?? 'ja-jp')}
               onChange={(v) => updateField('tagLanguage', v)}
+            />
+            <InstanceModeField
+              label="实例模式"
+              value={String(form.instanceMode ?? 'private')}
+              onChange={(v) => updateField('instanceMode', v)}
+            />
+            <BoolField
+              label="允许注册"
+              value={!!form.allowRegistration}
+              onChange={(v) => updateField('allowRegistration', v)}
             />
             <BoolField
               label="启用 Gzip"
@@ -341,6 +354,40 @@ function FieldRow({
         onChange={(e) => onChange(e.target.value)}
         className="w-full border-none bg-transparent py-2 text-sm outline-none"
       />
+    </M3eFormField>
+  );
+}
+
+/** 实例模式：私有 / 公开 下拉。 */
+function InstanceModeField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const id = `field-${label}`;
+  const options = [
+    { value: 'private', label: '私有（需要登录）' },
+    { value: 'public', label: '公开（匿名只读）' },
+  ];
+  return (
+    <M3eFormField variant="outlined" hideSubscript="always">
+      <label slot="label" htmlFor={id}>
+        {label}
+      </label>
+      <M3eSelect
+        id={id}
+        onChange={(e) => onChange(String((e.target as M3eSelectElement).value ?? ''))}
+      >
+        {options.map((opt) => (
+          <M3eOption key={opt.value} value={opt.value} selected={opt.value === value}>
+            {opt.label}
+          </M3eOption>
+        ))}
+      </M3eSelect>
     </M3eFormField>
   );
 }
