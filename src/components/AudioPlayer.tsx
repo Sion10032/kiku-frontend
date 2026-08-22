@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -19,7 +19,6 @@ import '@m3e/icons/outlined/shuffle';
 import '@m3e/icons/outlined/volume_up';
 import '@m3e/icons/outlined/volume_off';
 import '@m3e/icons/outlined/music_note';
-import '@m3e/icons/outlined/lyrics';
 import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
 import QueueDialog, { PLAY_MODE_ICON, PLAY_MODE_LABEL } from './QueueDialog';
@@ -33,7 +32,9 @@ import { formatDuration } from '../utils/format';
  *
  * - 顶栏仅折叠按钮；底部控制区自上而下：进度条（M3eSlider，拖动实时
  *   seek）、传输控制（快退/上一首/播放/下一首/快进）、辅助开关
- *   （播放模式/歌词/播放列表/睡眠定时）、音量滑块 + 静音
+ *   （播放模式/播放列表/睡眠定时）、音量滑块 + 静音
+ * - 中部宽屏封面/歌词双栏自动显示；窄屏点击封面↔点歌词空白处切换
+ *   （交叉淡化 300ms）；歌词行两段式点击确认 seek（见 LyricsPanel）
  * - 窄屏（<640px）覆盖 M3E 按钮 token 缩小尺寸，防止控制行溢出
  * - 播放列表对话框（dnd-kit 拖拽排序）、睡眠定时器
  */
@@ -62,11 +63,15 @@ export default function AudioPlayer() {
 
   const [queueOpen, setQueueOpen] = useState(false);
   const [sleepOpen, setSleepOpen] = useState(false);
-  const [lyricsOpen, setLyricsOpen] = useState(true);
+  /** 窄屏歌词视图（宽屏双栏常显，状态无效）；切曲自动回封面视图 */
+  const [showLyrics, setShowLyrics] = useState(false);
+
+  useEffect(() => setShowLyrics(false), [queueIndex]);
 
   if (hide || queue.length === 0) return null;
 
   const track = queue[queueIndex];
+  const hasLyrics = lyricLines.length > 0;
 
   /** 进度条拖动：thumb 值实时写回（seekTo 内部 clamp）。 */
   function handleSeek(e: Event) {
@@ -89,50 +94,39 @@ export default function AudioPlayer() {
         </M3eIconButton>
       </div>
 
-      {/* 中部：封面/曲目信息 与 歌词（宽屏左右双栏；窄屏展开歌词时隐藏封面） */}
-      {lyricsOpen && (
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 lg:flex-row lg:items-stretch">
-          {/* 封面 + 曲目信息（窄屏展开歌词时隐藏） */}
-          <div className="flex hidden shrink-0 flex-col items-center justify-center gap-4 lg:flex lg:flex-1">
-            {track.workId ? (
-              <img
-                src={mediaUrl(`/api/cover/${track.workId}/file`)}
-                alt={track.workTitle}
-                className="max-h-[30vh] w-auto max-w-[min(80vw,360px)] rounded-2xl object-contain lg:max-h-[60vh]"
-              />
-            ) : (
-              <div className="flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)">
-                <M3eIcon name="music_note" />
-              </div>
-            )}
-
-            <div className="max-w-full text-center">
-              <h2 className="truncate text-xl font-medium">{track.title}</h2>
-              <p className="mt-1 text-sm opacity-70">{track.workTitle}</p>
-            </div>
-          </div>
-
-          {/* 歌词面板（窄屏限高，避免挢压控制区） */}
-          <div className="flex min-h-0 flex-col py-8 lg:flex-1">
-            {lyricLines.length > 0 ? (
-              <LyricsPanel />
-            ) : (
-              <div className="flex h-full min-h-24 items-center justify-center text-sm text-(--md-sys-color-on-surface-variant)">
-                当前曲目无歌词
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 折叠态：仅封面 + 曲目信息 */}
-      {!lyricsOpen && (
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto px-6 pb-6">
+      {/* 中部：宽屏封面/歌词左右双栏自动显示；窄屏两视图绝对定位叠放，
+          opacity 交叉淡化切换（点封面→歌词，点歌词空白→封面；
+          无歌词时仅封面） */}
+      <div className="relative flex min-h-0 flex-1 gap-4 overflow-hidden lg:flex-row lg:items-stretch lg:px-6">
+        {/* 封面 + 曲目信息：窄屏为查看歌词热区（有歌词时整块可点） */}
+        <div
+          role={hasLyrics ? 'button' : undefined}
+          tabIndex={hasLyrics ? 0 : undefined}
+          aria-label={hasLyrics ? '查看歌词' : undefined}
+          onClick={hasLyrics ? () => setShowLyrics(true) : undefined}
+          onKeyDown={
+            hasLyrics
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowLyrics(true);
+                  }
+                }
+              : undefined
+          }
+          className={[
+            'flex flex-col items-center justify-center gap-4 overflow-y-auto transition-opacity duration-300',
+            'max-lg:absolute max-lg:inset-0 max-lg:px-6 max-lg:pb-6 lg:flex-1',
+            showLyrics
+              ? 'max-lg:pointer-events-none max-lg:opacity-0'
+              : 'max-lg:opacity-100',
+          ].join(' ')}
+        >
           {track.workId ? (
             <img
               src={mediaUrl(`/api/cover/${track.workId}/file`)}
               alt={track.workTitle}
-              className="max-h-[38vh] w-auto max-w-[min(80vw,420px)] rounded-2xl object-contain"
+              className="max-h-[38vh] w-auto max-w-[min(80vw,420px)] rounded-2xl object-contain lg:max-h-[60vh]"
             />
           ) : (
             <div className="flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)">
@@ -144,7 +138,23 @@ export default function AudioPlayer() {
             <p className="mt-1 text-sm opacity-70">{track.workTitle}</p>
           </div>
         </div>
-      )}
+
+        {/* 歌词面板：宽屏常驻（无歌词时隐藏）；窄屏点空白处返回封面 */}
+        <div
+          onClick={() => setShowLyrics(false)}
+          className={[
+            'flex min-h-0 flex-col transition-opacity duration-300',
+            'max-lg:absolute max-lg:inset-0 max-lg:px-6 max-lg:pt-8 max-lg:pb-6',
+            'lg:flex-1 lg:py-8',
+            showLyrics && hasLyrics
+              ? 'max-lg:opacity-100'
+              : 'max-lg:pointer-events-none max-lg:opacity-0',
+            hasLyrics ? 'lg:flex' : 'lg:hidden',
+          ].join(' ')}
+        >
+          <LyricsPanel />
+        </div>
+      </div>
 
       {/* 底部：进度条 + 控制区（不随歌词滚动）；窄屏覆盖按钮 token 缩为
           medium 40px，宽度经 leading/trailing space 保持方形 */}
@@ -201,20 +211,13 @@ export default function AudioPlayer() {
           </M3eIconButton>
         </div>
 
-        {/* 辅助开关：播放模式 / 歌词 / 播放列表 / 睡眠定时 */}
+        {/* 辅助开关：播放模式 / 播放列表 / 睡眠定时 */}
         <div className="flex items-center gap-4">
           <M3eIconButton
             aria-label={`播放模式：${PLAY_MODE_LABEL[playMode]}`}
             onClick={changePlayMode}
           >
             <M3eIcon name={PLAY_MODE_ICON[playMode]} />
-          </M3eIconButton>
-          <M3eIconButton
-            aria-label={lyricsOpen ? '隐藏歌词' : '显示歌词'}
-            disabled={lyricLines.length === 0}
-            onClick={() => setLyricsOpen((v) => !v)}
-          >
-            <M3eIcon name="lyrics" />
           </M3eIconButton>
           <M3eIconButton
             aria-label="播放列表"

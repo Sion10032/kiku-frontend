@@ -44,6 +44,8 @@ export function seekTo(time: number): void {
   const clamped = dur > 0 ? Math.max(0, Math.min(time, dur)) : Math.max(0, time);
   sound.seek(clamped);
   usePlayerStore.getState().setCurrentTime(clamped);
+  // 暂停时 250ms 轮询不跑，需在此同步歌词行（播放中轮询会兜底）
+  syncLyric(clamped);
 }
 
 /** 由音轨解析流媒体地址：优先 workId + hash，缺失时回退 mediaStreamUrl。 */
@@ -222,6 +224,7 @@ export function usePlayer(): void {
     );
     sound.seek(next);
     usePlayerStore.getState().setCurrentTime(next);
+    syncLyric(next);
   }, [rewindSeekMode]);
 
   // —— 快进（clamp 到 duration） ——
@@ -240,6 +243,7 @@ export function usePlayer(): void {
     );
     sound.seek(next);
     usePlayerStore.getState().setCurrentTime(next);
+    syncLyric(next);
   }, [forwardSeekMode]);
 
   // —— 睡眠定时器：到达 sleepTime 后暂停并清除（分钟精度） ——
