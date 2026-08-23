@@ -28,6 +28,8 @@ export function useM3eListActionStyle({ actionStyle, buttonStyle }: M3eListActio
         innerButtonRoot.appendChild(createStyleElement(buttonStyle));
       }
     })();
+    // 仅为挂载时一次性注入（调用方传静态内容，内部幂等）；样式对象不进依赖
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return ref;

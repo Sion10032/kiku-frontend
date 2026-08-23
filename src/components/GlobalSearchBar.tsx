@@ -36,13 +36,15 @@ export default function GlobalSearchBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ debouncedKeyword ]);
 
-  // URL → 输入（浏览器后退/前进时保持同步）
-  useEffect(() => {
+  // URL → 输入（浏览器后退/前进时保持同步；渲染期调整 state，
+  // 仅 urlKeyword 变化的渲染中执行，替代 effect 中 setState）
+  const [ prevUrlKeyword, setPrevUrlKeyword ] = useState(urlKeyword);
+  if (urlKeyword !== prevUrlKeyword) {
+    setPrevUrlKeyword(urlKeyword);
     if ((urlKeyword ?? '') !== debouncedKeyword) {
       setKeywordInput(urlKeyword ?? '');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ urlKeyword ]);
+  }
 
   return (
     <M3eSearchBar

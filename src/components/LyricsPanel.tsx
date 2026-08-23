@@ -30,18 +30,19 @@ export default function LyricsPanel() {
   const [ pendingIndex, setPendingIndex ] = useState<number | null>(null);
   const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 切曲（行数据更换）重置待跳转标记并取消超时
-  useEffect(() => {
+  // 切曲（行数据更换）重置待跳转标记（渲染期调整 state，替代 effect 中 setState）
+  const [ prevLines, setPrevLines ] = useState(lyricLines);
+  if (lyricLines !== prevLines) {
+    setPrevLines(lyricLines);
     setPendingIndex(null);
-    if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
-  }, [ lyricLines ]);
+  }
 
-  // 卸载时清理定时器
+  // 卸载或切曲时清理定时器
   useEffect(
     () => () => {
       if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
     },
-    [],
+    [ lyricLines ],
   );
 
   // 当前行变化 → 手动滚动容器使当前行居中。

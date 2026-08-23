@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { M3eButton } from '@m3e/react/button';
 import { M3eCard } from '@m3e/react/card';
 import { M3eIcon } from '@m3e/react/icon';
@@ -42,9 +42,11 @@ export default function Scanner() {
   const [ mainLogs, setMainLogs ] = useState<LogEntry[]>([]);
   const [ resultMessage, setResultMessage ] = useState('');
 
-  // 用 ref 持有最新 state，避免 SSE 回调闭包陈旧
+  // 用 ref 持有最新 state，避免 SSE 回调闭包陈旧；每次渲染后同步
   const stateRef = useRef(state);
-  stateRef.current = state;
+  useEffect(() => {
+    stateRef.current = state;
+  });
 
   const handleEvent = useCallback((event: string, data: unknown) => {
     const d = data as Record<string, unknown>;

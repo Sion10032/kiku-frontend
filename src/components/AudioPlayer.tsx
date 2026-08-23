@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -21,7 +21,8 @@ import '@m3e/icons/outlined/volume_off';
 import '@m3e/icons/outlined/music_note';
 import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
-import QueueDialog, { PLAY_MODE_ICON, PLAY_MODE_LABEL } from './QueueDialog';
+import QueueDialog from './QueueDialog';
+import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../constants';
 import { usePlayerStore } from '../stores/playerStore';
 import { mediaUrl } from '../api/client';
 import { seekTo } from '../hooks/usePlayer';
@@ -65,8 +66,12 @@ export default function AudioPlayer() {
   const [ sleepOpen, setSleepOpen ] = useState(false);
   /** 窄屏歌词视图（宽屏双栏常显，状态无效）；切曲自动回封面视图 */
   const [ showLyrics, setShowLyrics ] = useState(false);
-
-  useEffect(() => setShowLyrics(false), [ queueIndex ]);
+  // 切曲时重置窄屏歌词视图（渲染期调整 state，替代 effect 中 setState）
+  const [ prevQueueIndex, setPrevQueueIndex ] = useState(queueIndex);
+  if (queueIndex !== prevQueueIndex) {
+    setPrevQueueIndex(queueIndex);
+    setShowLyrics(false);
+  }
 
   if (hide || queue.length === 0) return null;
 

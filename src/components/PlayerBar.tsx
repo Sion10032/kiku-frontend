@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -17,7 +17,8 @@ import { formatDuration } from '../utils/format';
 import LyricsBar from './LyricsBar';
 import MarqueeText from './MarqueeText';
 import ProgressBar from './ProgressBar';
-import QueueDialog, { PLAY_MODE_ICON, PLAY_MODE_LABEL } from './QueueDialog';
+import QueueDialog from './QueueDialog';
+import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../constants';
 
 /** 包装 onClick：阻止冒泡到信息区展开热区后执行 action（M3e 组件回调为原生 Event）。 */
 function stopAnd(fn: () => void) {
@@ -54,9 +55,13 @@ export default function PlayerBar() {
   const [ coverFailed, setCoverFailed ] = useState(false);
 
   const track = queue[queueIndex];
-  // 切曲后重置封面失败标记
+  // 切曲后重置封面失败标记（渲染期调整 state，替代 effect 中 setState）
   const coverKey = track?.workId ?? track?.hash;
-  useEffect(() => setCoverFailed(false), [ coverKey ]);
+  const [ prevCoverKey, setPrevCoverKey ] = useState(coverKey);
+  if (coverKey !== prevCoverKey) {
+    setPrevCoverKey(coverKey);
+    setCoverFailed(false);
+  }
 
   if (queue.length === 0 || !track) return null;
 

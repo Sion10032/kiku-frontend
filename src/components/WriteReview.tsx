@@ -12,10 +12,10 @@ import {
   useDeleteReviewMutation,
 } from '../queries/useReviewMutation';
 import StarRating from './StarRating';
-import { PROGRESS_LABELS } from './FavListItem';
+import { PROGRESS_LABELS } from '../constants';
 import type { Progress, Work } from '../types';
 
-/** 进度选项顺序（与收藏页 FavListItem 的 PROGRESS_LABELS 同源）。 */
+/** 进度选项顺序（与 PROGRESS_LABELS 同源）。 */
 const PROGRESS_ORDER: Progress[] = [
   'marked',
   'listening',

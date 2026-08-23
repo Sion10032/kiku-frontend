@@ -27,6 +27,8 @@ export function useM3eStyle<T extends M3eStyleElement = M3eStyleElement>({ style
         root.appendChild(createStyleElement(style));
       }
     })();
+    // 仅为挂载时一次性注入（调用方传静态内容，内部幂等）；style 不进依赖
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return ref;

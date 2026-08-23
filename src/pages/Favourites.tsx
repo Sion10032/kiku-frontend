@@ -5,7 +5,8 @@ import { M3eList } from '@m3e/react/list';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { useUserStore } from '../stores/userStore';
 import { useReviewsByUser, useWorkMap } from '../queries/useReviewsQuery';
-import FavListItem, { PROGRESS_LABELS } from '../components/FavListItem';
+import FavListItem from '../components/FavListItem';
+import { PROGRESS_LABELS } from '../constants';
 import type { Progress, Review, Work } from '../types';
 
 export type FavouritesRoute = 'review' | 'progress' | 'folder';
@@ -59,7 +60,11 @@ export default function Favourites({ route, status }: FavouritesProps) {
   }
 
   const reviewsQuery = useReviewsByUser(name || undefined);
-  const reviews = reviewsQuery.data ?? [];
+  // useMemo 稳定引用：?? 每次渲染生成新数组，会让下游 useMemo 依赖失效
+  const reviews = useMemo(
+    () => reviewsQuery.data ?? [],
+    [ reviewsQuery.data ],
+  );
 
   const workIds = useMemo(() => reviews.map(r => r.workId), [ reviews ]);
   const { works, isPending: worksPending } = useWorkMap(workIds);

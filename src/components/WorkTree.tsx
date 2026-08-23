@@ -59,8 +59,11 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   const addToQueue = usePlayerStore(s => s.addToQueue);
   const playNext = usePlayerStore(s => s.playNext);
 
-  // 单目录作品自动进入根目录（对齐原 kikoeru-quasar 行为）
-  useEffect(() => {
+  // 单目录作品自动进入根目录（对齐原 kikoeru-quasar 行为；
+  // 渲染期调整 state，替代 effect 中 setState）
+  const [ prevTree, setPrevTree ] = useState(tree);
+  if (tree !== prevTree) {
+    setPrevTree(tree);
     const initial: string[] = [];
     let nodes = tree;
     while (nodes.length === 1 && nodes[0].type === 'folder') {
@@ -68,7 +71,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
       nodes = nodes[0].children;
     }
     setPath(initial);
-  }, [ tree ]);
+  }
 
   // 按面包屑路径解析当前目录
   const fatherFolder = useMemo(() => {

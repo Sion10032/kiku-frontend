@@ -51,10 +51,12 @@ export default function MainLayout() {
   );
   const [ overlayOpen, setOverlayOpen ] = useState(false);
 
-  // 回到宽屏时关掉可能残留的浮层抽屉
-  useEffect(() => {
+  // 回到宽屏时关掉可能残留的浮层抽屉（渲染期调整 state，替代 effect 中 setState）
+  const [ prevIsNarrow, setPrevIsNarrow ] = useState(isNarrow);
+  if (isNarrow !== prevIsNarrow) {
+    setPrevIsNarrow(isNarrow);
     if (!isNarrow) setOverlayOpen(false);
-  }, [ isNarrow ]);
+  }
 
   // Esc 关闭浮层抽屉（开启时监听）
   useEffect(() => {

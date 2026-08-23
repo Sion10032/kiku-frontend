@@ -19,7 +19,11 @@ export function useSSE(
   deps?: readonly unknown[],
 ) {
   const cbRef = useRef(onEvent);
-  cbRef.current = onEvent;
+
+  // 每次渲染后同步最新回调，避免 onEvent 变化触发重订阅
+  useEffect(() => {
+    cbRef.current = onEvent;
+  });
 
   useEffect(() => {
     const ctrl = new AbortController();

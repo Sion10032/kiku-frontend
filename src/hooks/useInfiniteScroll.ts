@@ -18,7 +18,11 @@ export function useInfiniteScroll(options: {
   const { onLoadMore, hasMore, loading, rootMargin = 250 } = options;
   // 用 ref 持有最新回调，避免 observer 因回调变化重建
   const cbRef = useRef(onLoadMore);
-  cbRef.current = onLoadMore;
+
+  // 每次渲染后同步最新回调
+  useEffect(() => {
+    cbRef.current = onLoadMore;
+  });
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 

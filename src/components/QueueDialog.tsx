@@ -18,23 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/drag_indicator';
-import { usePlayerStore, type PlayMode, type Track } from '../stores/playerStore';
-
-/** 播放模式 → 图标名。 */
-export const PLAY_MODE_ICON: Record<PlayMode, string> = {
-  order: 'playlist_play',
-  allRepeat: 'repeat',
-  repeatOne: 'repeat_one',
-  shuffle: 'shuffle',
-};
-
-/** 播放模式 → 中文名（aria-label / 提示用）。 */
-export const PLAY_MODE_LABEL: Record<PlayMode, string> = {
-  order: '顺序播放',
-  allRepeat: '列表循环',
-  repeatOne: '单曲循环',
-  shuffle: '随机播放',
-};
+import { usePlayerStore, type Track } from '../stores/playerStore';
 
 /**
  * 播放列表对话框：列出队列、当前曲目高亮、点击切曲、拖拽排序。

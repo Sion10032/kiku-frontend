@@ -3,17 +3,9 @@ import { M3eListItem } from '@m3e/react/list';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eChip } from '@m3e/react/chips';
 import '@m3e/icons/outlined/star';
-import type { Progress, Review, Work } from '../types';
+import type { Review, Work } from '../types';
+import { PROGRESS_LABELS } from '../constants';
 import CoverThumbnail from './CoverThumbnail';
-
-/** 进度状态 → 中文标签（对齐原 kikoeru-quasar 的进度筛选文案）。 */
-export const PROGRESS_LABELS: Record<Progress, string> = {
-  marked: '想听',
-  listening: '在听',
-  listened: '听过',
-  replay: '重听',
-  postponed: '搁置',
-};
 
 interface FavListItemProps {
   work: Work;
