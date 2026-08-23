@@ -50,12 +50,13 @@ export default function Settings() {
       <h1 className="m-0 text-2xl font-normal">设置</h1>
       <M3eCard>
         <div slot="content" className="flex flex-col gap-6">
-          {/* 颜色模式 */}
-          <div className="flex items-center justify-between gap-4">
+          {/* 颜色模式：窄屏时标签与分段按钮上下堆叠，避免横向溢出 */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span>颜色模式</span>
             {/* 注意：组的 value 是 getter-only 派生属性（同 radio-group），
                 受控方式是给每个 M3eButtonSegment 传 checked */}
             <M3eSegmentedButton
+              className="w-full sm:w-auto"
               onInput={(e) =>
                 setColorMode((e.target as HTMLInputElement).value as ColorMode)
               }
@@ -90,12 +91,13 @@ export default function Settings() {
           </div>
 
           {/* NSFW 封面 */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="flex flex-col">
               <span>NSFW 封面</span>
               <span className="text-sm opacity-70">始终模糊 / 默认模糊悬浮显示 / 始终清晰显示</span>
             </span>
             <M3eSegmentedButton
+              className="w-full sm:w-auto"
               onInput={(e) =>
                 setCoverBlurMode(
                   (e.target as HTMLInputElement).value as CoverBlurMode,
@@ -173,12 +175,13 @@ export default function Settings() {
           </div>
 
           {/* 行数 */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="flex flex-col">
               <span className={floatingLyrics.enabled ? '' : 'opacity-50'}>行数上限</span>
               <span className="text-sm opacity-70">歌词过长时换行显示，超出部分省略</span>
             </span>
             <M3eSegmentedButton
+              className="w-full sm:w-auto"
               disabled={!floatingLyrics.enabled}
               onInput={(e) =>
                 setFloatingLyrics({
