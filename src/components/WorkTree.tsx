@@ -49,6 +49,9 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   const [path, setPath] = useState<string[]>([]);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const menuRef = useRef<M3eMenuElement>(null);
+  // 文件列表容器：目录切换时用 min-height 防止瞬时高度塌缩导致滚动位置丢失
+  const listRef = useRef<HTMLDivElement>(null);
+  const [listMinHeight, setListMinHeight] = useState<number | undefined>();
 
   const queue = usePlayerStore((s) => s.queue);
   const queueIndex = usePlayerStore((s) => s.queueIndex);
@@ -95,8 +98,18 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   const currentTrack =
     queue[queueIndex]?.workId === work.id ? queue[queueIndex] : undefined;
 
+  /**
+   * 目录切换：先锁定列表当前高度（新 m3e-list-option 的 shadow DOM 异步渲染，
+   * 插入瞬间高度为 0，会让滚动容器钳制 scrollTop 到顶部），
+   * 新条目渲染完成后在 effect 里解除锁定。
+   */
+  function navigate(next: string[]) {
+    if (listRef.current) setListMinHeight(listRef.current.offsetHeight);
+    setPath(next);
+  }
+
   function enterFolder(folder: Extract<TrackNode, { type: 'folder' }>) {
-    setPath((prev) => [...prev, folder.title]);
+    navigate([...path, folder.title]);
   }
 
   function playLeaf(leaf: TrackLeaf) {
@@ -132,23 +145,33 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
     return currentTrack?.hash === leaf.hash;
   }
 
+  // 新目录条目渲染完成后解除高度锁定（等所有 list-option 渲染完）
+  useEffect(() => {
+    if (listMinHeight === undefined || !listRef.current) return;
+    const opts = [...listRef.current.querySelectorAll('m3e-list-option')];
+    void Promise.all(opts.map((o) => o.updateComplete)).then(() =>
+      setListMinHeight(undefined),
+    );
+  }, [listMinHeight, fatherFolder]);
+
   return (
     <div className="flex flex-col gap-3">
       {/* 面包屑 */}
       <M3eBreadcrumb>
-        <M3eBreadcrumbItem onClick={() => setPath([])}>
+        <M3eBreadcrumbItem onClick={() => navigate([])}>
           ROOT
         </M3eBreadcrumbItem>
         {path.map((name, i) => (
           <M3eBreadcrumbItem
             key={`${name}-${i}`}
-            onClick={() => setPath(path.slice(0, i + 1))}>
+            onClick={() => navigate(path.slice(0, i + 1))}>
             {name}
           </M3eBreadcrumbItem>
         ))}
       </M3eBreadcrumb>
 
-      {/* 文件列表 */}
+      {/* 文件列表（min-height 锁定防止目录切换时滚动位置丢失） */}
+      <div ref={listRef} style={listMinHeight ? { minHeight: listMinHeight } : undefined}>
       {loading && (
         <div className="flex justify-center py-12">
           <M3eCircularProgressIndicator />
@@ -163,7 +186,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
 
       {!loading && fatherFolder.length > 0 && (
         <M3eSelectionList variant='segmented' hide-selection-indicator>
-          {path.length > 0 && <ParentListItem onBack={() => setPath(path.slice(0, -1))} />}
+          {path.length > 0 && <ParentListItem onBack={() => navigate(path.slice(0, -1))} />}
           {fatherFolder.map((node) =>
             node.type === 'folder' ? (
               <TrackFolderListItem
@@ -183,6 +206,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
           )}
         </M3eSelectionList>
       )}
+      </div>
 
       {/* 上下文菜单（⋮ 按钮触发；定位 / 翻转 / 关闭均由 m3e-menu 处理） */}
       <M3eMenu ref={menuRef}>
