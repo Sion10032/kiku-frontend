@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate, Link } from '@tanstack/react-router';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eButton } from '@m3e/react/button';
@@ -23,6 +23,13 @@ export default function Login() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  /** 原生 input 上按回车 → 手动触发 form 提交（M3eButton 在 shadow DOM 内，隐式提交不可靠）。 */
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    e.currentTarget.form?.requestSubmit();
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -70,6 +77,7 @@ export default function Login() {
             autoComplete="username"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyDown={onKeyDown}
             required
             minLength={4}
             className="w-full border-none bg-transparent p-y-2 text-base outline-none"
@@ -87,6 +95,7 @@ export default function Login() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={onKeyDown}
             required
             minLength={5}
             className="w-full border-none bg-transparent py-2 text-base outline-none"
