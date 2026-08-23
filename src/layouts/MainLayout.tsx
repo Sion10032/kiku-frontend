@@ -74,7 +74,7 @@ export default function MainLayout() {
       <div
         className={[
           'grid h-dvh grid-rows-[auto_1fr_auto] overflow-hidden transition-[grid-template-columns] duration-200',
-          '[grid-template-areas:\'drawer_appbar\'\'drawer_content\'\'drawer_player\']',
+          `[grid-template-areas:'drawer_appbar''drawer_content''drawer_player']`,
           drawerHidden ? 'grid-cols-[0px_1fr]' : 'grid-cols-[240px_1fr]',
         ].join(' ')}>
         <div className='[grid-area:drawer] min-h-0 overflow-hidden'>
