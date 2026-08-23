@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { M3eSearchBar } from '@m3e/react/search';
 import { M3eIcon } from '@m3e/react/icon';
-import { M3eList, M3eListItem } from '@m3e/react/list';
+import { M3eActionList, M3eListAction } from '@m3e/react/list';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import '@m3e/icons/outlined/search';
 import '@m3e/icons/outlined/chevron_right';
@@ -155,12 +155,18 @@ export default function List({ type }: { type: ListType }) {
 
       {/* 列表 */}
       {!loading && !isError && entries.length > 0 && (
-        <M3eList>
+        <M3eActionList>
           {entries.map((entry) => (
-            <M3eListItem
+            <M3eListAction
               key={entry.key}
               onClick={() => navigate({ to: '/works', search: entry.search })}
             >
+              <style>{`
+                * {
+                  --m3e-list-item-container-shape: calc(infinity * 1px);
+                  --m3e-list-item-hover-container-shape: calc(infinity * 1px);
+                }
+              `}</style>
               <span
                 slot="leading"
                 className="me-3 flex items-center opacity-60"
@@ -171,9 +177,9 @@ export default function List({ type }: { type: ListType }) {
               <span slot="trailing" className="flex items-center opacity-50">
                 <M3eIcon name="chevron_right" />
               </span>
-            </M3eListItem>
+            </M3eListAction>
           ))}
-        </M3eList>
+        </M3eActionList>
       )}
 
       {/* 空状态 */}
