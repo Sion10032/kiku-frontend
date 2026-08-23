@@ -24,7 +24,7 @@ interface FavListItemProps {
 }
 
 /**
- * 收藏页列表项：封面 + 标题 + 圈子/声优/发售日 + 评价星 + 进度标记 + 短评。
+ * 收藏页列表项：封面 + 标题 + 社团/声优/发售日 + 评价星 + 进度标记 + 短评。
  *
  * m3e named slot（leading/trailing）只对直接子元素生效——导航用
  * onClick + useNavigate，不把 slot 元素包进 <Link>（见注意事项 15）。
@@ -46,7 +46,7 @@ export default function FavListItem({ work, review, mode }: FavListItemProps) {
       <div className="min-w-0 flex-1">
         <div className="line-clamp-2 text-base">{work.title}</div>
 
-        {/* 圈子 / 发售日 / 声优 */}
+        {/* 社团 / 发售日 / 声优 */}
         <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm opacity-70">
           <span>{work.circle.name}</span>
           {work.release && <span>{work.release}</span>}

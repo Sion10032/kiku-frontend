@@ -54,7 +54,7 @@ export default function GlobalSearchBar() {
       <input
         slot="input"
         type="text"
-        placeholder="搜索作品/圈子/标签/声优，或输入 RJ 号…"
+        placeholder="搜索作品/社团/标签/声优，或输入 RJ 号…"
         value={keywordInput}
         onInput={(e) => setKeywordInput((e.target as HTMLInputElement).value)}
       />

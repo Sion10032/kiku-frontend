@@ -45,7 +45,7 @@ export function getTracks(id: string): Promise<Tracks> {
   return apiFetch<Tracks>(`tracks/${id}`);
 }
 
-/** 圈子下的作品：GET /api/circles/:id/works （返回裸数组） */
+/** 社团下的作品：GET /api/circles/:id/works （返回裸数组） */
 export function getCircleWorks(
   id: number,
   params: Omit<WorksParams, 'circleId' | 'tagId' | 'vaId' | 'keyword'> = {},
@@ -82,7 +82,7 @@ export function searchWorks(keyword: string): Promise<{ works: Work[] }> {
   );
 }
 
-// ---------- 圈子 / 标签 / 声优 列表 ----------
+// ---------- 社团 / 标签 / 声优 列表 ----------
 
 export function getCircles(): Promise<Circle[]> {
   return apiFetch<Circle[]>('circles/');

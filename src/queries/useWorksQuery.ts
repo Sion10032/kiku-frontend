@@ -36,7 +36,7 @@ export function useWorksInfinite(
   });
 }
 
-/** 按圈子筛选的作品（一次拉全，后端无分页）。 */
+/** 按社团筛选的作品（一次拉全，后端无分页）。 */
 export function useCircleWorks(circleId: number | undefined) {
   return useQuery({
     queryKey: ['works', 'circle', circleId],

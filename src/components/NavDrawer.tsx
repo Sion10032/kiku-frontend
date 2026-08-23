@@ -85,7 +85,7 @@ export default function NavDrawer() {
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
                 <M3eIcon slot="icon" name="groups" />
-                <span slot="label">圈子</span>
+                <span slot="label">社团</span>
               </M3eNavMenuItem>
             )}
           </Link>

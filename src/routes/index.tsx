@@ -27,7 +27,7 @@ const indexRoute = createRoute({
 
 // 作品详情：路径参数 id → number（定义见 routes/work.tsx）
 
-// 圈子/标签/声优：path param 收敛为枚举（替代三个独立 prop 路由）
+// 社团/标签/声优：path param 收敛为枚举（替代三个独立 prop 路由）
 const listRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/list/$type',

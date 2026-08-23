@@ -19,7 +19,7 @@ interface WorkDetailsProps {
 }
 
 /**
- * 作品详情信息卡：封面、标题、圈子、评分（平均分 + 分布）、价格/售出/发售日、
+ * 作品详情信息卡：封面、标题、社团、评分（平均分 + 分布）、价格/售出/发售日、
  * 标签、声优、DLsite 链接与「我的评价」入口。
  * 「我的评价」入口打开 WriteReview 对话框（星级 + 短评 + 进度，见步骤 12）。
  */
@@ -60,7 +60,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         {/* 标题 */}
         <h1 className="m-0 text-xl font-normal leading-snug">{work.title}</h1>
 
-        {/* 圈子 */}
+        {/* 社团 */}
         <Link
           to="/works"
           search={{ circleId: work.circle.id }}

@@ -203,7 +203,7 @@ export default function Works() {
           <span>
             筛选中：
             {search.keyword && `关键词「${search.keyword}」`}
-            {search.circleId && `圈子`}
+            {search.circleId && `社团`}
             {search.tagId && `标签`}
             {search.vaId && `声优`}
           </span>

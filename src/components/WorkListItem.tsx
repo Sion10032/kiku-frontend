@@ -15,7 +15,7 @@ interface WorkListItemProps {
 /**
  * 作品列表项（列表视图）。
  *
- * 缩略图（sam）+ 标题 + 圈子 / 声优 + 标签。
+ * 缩略图（sam）+ 标题 + 社团 / 声优 + 标签。
  */
 export default function WorkListItem({
   work,

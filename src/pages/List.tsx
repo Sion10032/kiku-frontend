@@ -18,7 +18,7 @@ import {
 export type ListType = 'circles' | 'tags' | 'vas';
 
 const LABELS: Record<ListType, string> = {
-  circles: '圈子',
+  circles: '社团',
   tags: '标签',
   vas: '声优',
 };
@@ -42,7 +42,7 @@ interface Entry {
 }
 
 /**
- * 圈子 / 标签 / 声优 列表页（步骤 9）。
+ * 社团 / 标签 / 声优 列表页（步骤 9）。
  *
  * - 按路由 type 选择查询（getCircles / getTags / getVas，均返回裸数组）
  * - m3e SearchBar 输入即筛（客户端按名称过滤）

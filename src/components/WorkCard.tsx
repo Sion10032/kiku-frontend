@@ -17,7 +17,7 @@ interface WorkCardProps {
 /**
  * 作品卡片（网格视图）。
  *
- * 展示：封面、标题、圈子、评分（平均分 + 评分人数）、评论数、
+ * 展示：封面、标题、社团、评分（平均分 + 评分人数）、评论数、
  * 价格、售出数、NSFW 标记、标签、声优。
  */
 export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
