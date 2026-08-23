@@ -20,33 +20,32 @@ const NAV_ENTRIES: NavEntry[] = [
  */
 export default function DashboardLayout() {
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
+    <div className='flex h-dvh flex-col overflow-hidden'>
       <M3eAppBar>
-        <span slot="leading">
-          <Link to="/works" className="no-underline">
-            <M3eButton variant="text">← 返回</M3eButton>
+        <span slot='leading'>
+          <Link to='/works' className='no-underline'>
+            <M3eButton variant='text'>← 返回</M3eButton>
           </Link>
         </span>
-        <span slot="headline" className="text-xl font-medium">
+        <span slot='headline' className='text-xl font-medium'>
           管理后台
         </span>
       </M3eAppBar>
 
-      <nav className="flex min-h-12 flex-0 items-center gap-1 overflow-x-auto border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] px-4 py-2">
-        {NAV_ENTRIES.map((entry) => (
+      <nav className='flex min-h-12 flex-0 items-center gap-1 overflow-x-auto border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] px-4 py-2'>
+        {NAV_ENTRIES.map(entry => (
           <Link
             key={entry.to}
             to={entry.to}
-            className="whitespace-nowrap rounded-full px-4 py-2 text-[var(--md-sys-color-on-surface)] no-underline data-[active]:font-semibold data-[active]:bg-[var(--md-sys-color-primary-container)]"
+            className='whitespace-nowrap rounded-full px-4 py-2 text-[var(--md-sys-color-on-surface)] no-underline data-[active]:font-semibold data-[active]:bg-[var(--md-sys-color-primary-container)]'
             activeProps={{ 'data-active': '' }}
-            activeOptions={{ exact: entry.to === '/admin' }}
-          >
+            activeOptions={{ exact: entry.to === '/admin' }}>
             {entry.label}
           </Link>
         ))}
       </nav>
 
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className='flex-1 overflow-y-auto p-6'>
         <Outlet />
       </main>
     </div>

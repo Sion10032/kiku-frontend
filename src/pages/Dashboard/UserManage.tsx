@@ -22,24 +22,25 @@ import type { User } from '../../types';
  * - 删除用户（deleteUsers）
  */
 export default function UserManage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [ users, setUsers ] = useState<User[]>([]);
+  const [ loading, setLoading ] = useState(true);
+  const [ saving, setSaving ] = useState(false);
 
   // 创建表单
-  const [newName, setNewName] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newGroup, setNewGroup] = useState<'user' | 'guest'>('user');
+  const [ newName, setNewName ] = useState('');
+  const [ newPassword, setNewPassword ] = useState('');
+  const [ newGroup, setNewGroup ] = useState<'user' | 'guest'>('user');
 
   // 改密
-  const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [newPwd, setNewPwd] = useState('');
+  const [ editingUser, setEditingUser ] = useState<string | null>(null);
+  const [ newPwd, setNewPwd ] = useState('');
 
   async function refresh() {
     try {
       const list = await getUsers();
       setUsers(list);
-    } catch (err) {
+    }
+    catch (err) {
       M3eSnackbar.open(
         err instanceof Error ? err.message : '加载用户列表失败',
       );
@@ -55,7 +56,6 @@ export default function UserManage() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleCreate() {
@@ -81,9 +81,11 @@ export default function UserManage() {
       setNewGroup('user');
       M3eSnackbar.open(`用户 ${name} 创建成功`);
       await refresh();
-    } catch (err) {
+    }
+    catch (err) {
       M3eSnackbar.open(err instanceof Error ? err.message : '创建失败');
-    } finally {
+    }
+    finally {
       setSaving(false);
     }
   }
@@ -101,9 +103,11 @@ export default function UserManage() {
       setEditingUser(null);
       setNewPwd('');
       M3eSnackbar.open(`用户 ${editingUser} 密码已更新`);
-    } catch (err) {
+    }
+    catch (err) {
       M3eSnackbar.open(err instanceof Error ? err.message : '更新失败');
-    } finally {
+    }
+    finally {
       setSaving(false);
     }
   }
@@ -111,12 +115,14 @@ export default function UserManage() {
   async function handleDelete(name: string) {
     setSaving(true);
     try {
-      await deleteUsers({ users: [{ name }] });
+      await deleteUsers({ users: [ { name } ] });
       M3eSnackbar.open(`用户 ${name} 已删除`);
       await refresh();
-    } catch (err) {
+    }
+    catch (err) {
       M3eSnackbar.open(err instanceof Error ? err.message : '删除失败');
-    } finally {
+    }
+    finally {
       setSaving(false);
     }
   }
@@ -129,91 +135,86 @@ export default function UserManage() {
   }
 
   if (loading) {
-    return <p className="opacity-70">加载中…</p>;
+    return <p className='opacity-70'>加载中…</p>;
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className='flex flex-col gap-4'>
       {/* 用户列表 */}
       <M3eCard>
-        <div slot="header">
-          <span className="text-sm font-medium">用户列表 ({users.length})</span>
+        <div slot='header'>
+          <span className='text-sm font-medium'>用户列表 ({users.length})</span>
         </div>
-        <div slot="content">
+        <div slot='content'>
           {users.length === 0 && (
-            <p className="m-0 text-sm opacity-50">暂无用户</p>
+            <p className='m-0 text-sm opacity-50'>暂无用户</p>
           )}
 
-          <div className="flex flex-col gap-2">
-            {users.map((user) => (
+          <div className='flex flex-col gap-2'>
+            {users.map(user => (
               <div
                 key={user.name}
-                className="flex items-center justify-between gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium">{user.name}</span>
-                  <span className="ml-2 rounded-sm px-1.5 py-0.5 text-xs" style={{ background: 'var(--md-sys-color-secondary-container)', color: 'var(--md-sys-color-on-secondary-container)' }}>
+                className='flex items-center justify-between gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] p-3'>
+                <div className='min-w-0 flex-1'>
+                  <span className='text-sm font-medium'>{user.name}</span>
+                  <span className='ml-2 rounded-sm px-1.5 py-0.5 text-xs' style={{ background: 'var(--md-sys-color-secondary-container)', color: 'var(--md-sys-color-on-secondary-container)' }}>
                     {user.group}
                   </span>
                 </div>
 
-                <div className="flex shrink-0 gap-1">
-                  {editingUser === user.name ? (
-                    <>
-                      <M3eFormField
-                        variant="outlined"
-                        hideSubscript="always"
-                      >
-                        <label slot="label" htmlFor={`pwd-${user.name}`}>
-                          新密码
-                        </label>
-                        <input
-                          id={`pwd-${user.name}`}
-                          type="password"
-                          value={newPwd}
-                          onChange={(e) => setNewPwd(e.target.value)}
-                          placeholder="至少 5 个字符"
-                          className="w-full border-none bg-transparent py-2 text-sm outline-none"
-                        />
-                      </M3eFormField>
-                      <M3eButton
-                        variant="text"
-                        onClick={() => {
-                          setEditingUser(null);
-                          setNewPwd('');
-                        }}
-                      >
-                        取消
-                      </M3eButton>
-                      <M3eButton
-                        variant="filled"
-                        disabled={saving}
-                        onClick={handleUpdatePassword}
-                      >
-                        保存
-                      </M3eButton>
-                    </>
-                  ) : (
-                    <>
-                      <M3eButton
-                        variant="text"
-                        onClick={() => {
-                          setEditingUser(user.name);
-                          setNewPwd('');
-                        }}
-                      >
-                        改密
-                      </M3eButton>
-                      <M3eButton
-                        variant="text"
-                        className="text-[var(--md-sys-color-error)]"
-                        disabled={saving}
-                        onClick={() => handleDelete(user.name)}
-                      >
-                        删除
-                      </M3eButton>
-                    </>
-                  )}
+                <div className='flex shrink-0 gap-1'>
+                  {editingUser === user.name
+                    ? (
+                      <>
+                        <M3eFormField
+                          variant='outlined'
+                          hideSubscript='always'>
+                          <label slot='label' htmlFor={`pwd-${user.name}`}>
+                            新密码
+                          </label>
+                          <input
+                            id={`pwd-${user.name}`}
+                            type='password'
+                            value={newPwd}
+                            onChange={e => setNewPwd(e.target.value)}
+                            placeholder='至少 5 个字符'
+                            className='w-full border-none bg-transparent py-2 text-sm outline-none' />
+                        </M3eFormField>
+                        <M3eButton
+                          variant='text'
+                          onClick={() => {
+                            setEditingUser(null);
+                            setNewPwd('');
+                          }}>
+                          取消
+                        </M3eButton>
+                        <M3eButton
+                          variant='filled'
+                          disabled={saving}
+                          onClick={handleUpdatePassword}>
+                          保存
+                        </M3eButton>
+                      </>
+                    )
+                    : (
+                      <>
+                        <M3eButton
+                          variant='text'
+                          onClick={() => {
+                            setEditingUser(user.name);
+                            setNewPwd('');
+                          }}>
+                          改密
+                        </M3eButton>
+                        <M3eButton
+                          variant='text'
+                          className='text-[var(--md-sys-color-error)]'
+                          disabled={saving}
+                          onClick={() => handleDelete(user.name)}>
+                          删除
+                        </M3eButton>
+                      </>
+                    )}
                 </div>
               </div>
             ))}
@@ -223,54 +224,51 @@ export default function UserManage() {
 
       {/* 创建用户 */}
       <M3eCard>
-        <div slot="header">
-          <span className="text-sm font-medium">创建用户</span>
+        <div slot='header'>
+          <span className='text-sm font-medium'>创建用户</span>
         </div>
-        <div slot="content">
-          <div className="flex flex-col gap-3">
-            <M3eFormField variant="outlined" hideSubscript="always">
-              <label slot="label" htmlFor="new-user-name">
+        <div slot='content'>
+          <div className='flex flex-col gap-3'>
+            <M3eFormField variant='outlined' hideSubscript='always'>
+              <label slot='label' htmlFor='new-user-name'>
                 用户名（至少 4 个字符）
               </label>
               <input
-                id="new-user-name"
+                id='new-user-name'
                 value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="用户名"
-                className="w-full border-none bg-transparent py-2 text-sm outline-none"
-              />
+                onChange={e => setNewName(e.target.value)}
+                placeholder='用户名'
+                className='w-full border-none bg-transparent py-2 text-sm outline-none' />
             </M3eFormField>
-            <M3eFormField variant="outlined" hideSubscript="always">
-              <label slot="label" htmlFor="new-user-pwd">
+            <M3eFormField variant='outlined' hideSubscript='always'>
+              <label slot='label' htmlFor='new-user-pwd'>
                 密码（至少 5 个字符）
               </label>
               <input
-                id="new-user-pwd"
-                type="password"
+                id='new-user-pwd'
+                type='password'
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="密码"
-                className="w-full border-none bg-transparent py-2 text-sm outline-none"
-              />
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder='密码'
+                className='w-full border-none bg-transparent py-2 text-sm outline-none' />
             </M3eFormField>
-            <M3eFormField variant="outlined" hideSubscript="always">
-              <label slot="label" htmlFor="new-user-group">
+            <M3eFormField variant='outlined' hideSubscript='always'>
+              <label slot='label' htmlFor='new-user-group'>
                 用户组
               </label>
-              <M3eSelect id="new-user-group" onChange={onGroupChange}>
-                <M3eOption value="user" selected={newGroup === 'user'}>
+              <M3eSelect id='new-user-group' onChange={onGroupChange}>
+                <M3eOption value='user' selected={newGroup === 'user'}>
                   user
                 </M3eOption>
-                <M3eOption value="guest" selected={newGroup === 'guest'}>
+                <M3eOption value='guest' selected={newGroup === 'guest'}>
                   guest
                 </M3eOption>
               </M3eSelect>
             </M3eFormField>
             <M3eButton
-              variant="filled"
+              variant='filled'
               disabled={saving}
-              onClick={handleCreate}
-            >
+              onClick={handleCreate}>
               {saving ? '创建中…' : '创建用户'}
             </M3eButton>
           </div>

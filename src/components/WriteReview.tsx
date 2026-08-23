@@ -42,17 +42,17 @@ interface WriteReviewProps {
  *   invalidate works/work/reviews 并关闭对话框。
  */
 export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
-  const name = useUserStore((s) => s.name);
+  const name = useUserStore(s => s.name);
   const reviewMutation = useReviewMutation();
   const deleteMutation = useDeleteReviewMutation();
 
   // 当前用户对该作品的已有评价（回显 rating/progress/短评）
   const reviewsQuery = useReviewsByUser(name || undefined);
-  const existing = reviewsQuery.data?.find((r) => r.workId === work.id);
+  const existing = reviewsQuery.data?.find(r => r.workId === work.id);
 
-  const [rating, setRating] = useState(0);
-  const [reviewText, setReviewText] = useState('');
-  const [progress, setProgress] = useState<Progress | ''>('');
+  const [ rating, setRating ] = useState(0);
+  const [ reviewText, setReviewText ] = useState('');
+  const [ progress, setProgress ] = useState<Progress | ''>('');
 
   // 仅在「打开」的瞬间用已有评价初始化表单，避免查询完成或输入过程中被重置
   const prevOpen = useRef(false);
@@ -90,7 +90,8 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
       });
       M3eSnackbar.open('评价已保存');
       onClose();
-    } catch (err) {
+    }
+    catch (err) {
       M3eSnackbar.open(
         err instanceof Error ? err.message : '保存失败，请稍后重试',
       );
@@ -103,7 +104,8 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
       await deleteMutation.mutateAsync(work.id);
       M3eSnackbar.open('评价已删除');
       onClose();
-    } catch (err) {
+    }
+    catch (err) {
       M3eSnackbar.open(
         err instanceof Error ? err.message : '删除失败，请稍后重试',
       );
@@ -111,43 +113,41 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
   }
 
   return (
-    <M3eDialog open={open} onClosed={onClose} dismissible closeLabel="关闭">
-      <span slot="header">我的评价</span>
+    <M3eDialog open={open} onClosed={onClose} dismissible closeLabel='关闭'>
+      <span slot='header'>我的评价</span>
 
-      <div className="flex flex-col gap-4 py-2">
+      <div className='flex flex-col gap-4 py-2'>
         {/* 星级 */}
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm opacity-70">评分</span>
-          <StarRating value={rating} onChange={setRating} size="2rem" />
+        <div className='flex items-center justify-between gap-3'>
+          <span className='text-sm opacity-70'>评分</span>
+          <StarRating value={rating} onChange={setRating} size='2rem' />
         </div>
 
         {/* 短评 */}
-        <M3eFormField variant="outlined">
-          <label slot="label" htmlFor="review-text">
+        <M3eFormField variant='outlined'>
+          <label slot='label' htmlFor='review-text'>
             短评（可选）
           </label>
           <textarea
-            id="review-text"
+            id='review-text'
             value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
+            onChange={e => setReviewText(e.target.value)}
             rows={3}
             maxLength={500}
-            className="w-full resize-none border-none bg-transparent py-2 text-sm outline-none"
-          />
+            className='w-full resize-none border-none bg-transparent py-2 text-sm outline-none' />
         </M3eFormField>
 
         {/* 收听进度 */}
-        <M3eFormField variant="outlined" hideSubscript="always">
-          <label slot="label" htmlFor="review-progress">
+        <M3eFormField variant='outlined' hideSubscript='always'>
+          <label slot='label' htmlFor='review-progress'>
             收听进度
           </label>
-          <M3eSelect id="review-progress" onChange={onProgressChange}>
-            {PROGRESS_ORDER.map((value) => (
+          <M3eSelect id='review-progress' onChange={onProgressChange}>
+            {PROGRESS_ORDER.map(value => (
               <M3eOption
                 key={value}
                 value={value}
-                selected={progress === value}
-              >
+                selected={progress === value}>
                 {PROGRESS_LABELS[value]}
               </M3eOption>
             ))}
@@ -156,24 +156,23 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
       </div>
 
       {/* 底部操作：左侧删除（已有评价时显示），右侧取消 / 确定 */}
-      <div slot="actions" className="flex items-center justify-between">
+      <div slot='actions' className='flex items-center justify-between'>
         <div>
           {hasExisting && (
             <M3eButton
-              variant="text"
-              className="text-[var(--md-sys-color-error)]"
+              variant='text'
+              className='text-[var(--md-sys-color-error)]'
               disabled={loading}
-              onClick={onDelete}
-            >
+              onClick={onDelete}>
               {deleteMutation.isPending ? '删除中…' : '删除评价'}
             </M3eButton>
           )}
         </div>
-        <div className="flex gap-2">
-          <M3eButton variant="text" disabled={loading} onClick={onClose}>
+        <div className='flex gap-2'>
+          <M3eButton variant='text' disabled={loading} onClick={onClose}>
             取消
           </M3eButton>
-          <M3eButton variant="filled" disabled={loading} onClick={onSubmit}>
+          <M3eButton variant='filled' disabled={loading} onClick={onSubmit}>
             {reviewMutation.isPending ? '保存中…' : '确定'}
           </M3eButton>
         </div>

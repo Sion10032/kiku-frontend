@@ -33,9 +33,9 @@ interface WorkResumeProps {
  */
 export default function WorkResume({ work, tree }: WorkResumeProps) {
   const progress = work.userProgress;
-  const setQueue = usePlayerStore((s) => s.setQueue);
+  const setQueue = usePlayerStore(s => s.setQueue);
   const deleteMutation = useDeleteProgressMutation();
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [ confirmOpen, setConfirmOpen ] = useState(false);
 
   if (!progress) return null;
 
@@ -44,9 +44,9 @@ export default function WorkResume({ work, tree }: WorkResumeProps) {
   function resume() {
     const leaves = flattenAudioLeaves(tree);
     if (leaves.length === 0) return;
-    const idx = leaves.findIndex((l) => l.hash === progress!.mediaIndex);
+    const idx = leaves.findIndex(l => l.hash === progress!.mediaIndex);
     const index = idx === -1 ? 0 : idx;
-    const queue = leaves.map((l) => toTrack(work, l));
+    const queue = leaves.map(l => toTrack(work, l));
     // 上次音轨仍在:从上次时间点恢复;找不到:第一轨从头
     if (idx !== -1 && progress!.position > 0) {
       queue[index] = { ...queue[index], startAt: progress!.position };
@@ -65,53 +65,58 @@ export default function WorkResume({ work, tree }: WorkResumeProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className='flex items-center gap-2'>
       <M3eButton
-        variant="tonal"
+        variant='tonal'
         onClick={resume}
         disabled={!hasTree}
-        className="min-w-0 flex-1"
-      >
+        className='min-w-0 flex-1'>
         {/* 轨名随可用宽度自适应压缩(组件 .label 自带 ellipsis),不折行 */}
-        <M3eIcon slot="icon" name="play_arrow" />
-        {progress.trackTitle ?? '继续播放'} · {formatDuration(progress.position)}
+        <M3eIcon slot='icon' name='play_arrow' />
+        {progress.trackTitle ?? '继续播放'}
+        {' '}
+        ·
+        {formatDuration(progress.position)}
       </M3eButton>
 
-      <span className="shrink-0 text-sm opacity-70">
+      <span className='shrink-0 text-sm opacity-70'>
         已听 {progress.listenedCount} 轨
       </span>
 
       <M3eIconButton
-        aria-label="删除播放记录"
-        title="删除播放记录"
+        aria-label='删除播放记录'
+        title='删除播放记录'
         disabled={deleteMutation.isPending}
-        onClick={() => setConfirmOpen(true)}
-      >
-        <M3eIcon name="delete" />
+        onClick={() => setConfirmOpen(true)}>
+        <M3eIcon name='delete' />
       </M3eIconButton>
 
       <M3eDialog
         open={confirmOpen}
         onClosed={() => setConfirmOpen(false)}
         dismissible
-        closeLabel="关闭"
-      >
-        <span slot="header">删除播放记录?</span>
+        closeLabel='关闭'>
+        <span slot='header'>删除播放记录?</span>
 
-        <div className="flex flex-col gap-4 py-2">
-          <p className="m-0">
-            将清除「{work.title}」的全部收听进度(已听 {progress.listenedCount} 轨),
+        <div className='flex flex-col gap-4 py-2'>
+          <p className='m-0'>
+            将清除「
+            {work.title}
+            」的全部收听进度(已听
+            {' '}
+            {progress.listenedCount}
+            {' '}
+            轨),
             删除后无法恢复,该作品将回到未读状态。
           </p>
-          <div className="flex justify-end gap-2">
-            <M3eButton variant="text" onClick={() => setConfirmOpen(false)}>
+          <div className='flex justify-end gap-2'>
+            <M3eButton variant='text' onClick={() => setConfirmOpen(false)}>
               取消
             </M3eButton>
             <M3eButton
-              variant="text"
+              variant='text'
               disabled={deleteMutation.isPending}
-              onClick={onDeleteConfirm}
-            >
+              onClick={onDeleteConfirm}>
               删除
             </M3eButton>
           </div>

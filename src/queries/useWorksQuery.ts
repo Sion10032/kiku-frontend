@@ -24,7 +24,7 @@ export function useWorksInfinite(
   params: Omit<WorksParams, 'circleId' | 'tagId' | 'vaId' | 'keyword'> = {},
 ) {
   return useInfiniteQuery({
-    queryKey: ['works', params],
+    queryKey: [ 'works', params ],
     queryFn: ({ pageParam }) => getWorks({ ...params, page: pageParam }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
@@ -39,7 +39,7 @@ export function useWorksInfinite(
 /** 按社团筛选的作品（一次拉全，后端无分页）。 */
 export function useCircleWorks(circleId: number | undefined) {
   return useQuery({
-    queryKey: ['works', 'circle', circleId],
+    queryKey: [ 'works', 'circle', circleId ],
     queryFn: () => getCircleWorks(circleId!),
     enabled: circleId != null,
   });
@@ -48,7 +48,7 @@ export function useCircleWorks(circleId: number | undefined) {
 /** 按标签筛选的作品。 */
 export function useTagWorks(tagId: number | undefined) {
   return useQuery({
-    queryKey: ['works', 'tag', tagId],
+    queryKey: [ 'works', 'tag', tagId ],
     queryFn: () => getTagWorks(tagId!),
     enabled: tagId != null,
   });
@@ -57,7 +57,7 @@ export function useTagWorks(tagId: number | undefined) {
 /** 按声优筛选的作品。 */
 export function useVaWorks(vaId: string | undefined) {
   return useQuery({
-    queryKey: ['works', 'va', vaId],
+    queryKey: [ 'works', 'va', vaId ],
     queryFn: () => getVaWorks(vaId!),
     enabled: vaId != null,
   });
@@ -66,7 +66,7 @@ export function useVaWorks(vaId: string | undefined) {
 /** 搜索结果（一次拉全，后端无分页）。保留旧结果避免关键词变化时闪 loading。 */
 export function useSearchWorks(keyword: string | undefined) {
   return useQuery({
-    queryKey: ['works', 'search', keyword],
+    queryKey: [ 'works', 'search', keyword ],
     queryFn: () => searchWorks(keyword!),
     enabled: !!keyword,
     placeholderData: keepPreviousData,
@@ -77,7 +77,7 @@ export function useSearchWorks(keyword: string | undefined) {
 /** 作品详情（步骤 7 使用，此处一并导出）。 */
 export function useWorkQuery(id: string) {
   return useQuery({
-    queryKey: ['work', id],
+    queryKey: [ 'work', id ],
     queryFn: () => getWork(id),
     enabled: id != null,
   });
@@ -86,7 +86,7 @@ export function useWorkQuery(id: string) {
 /** 作品文件树（步骤 7 使用）。后端 501 时由 getTracks 内部回退 mock。 */
 export function useTracksQuery(id: string) {
   return useQuery({
-    queryKey: ['tracks', id],
+    queryKey: [ 'tracks', id ],
     queryFn: () => getTracks(id),
     enabled: id != null,
   });

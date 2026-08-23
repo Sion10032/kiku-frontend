@@ -42,19 +42,19 @@ function isNarrowViewport(): boolean {
  * 移动端正式适配在步骤 15 接入。
  */
 export default function MainLayout() {
-  const navHidden = useUiStore((s) => s.navHidden);
-  const toggleNavHidden = useUiStore((s) => s.toggleNavHidden);
+  const navHidden = useUiStore(s => s.navHidden);
+  const toggleNavHidden = useUiStore(s => s.toggleNavHidden);
   const isNarrow = useSyncExternalStore(
     subscribeNarrow,
     isNarrowViewport,
     () => false,
   );
-  const [overlayOpen, setOverlayOpen] = useState(false);
+  const [ overlayOpen, setOverlayOpen ] = useState(false);
 
   // 回到宽屏时关掉可能残留的浮层抽屉
   useEffect(() => {
     if (!isNarrow) setOverlayOpen(false);
-  }, [isNarrow]);
+  }, [ isNarrow ]);
 
   // Esc 关闭浮层抽屉（开启时监听）
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function MainLayout() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [overlayOpen]);
+  }, [ overlayOpen ]);
 
   // 窄屏强制隐藏；宽屏尊重用户偏好
   const drawerHidden = isNarrow || navHidden;
@@ -74,32 +74,29 @@ export default function MainLayout() {
       <div
         className={[
           'grid h-dvh grid-rows-[auto_1fr_auto] overflow-hidden transition-[grid-template-columns] duration-200',
-          "[grid-template-areas:'drawer_appbar''drawer_content''drawer_player']",
+          '[grid-template-areas:\'drawer_appbar\'\'drawer_content\'\'drawer_player\']',
           drawerHidden ? 'grid-cols-[0px_1fr]' : 'grid-cols-[240px_1fr]',
-        ].join(' ')}
-      >
-        <div className="[grid-area:drawer] min-h-0 overflow-hidden">
+        ].join(' ')}>
+        <div className='[grid-area:drawer] min-h-0 overflow-hidden'>
           <NavDrawer />
         </div>
 
-        <M3eAppBar className="[grid-area:appbar]">
+        <M3eAppBar className='[grid-area:appbar]'>
           <M3eIconButton
-            slot="leading"
+            slot='leading'
             aria-label={isNarrow ? '打开导航' : navHidden ? '显示侧栏' : '隐藏侧栏'}
             title={isNarrow ? '打开导航' : navHidden ? '显示侧栏' : '隐藏侧栏'}
             onClick={() =>
-              isNarrow ? setOverlayOpen(true) : toggleNavHidden()
-            }
-          >
-            <M3eIcon name="menu" />
+              isNarrow ? setOverlayOpen(true) : toggleNavHidden()}>
+            <M3eIcon name='menu' />
           </M3eIconButton>
           {/* 全局搜索：任意页面输入即跳 /works 搜索（详见组件注释） */}
-          <div slot="title" className="mx-auto w-full max-w-xl">
+          <div slot='title' className='mx-auto w-full max-w-xl'>
             <GlobalSearchBar />
           </div>
         </M3eAppBar>
 
-        <main className="[grid-area:content] overflow-y-auto p-4 px-6">
+        <main className='[grid-area:content] overflow-y-auto p-4 px-6'>
           <Outlet />
         </main>
 
@@ -116,20 +113,18 @@ export default function MainLayout() {
       {isNarrow && (
         <>
           <div
-            aria-hidden="true"
+            aria-hidden='true'
             className={[
               'fixed inset-0 z-60 bg-black/40 transition-opacity duration-200',
               overlayOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
             ].join(' ')}
-            onClick={() => setOverlayOpen(false)}
-          />
+            onClick={() => setOverlayOpen(false)} />
           <div
             className={[
               'fixed inset-y-0 left-0 z-70 shadow-2xl transition-transform duration-200',
               overlayOpen ? 'translate-x-0' : 'pointer-events-none -translate-x-full',
             ].join(' ')}
-            onClickCapture={() => setOverlayOpen(false)}
-          >
+            onClickCapture={() => setOverlayOpen(false)}>
             <NavDrawer />
           </div>
         </>

@@ -76,8 +76,8 @@ export function getVaWorks(
 }
 
 /** 搜索：GET /api/search/:keyword （返回 {works}，无分页） */
-export function searchWorks(keyword: string): Promise<{ works: Work[] }> {
-  return apiFetch<{ works: Work[] }>(
+export function searchWorks(keyword: string): Promise<{ works: Work[]; }> {
+  return apiFetch<{ works: Work[]; }>(
     `search/${encodeURIComponent(keyword)}`,
   );
 }

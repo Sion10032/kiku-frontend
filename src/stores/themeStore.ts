@@ -9,7 +9,7 @@ interface ThemeState {
   setSeed: (seed: string) => void;
 }
 
-export const useThemeStore = create<ThemeState>((set) => ({
+export const useThemeStore = create<ThemeState>(set => ({
   seed: DEFAULT_SEED,
-  setSeed: (seed) => set({ seed }),
+  setSeed: seed => set({ seed }),
 }));

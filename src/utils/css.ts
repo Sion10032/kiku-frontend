@@ -8,7 +8,7 @@ export type CssInput = string | StyleObject;
  * 将 camelCase 转换为 kebab-case（例如 alignSelf -> align-self）
  */
 function camelToKebab(str: string): string {
-  return str.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  return str.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
 }
 
 /**
@@ -20,9 +20,9 @@ export function serializeCss(input: CssInput): string {
   }
 
   return Object.entries(input)
-    .map(([selector, styles]) => {
+    .map(([ selector, styles ]) => {
       const styleRules = Object.entries(styles)
-        .map(([prop, value]) => {
+        .map(([ prop, value ]) => {
           if (value === undefined || value === null) return '';
           return `  ${camelToKebab(prop)}: ${value};`;
         })

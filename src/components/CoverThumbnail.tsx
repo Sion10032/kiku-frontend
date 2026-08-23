@@ -10,9 +10,9 @@ interface CoverThumbnailProps {
 }
 
 const SIZE_MAP = {
-  sm: 'w-10 h-10',   // 40px
-  md: 'w-14 h-14',   // 56px
-  lg: 'w-20 h-20',   // 80px
+  sm: 'w-10 h-10', // 40px
+  md: 'w-14 h-14', // 56px
+  lg: 'w-20 h-20', // 80px
 };
 
 /**
@@ -25,30 +25,30 @@ export default function CoverThumbnail({
   workId,
   size = 'md',
 }: CoverThumbnailProps) {
-  const [failed, setFailed] = useState(false);
+  const [ failed, setFailed ] = useState(false);
   const src = mediaUrl(`/api/cover/${workId}/file?type=sam`);
   const sizeClass = SIZE_MAP[size];
 
   return (
     <Link
-      to="/work/$id"
+      to='/work/$id'
       params={{ id: workId }}
-      className={`relative block shrink-0 overflow-hidden rounded-lg ${sizeClass}`}
-    >
-      {failed ? (
-        <div className="h-full w-full bg-black/10" />
-      ) : (
-        <img
-          src={src}
-          alt={workId}
-          loading="lazy"
-          onError={() => setFailed(true)}
-          className="h-full w-full bg-black/5 object-cover"
-        />
-      )}
-      {/*<span className="absolute left-0 top-0 m-0.5 rounded-sm bg-black/70 px-1 py-px text-[10px] leading-tight text-white">
+      className={`relative block shrink-0 overflow-hidden rounded-lg ${sizeClass}`}>
+      {failed
+        ? (
+          <div className='h-full w-full bg-black/10' />
+        )
+        : (
+          <img
+            src={src}
+            alt={workId}
+            loading='lazy'
+            onError={() => setFailed(true)}
+            className='h-full w-full bg-black/5 object-cover' />
+        )}
+      {/* <span className="absolute left-0 top-0 m-0.5 rounded-sm bg-black/70 px-1 py-px text-[10px] leading-tight text-white">
         {workId}
-      </span>*/}
+      </span> */}
     </Link>
   );
 }

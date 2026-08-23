@@ -10,7 +10,7 @@ import type { Work } from '../types';
  */
 export function useReviewsByUser(username: string | undefined) {
   return useQuery({
-    queryKey: ['reviews', 'user', username],
+    queryKey: [ 'reviews', 'user', username ],
     queryFn: () => getReviewsByUser(username!),
     enabled: !!username,
   });
@@ -26,10 +26,10 @@ export function useReviewsByUser(username: string | undefined) {
  * 返回 id → Work 的映射（加载中/失败的项不在映射内，由调用方据此判断缺失）。
  */
 export function useWorkMap(workIds: string[]) {
-  const ids = useMemo(() => [...new Set(workIds)], [workIds]);
+  const ids = useMemo(() => [ ...new Set(workIds) ], [ workIds ]);
   const results = useQueries({
-    queries: ids.map((id) => ({
-      queryKey: ['work', id] as const,
+    queries: ids.map(id => ({
+      queryKey: [ 'work', id ] as const,
       queryFn: () => getWork(id),
     })),
   });
@@ -42,7 +42,7 @@ export function useWorkMap(workIds: string[]) {
 
   return {
     works,
-    isPending: results.some((r) => r.isPending),
-    isError: results.some((r) => r.isError),
+    isPending: results.some(r => r.isPending),
+    isError: results.some(r => r.isError),
   };
 }

@@ -31,9 +31,9 @@ const LEADING_ICONS: Record<ListType, string> = {
 
 /** 列表项跳转 /works 携带的筛选 search 参数（对齐 worksRoute 的 validateSearch）。 */
 type EntitySearch =
-  | { circleId: number }
-  | { tagId: number }
-  | { vaId: string };
+  | { circleId: number; }
+  | { tagId: number; }
+  | { vaId: string; };
 
 interface Entry {
   key: string;
@@ -51,10 +51,10 @@ interface Entry {
  * 注意：M3eListItem 的 named slot（leading/trailing）只对直接子元素生效，
  * 因此导航用 onClick + useNavigate 而非把 slot 元素包进 <Link>。
  */
-export default function List({ type }: { type: ListType }) {
+export default function List({ type }: { type: ListType; }) {
   const navigate = useNavigate();
   const label = LABELS[type];
-  const [keyword, setKeyword] = useState('');
+  const [ keyword, setKeyword ] = useState('');
 
   const circles = useCirclesQuery();
   const tags = useTagsQuery();
@@ -66,8 +66,8 @@ export default function List({ type }: { type: ListType }) {
     const match = (name: string) => !kw || name.toLowerCase().includes(kw);
     if (type === 'circles') {
       return (circles.data ?? [])
-        .filter((c) => match(c.name))
-        .map((c) => ({
+        .filter(c => match(c.name))
+        .map(c => ({
           key: String(c.id),
           name: c.name,
           search: { circleId: c.id },
@@ -75,21 +75,21 @@ export default function List({ type }: { type: ListType }) {
     }
     if (type === 'tags') {
       return (tags.data ?? [])
-        .filter((t) => match(t.name))
-        .map((t) => ({
+        .filter(t => match(t.name))
+        .map(t => ({
           key: String(t.id),
           name: t.name,
           search: { tagId: t.id },
         }));
     }
     return (vas.data ?? [])
-      .filter((v) => match(v.name))
-      .map((v) => ({
+      .filter(v => match(v.name))
+      .map(v => ({
         key: v.id,
         name: v.name,
         search: { vaId: v.id },
       }));
-  }, [type, circles.data, tags.data, vas.data, keyword]);
+  }, [ type, circles.data, tags.data, vas.data, keyword ]);
 
   const loading =
     type === 'circles'
@@ -113,12 +113,12 @@ export default function List({ type }: { type: ListType }) {
         : (vas.data?.length ?? 0);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="mb-4">
-        <h1 className="m-0 text-xl">
+    <div className='mx-auto max-w-3xl'>
+      <div className='mb-4'>
+        <h1 className='m-0 text-xl'>
           {label}
           {!loading && total > 0 && (
-            <span className="ml-2 text-base opacity-60">({total})</span>
+            <span className='ml-2 text-base opacity-60'>({total})</span>
           )}
         </h1>
       </div>
@@ -126,29 +126,27 @@ export default function List({ type }: { type: ListType }) {
       {/* 搜索（客户端过滤；m3e SearchBar 的 input 由调用方提供） */}
       <M3eSearchBar
         clearable
-        className="mb-4 block w-full"
-        onClear={() => setKeyword('')}
-      >
-        <M3eIcon slot="leading" name="search" />
+        className='mb-4 block w-full'
+        onClear={() => setKeyword('')}>
+        <M3eIcon slot='leading' name='search' />
         <input
-          slot="input"
-          type="text"
+          slot='input'
+          type='text'
           placeholder={`搜索${label}…`}
           value={keyword}
-          onInput={(e) => setKeyword((e.target as HTMLInputElement).value)}
-        />
+          onInput={e => setKeyword((e.target as HTMLInputElement).value)} />
       </M3eSearchBar>
 
       {/* 加载中 */}
       {loading && (
-        <div className="flex justify-center py-12">
+        <div className='flex justify-center py-12'>
           <M3eCircularProgressIndicator />
         </div>
       )}
 
       {/* 加载失败 */}
       {!loading && isError && (
-        <div className="py-16 text-center opacity-60">
+        <div className='py-16 text-center opacity-60'>
           加载失败，请稍后重试
         </div>
       )}
@@ -159,20 +157,18 @@ export default function List({ type }: { type: ListType }) {
           '--m3e-list-item-container-shape': 'calc(infinity * 1px)',
           '--m3e-list-item-hover-container-shape': 'calc(infinity * 1px)',
         } as React.CSSProperties}>
-          {entries.map((entry) => (
+          {entries.map(entry => (
             <M3eListAction
               key={entry.key}
-              onClick={() => navigate({ to: '/works', search: entry.search })}
-            >
+              onClick={() => navigate({ to: '/works', search: entry.search })}>
               <span
-                slot="leading"
-                className="me-3 flex items-center opacity-60"
-              >
+                slot='leading'
+                className='me-3 flex items-center opacity-60'>
                 <M3eIcon name={LEADING_ICONS[type]} />
               </span>
-              <span className="block truncate">{entry.name}</span>
-              <span slot="trailing" className="flex items-center opacity-50">
-                <M3eIcon name="chevron_right" />
+              <span className='block truncate'>{entry.name}</span>
+              <span slot='trailing' className='flex items-center opacity-50'>
+                <M3eIcon name='chevron_right' />
               </span>
             </M3eListAction>
           ))}
@@ -181,7 +177,7 @@ export default function List({ type }: { type: ListType }) {
 
       {/* 空状态 */}
       {!loading && !isError && entries.length === 0 && (
-        <div className="py-16 text-center opacity-60">
+        <div className='py-16 text-center opacity-60'>
           {keyword ? `没有匹配的${label}` : `暂无${label}`}
         </div>
       )}

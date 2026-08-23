@@ -18,12 +18,12 @@ import { seekTo } from './usePlayer';
  *   避免 250ms 高频推送（Linux MPRIS 等面板高频刷新会闪断封面）
  */
 export function useMediaSession(): void {
-  const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
-  const playing = usePlayerStore((s) => s.playing);
-  const currentTime = usePlayerStore((s) => s.currentTime);
-  const duration = usePlayerStore((s) => s.duration);
-  const mediaNotification = useSettingsStore((s) => s.mediaNotification);
+  const queue = usePlayerStore(s => s.queue);
+  const queueIndex = usePlayerStore(s => s.queueIndex);
+  const playing = usePlayerStore(s => s.playing);
+  const currentTime = usePlayerStore(s => s.currentTime);
+  const duration = usePlayerStore(s => s.duration);
+  const mediaNotification = useSettingsStore(s => s.mediaNotification);
 
   const currentTrack = queue[queueIndex];
 
@@ -46,10 +46,10 @@ export function useMediaSession(): void {
     }
 
     const actions: Array<[MediaSessionAction, MediaSessionActionHandler]> = [
-      ['play', () => usePlayerStore.getState().play()],
-      ['pause', () => usePlayerStore.getState().pause()],
-      ['previoustrack', () => usePlayerStore.getState().previousTrack()],
-      ['nexttrack', () => usePlayerStore.getState().nextTrack()],
+      [ 'play', () => usePlayerStore.getState().play() ],
+      [ 'pause', () => usePlayerStore.getState().pause() ],
+      [ 'previoustrack', () => usePlayerStore.getState().previousTrack() ],
+      [ 'nexttrack', () => usePlayerStore.getState().nextTrack() ],
       [
         'seekbackward',
         () => {
@@ -72,24 +72,26 @@ export function useMediaSession(): void {
       ],
     ];
 
-    for (const [action, handler] of actions) {
+    for (const [ action, handler ] of actions) {
       try {
         ms.setActionHandler(action, handler);
-      } catch {
+      }
+      catch {
         // 浏览器不支持该动作（如 iOS Safari 的 seekto），静默降级
       }
     }
 
     return () => {
-      for (const [action] of actions) {
+      for (const [ action ] of actions) {
         try {
           ms.setActionHandler(action, null);
-        } catch {
+        }
+        catch {
           // 同上
         }
       }
     };
-  }, [mediaNotification]);
+  }, [ mediaNotification ]);
 
   // —— 曲目元数据：切曲时更新（workId 缺失则无封面） ——
 
@@ -115,19 +117,19 @@ export function useMediaSession(): void {
       album: currentTrack.workTitle,
       artwork: currentTrack.workId
         ? [
-            { src: cover('main'), type: 'image/jpeg' },
-            { src: cover('sam'), type: 'image/jpeg' },
-          ]
+          { src: cover('main'), type: 'image/jpeg' },
+          { src: cover('sam'), type: 'image/jpeg' },
+        ]
         : [],
     });
-  }, [currentTrack, mediaNotification]);
+  }, [ currentTrack, mediaNotification ]);
 
   // —— 播放状态 ——
 
   useEffect(() => {
     if (!('mediaSession' in navigator) || !mediaNotification) return;
     navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
-  }, [playing, mediaNotification]);
+  }, [ playing, mediaNotification ]);
 
   // —— 锁屏进度条：OS 按最后 position + playbackRate 自行插值，稀疏推送 ——
 
@@ -141,10 +143,10 @@ export function useMediaSession(): void {
     // 与插值期望偏差 >1.5s（seek），以及 ≥5s 漂移校正
     const expected = last.pos + (last.rate * (now - last.at)) / 1000;
     if (
-      last.rate === rate &&
-      last.dur === duration &&
-      Math.abs(currentTime - expected) <= 1.5 &&
-      now - last.pushed < 5000
+      last.rate === rate
+      && last.dur === duration
+      && Math.abs(currentTime - expected) <= 1.5
+      && now - last.pushed < 5000
     ) {
       return;
     }
@@ -156,8 +158,9 @@ export function useMediaSession(): void {
         position: currentTime,
       });
       posRef.current = { at: now, pos: currentTime, dur: duration, rate, pushed: now };
-    } catch {
+    }
+    catch {
       // duration 未就绪等非法参数，静默忽略
     }
-  }, [currentTime, duration, playing, mediaNotification]);
+  }, [ currentTime, duration, playing, mediaNotification ]);
 }

@@ -33,55 +33,51 @@ export default function WorkListItem({
   });
 
   // 状态角标仅登录用户显示（未登录时 userProgress 恒 null，无法区分）
-  const authed = useUserStore((s) => s.auth);
+  const authed = useUserStore(s => s.auth);
 
   return (
     <M3eListAction ref={ref}>
-      <div slot="leading" className="relative">
-        <CoverThumbnail workId={work.id} size='lg'/>
+      <div slot='leading' className='relative'>
+        <CoverThumbnail workId={work.id} size='lg' />
         {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
         {authed && (work.userProgress ? <ReadDot /> : <UnreadDot />)}
       </div>
 
-      <div className="min-w-0 flex-1">
+      <div className='min-w-0 flex-1'>
         <Link
-          to="/work/$id"
+          to='/work/$id'
           params={{ id: work.id }}
-          className="line-clamp-2 text-base no-underline"
-        >
+          className='line-clamp-2 text-base no-underline'>
           {work.title}
         </Link>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm">
+        <div className='mt-1 flex flex-wrap items-center gap-x-2 text-sm'>
           <Link
-            to="/works"
+            to='/works'
             search={{ circleId: work.circle.id }}
-            className="no-underline opacity-70"
-          >
+            className='no-underline opacity-70'>
             {work.circle.name}
           </Link>
-          {work.vas.map((va) => (
+          {work.vas.map(va => (
             <Link
               key={va.id}
-              to="/works"
+              to='/works'
               search={{ vaId: va.id }}
-              className="no-underline"
-              style={{ color: 'var(--m3e-primary)' }}
-            >
+              className='no-underline'
+              style={{ color: 'var(--m3e-primary)' }}>
               {va.name}
             </Link>
           ))}
         </div>
 
         {showLabel && work.tags.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-x-2 text-sm opacity-70">
-            {work.tags.map((tag) => (
+          <div className='mt-1 flex flex-wrap gap-x-2 text-sm opacity-70'>
+            {work.tags.map(tag => (
               <Link
                 key={tag.id}
-                to="/works"
+                to='/works'
                 search={{ tagId: tag.id }}
-                className="no-underline"
-              >
+                className='no-underline'>
                 {tag.name}
               </Link>
             ))}

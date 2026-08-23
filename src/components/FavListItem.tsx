@@ -39,19 +39,19 @@ export default function FavListItem({ work, review, mode }: FavListItemProps) {
 
   return (
     <M3eListItem onClick={openWork}>
-      <span slot="leading">
+      <span slot='leading'>
         <CoverThumbnail workId={work.id} />
       </span>
 
-      <div className="min-w-0 flex-1">
-        <div className="line-clamp-2 text-base">{work.title}</div>
+      <div className='min-w-0 flex-1'>
+        <div className='line-clamp-2 text-base'>{work.title}</div>
 
         {/* 社团 / 发售日 / 声优 */}
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm opacity-70">
+        <div className='mt-1 flex flex-wrap items-center gap-x-2 text-sm opacity-70'>
           <span>{work.circle.name}</span>
           {work.release && <span>{work.release}</span>}
-          {work.vas.map((va) => (
-            <span key={va.id} className="text-[var(--md-sys-color-primary)]">
+          {work.vas.map(va => (
+            <span key={va.id} className='text-[var(--md-sys-color-primary)]'>
               {va.name}
             </span>
           ))}
@@ -59,36 +59,35 @@ export default function FavListItem({ work, review, mode }: FavListItemProps) {
 
         {/* 评价星（已评分为 1-5 时显示） */}
         {rating > 0 && (
-          <div className="mt-1 flex items-center text-[var(--md-sys-color-primary)]">
-            {[1, 2, 3, 4, 5].map((n) => (
+          <div className='mt-1 flex items-center text-[var(--md-sys-color-primary)]'>
+            {[ 1, 2, 3, 4, 5 ].map(n => (
               <M3eIcon
                 key={n}
-                name="star"
+                name='star'
                 filled={n <= rating}
-                className={n <= rating ? '' : 'opacity-25'}
-              />
+                className={n <= rating ? '' : 'opacity-25'} />
             ))}
-            <span className="ms-1 text-sm opacity-70">{rating}/5</span>
+            <span className='ms-1 text-sm opacity-70'>{rating}/5</span>
           </div>
         )}
 
         {/* 进度标记 */}
         {progress && (
-          <div className="mt-1">
+          <div className='mt-1'>
             <M3eChip>{PROGRESS_LABELS[progress]}</M3eChip>
           </div>
         )}
 
         {/* 短评（评价视图） */}
         {mode === 'review' && review?.reviewText && (
-          <p className="mt-2 mb-0 whitespace-pre-wrap rounded-sm bg-[var(--md-sys-color-surface-container)] px-3 py-2 text-sm opacity-80">
+          <p className='mt-2 mb-0 whitespace-pre-wrap rounded-sm bg-[var(--md-sys-color-surface-container)] px-3 py-2 text-sm opacity-80'>
             {review.reviewText}
           </p>
         )}
       </div>
 
       {review?.updatedAt && (
-        <span slot="trailing" className="text-xs opacity-60">
+        <span slot='trailing' className='text-xs opacity-60'>
           {new Date(review.updatedAt).toLocaleDateString('zh-CN')}
         </span>
       )}

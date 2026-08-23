@@ -32,8 +32,8 @@ const listRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/list/$type',
   params: {
-    parse: (raw) => ({
-      type: z.enum(['circles', 'tags', 'vas']).parse(raw.type),
+    parse: raw => ({
+      type: z.enum([ 'circles', 'tags', 'vas' ]).parse(raw.type),
     }),
     stringify: ({ type }) => ({ type }),
   },
@@ -47,12 +47,12 @@ const listRoute = createRoute({
 const favouritesRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/favourites',
-  component: () => <Favourites route="review" />,
+  component: () => <Favourites route='review' />,
 });
 const favouritesReviewRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/favourites/review',
-  component: () => <Favourites route="review" />,
+  component: () => <Favourites route='review' />,
 });
 
 // /favourites/progress → 默认标记进度 marked（对齐原项目路由语义）
@@ -72,16 +72,16 @@ const favouritesProgressRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/favourites/progress/$status',
   params: {
-    parse: (raw) => ({
+    parse: raw => ({
       status: z
-        .enum(['marked', 'listening', 'listened', 'replay', 'postponed'])
+        .enum([ 'marked', 'listening', 'listened', 'replay', 'postponed' ])
         .parse(raw.status),
     }),
     stringify: ({ status }) => ({ status }),
   },
   component: function FavouritesProgress() {
     const { status } = favouritesProgressRoute.useParams();
-    return <Favourites route="progress" status={status} />;
+    return <Favourites route='progress' status={status} />;
   },
 });
 
@@ -89,7 +89,7 @@ const favouritesProgressRoute = createRoute({
 const favouritesFolderRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/favourites/folder',
-  component: () => <Favourites route="folder" />,
+  component: () => <Favourites route='folder' />,
 });
 
 // 管理后台

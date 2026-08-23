@@ -27,9 +27,9 @@ export default function CoverSFW({
   nsfw = true,
   release,
 }: CoverSFWProps) {
-  const [hovering, setHovering] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const blurMode = useSettingsStore((s) => s.coverBlurMode);
+  const [ hovering, setHovering ] = useState(false);
+  const [ failed, setFailed ] = useState(false);
+  const blurMode = useSettingsStore(s => s.coverBlurMode);
   const src = mediaUrl(`/api/cover/${workId}/file`);
 
   const shouldBlur = nsfw && (blurMode === 'always' || (blurMode === 'hover' && !hovering));
@@ -39,7 +39,7 @@ export default function CoverSFW({
 
   return (
     <Link
-      to="/work/$id"
+      to='/work/$id'
       params={{ id: workId }}
       // w-full：m3e-card 会把 slotted 的 header 强制为 flex 容器
       // （::slotted([slot=header]) { display: flex }），Link 作为 flex item
@@ -51,29 +51,29 @@ export default function CoverSFW({
         'overflow-hidden rounded-t-xl',
       ].join(' ')}
       onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
-    >
-      {failed ? (
-        <div className={['bg-black/10', frameClass].join(' ')} />
-      ) : (
-        <img
-          src={src}
-          alt={workId}
-          loading="lazy"
-          onError={() => setFailed(true)}
-          className={[
-            'w-full bg-black/5 object-cover transition-[filter] duration-200',
-            frameClass,
-            shouldBlur ? 'blur-[10px]' : '',
-          ].join(' ')}
-        />
-      )}
+      onMouseLeave={() => setHovering(false)}>
+      {failed
+        ? (
+          <div className={[ 'bg-black/10', frameClass ].join(' ')} />
+        )
+        : (
+          <img
+            src={src}
+            alt={workId}
+            loading='lazy'
+            onError={() => setFailed(true)}
+            className={[
+              'w-full bg-black/5 object-cover transition-[filter] duration-200',
+              frameClass,
+              shouldBlur ? 'blur-[10px]' : '',
+            ].join(' ')} />
+        )}
 
-      <span className="absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white">
+      <span className='absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white'>
         {workId}
       </span>
       {release && (
-        <span className="absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white">
+        <span className='absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white'>
           {release}
         </span>
       )}

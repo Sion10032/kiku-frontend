@@ -22,8 +22,8 @@ export function createUser(input: CreateUserInput): Promise<User> {
 /** 更新密码：PUT /api/credentials/user */
 export function updatePassword(
   input: UpdatePasswordInput,
-): Promise<{ message: string }> {
-  return apiFetch<{ message: string }>('credentials/user', {
+): Promise<{ message: string; }> {
+  return apiFetch<{ message: string; }>('credentials/user', {
     method: 'PUT',
     json: input,
   });
@@ -32,8 +32,8 @@ export function updatePassword(
 /** 删除用户：DELETE /api/credentials/user */
 export function deleteUsers(
   input: DeleteUsersInput,
-): Promise<{ message: string }> {
-  return apiFetch<{ message: string }>('credentials/user', {
+): Promise<{ message: string; }> {
+  return apiFetch<{ message: string; }>('credentials/user', {
     method: 'DELETE',
     json: input,
   });

@@ -217,7 +217,7 @@ export interface UpdatePasswordInput {
 }
 
 export interface DeleteUsersInput {
-  users: { name: string }[];
+  users: { name: string; }[];
 }
 
 // ---------- 配置 ----------

@@ -25,7 +25,7 @@ export const worksRoute = createRoute({
         'betterRandom',
       ])
       .optional(),
-    sort: z.enum(['desc', 'asc']).optional(),
+    sort: z.enum([ 'desc', 'asc' ]).optional(),
     page: z.number().int().min(1).optional(),
     seed: z.number().optional(),
     circleId: z.number().optional(),
@@ -38,10 +38,10 @@ export const worksRoute = createRoute({
   loaderDeps: ({ search }) => search,
   loader: ({ deps, context }) => {
     const filtered =
-      deps.circleId != null ||
-      deps.tagId != null ||
-      deps.vaId != null ||
-      !!deps.keyword;
+      deps.circleId != null
+      || deps.tagId != null
+      || deps.vaId != null
+      || !!deps.keyword;
     if (filtered) return undefined;
     const params = {
       order: deps.order,
@@ -50,11 +50,11 @@ export const worksRoute = createRoute({
     };
     const page = deps.page ?? 1;
     return context.queryClient.ensureQueryData({
-      queryKey: ['works', params],
+      queryKey: [ 'works', params ],
       queryFn: async () => {
         const result = await getWorks({ ...params, page });
         // 包装为 useInfiniteQuery 期望的 { pages, pageParams } 结构
-        return { pages: [result], pageParams: [page] };
+        return { pages: [ result ], pageParams: [ page ] };
       },
     });
   },

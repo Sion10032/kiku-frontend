@@ -10,7 +10,7 @@
  *
  * 实现后删除对应导入并替换为真实组件。
  */
-export default function Placeholder({ title }: { title: string }) {
+export default function Placeholder({ title }: { title: string; }) {
   return (
     <section>
       <h1>{title}</h1>

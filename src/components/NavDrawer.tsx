@@ -44,29 +44,29 @@ export default function NavDrawer() {
   const initial = name.trim().charAt(0).toUpperCase();
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-e border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
+    <aside className='flex h-full w-60 shrink-0 flex-col border-e border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)'>
       {/* 品牌头部 */}
-      <div className="px-5 pb-2 pt-5 text-xl font-medium">Kiku</div>
+      <div className='px-5 pb-2 pt-5 text-xl font-medium'>Kiku</div>
 
       {/* 导航区（可滚动） */}
-      <M3eNavMenu className="min-h-0 flex-1 overflow-y-auto">
+      <M3eNavMenu className='min-h-0 flex-1 overflow-y-auto'>
         {/* 资料库 */}
         <M3eNavMenuItemGroup>
-          <Link to="/works" className="block no-underline text-inherit">
+          <Link to='/works' className='block no-underline text-inherit'>
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
-                <M3eIcon slot="icon" name="library_music" />
-                <span slot="label">作品库</span>
+                <M3eIcon slot='icon' name='library_music' />
+                <span slot='label'>作品库</span>
               </M3eNavMenuItem>
             )}
           </Link>
           {/* 收藏以用户名为主键，匿名态隐藏 */}
           {auth && (
-            <Link to="/favourites" className="block no-underline text-inherit">
+            <Link to='/favourites' className='block no-underline text-inherit'>
               {({ isActive }) => (
                 <M3eNavMenuItem selected={isActive}>
-                  <M3eIcon slot="icon" name="favorite" />
-                  <span slot="label">收藏</span>
+                  <M3eIcon slot='icon' name='favorite' />
+                  <span slot='label'>收藏</span>
                 </M3eNavMenuItem>
               )}
             </Link>
@@ -75,43 +75,40 @@ export default function NavDrawer() {
 
         {/* 浏览 */}
         <M3eNavMenuItemGroup>
-          <span slot="label">浏览</span>
+          <span slot='label'>浏览</span>
           <Link
-            to="/list/$type"
+            to='/list/$type'
             params={{ type: 'circles' }}
-            className="block no-underline text-inherit"
-            activeOptions={{ exact: true }}
-          >
+            className='block no-underline text-inherit'
+            activeOptions={{ exact: true }}>
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
-                <M3eIcon slot="icon" name="groups" />
-                <span slot="label">社团</span>
+                <M3eIcon slot='icon' name='groups' />
+                <span slot='label'>社团</span>
               </M3eNavMenuItem>
             )}
           </Link>
           <Link
-            to="/list/$type"
+            to='/list/$type'
             params={{ type: 'tags' }}
-            className="block no-underline text-inherit"
-            activeOptions={{ exact: true }}
-          >
+            className='block no-underline text-inherit'
+            activeOptions={{ exact: true }}>
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
-                <M3eIcon slot="icon" name="tag" />
-                <span slot="label">标签</span>
+                <M3eIcon slot='icon' name='tag' />
+                <span slot='label'>标签</span>
               </M3eNavMenuItem>
             )}
           </Link>
           <Link
-            to="/list/$type"
+            to='/list/$type'
             params={{ type: 'vas' }}
-            className="block no-underline text-inherit"
-            activeOptions={{ exact: true }}
-          >
+            className='block no-underline text-inherit'
+            activeOptions={{ exact: true }}>
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
-                <M3eIcon slot="icon" name="record_voice_over" />
-                <span slot="label">声优</span>
+                <M3eIcon slot='icon' name='record_voice_over' />
+                <span slot='label'>声优</span>
               </M3eNavMenuItem>
             )}
           </Link>
@@ -120,16 +117,15 @@ export default function NavDrawer() {
         {/* 管理（仅管理员可见） */}
         {isAdmin && (
           <M3eNavMenuItemGroup>
-            <span slot="label">管理</span>
+            <span slot='label'>管理</span>
             <Link
-              to="/admin"
-              className="block no-underline text-inherit"
-              activeOptions={{ exact: true }}
-            >
+              to='/admin'
+              className='block no-underline text-inherit'
+              activeOptions={{ exact: true }}>
               {({ isActive }) => (
                 <M3eNavMenuItem selected={isActive}>
-                  <M3eIcon slot="icon" name="admin_panel_settings" />
-                  <span slot="label">管理后台</span>
+                  <M3eIcon slot='icon' name='admin_panel_settings' />
+                  <span slot='label'>管理后台</span>
                 </M3eNavMenuItem>
               )}
             </Link>
@@ -138,13 +134,13 @@ export default function NavDrawer() {
       </M3eNavMenu>
 
       {/* 设置：钉在导航区底部 */}
-      <M3eNavMenu className="shrink-0 border-t border-(--md-sys-color-outline-variant)">
+      <M3eNavMenu className='shrink-0 border-t border-(--md-sys-color-outline-variant)'>
         <M3eNavMenuItemGroup>
-          <Link to="/settings" className="block no-underline text-inherit" activeOptions={{ exact: true }}>
+          <Link to='/settings' className='block no-underline text-inherit' activeOptions={{ exact: true }}>
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
-                <M3eIcon slot="icon" name="settings" />
-                <span slot="label">设置</span>
+                <M3eIcon slot='icon' name='settings' />
+                <span slot='label'>设置</span>
               </M3eNavMenuItem>
             )}
           </Link>
@@ -152,33 +148,33 @@ export default function NavDrawer() {
       </M3eNavMenu>
 
       {/* 用户区（钉在底部）：公开模式匿名态显示登录入口 */}
-      {auth ? (
-        <div className="mt-auto flex items-center gap-3 border-t border-(--md-sys-color-outline-variant) px-4 py-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-base font-medium text-(--md-sys-color-on-primary-container)">
-            {initial || <M3eIcon name="person" />}
-          </span>
-          <span className="min-w-0 flex-1 truncate">{name}</span>
-          <M3eIconButton
-            aria-label="退出登录"
-            title="退出登录"
-            onClick={handleLogout}
-          >
-            <M3eIcon name="logout" />
-          </M3eIconButton>
-        </div>
-      ) : (
-        <div className="mt-auto border-t border-(--md-sys-color-outline-variant) px-4 py-3">
-          <Link
-            to="/login"
-            className="flex items-center gap-3 no-underline text-inherit"
-          >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container)">
-              <M3eIcon name="person" />
+      {auth
+        ? (
+          <div className='mt-auto flex items-center gap-3 border-t border-(--md-sys-color-outline-variant) px-4 py-3'>
+            <span className='flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-base font-medium text-(--md-sys-color-on-primary-container)'>
+              {initial || <M3eIcon name='person' />}
             </span>
-            <span className="flex-1">登录</span>
-          </Link>
-        </div>
-      )}
+            <span className='min-w-0 flex-1 truncate'>{name}</span>
+            <M3eIconButton
+              aria-label='退出登录'
+              title='退出登录'
+              onClick={handleLogout}>
+              <M3eIcon name='logout' />
+            </M3eIconButton>
+          </div>
+        )
+        : (
+          <div className='mt-auto border-t border-(--md-sys-color-outline-variant) px-4 py-3'>
+            <Link
+              to='/login'
+              className='flex items-center gap-3 no-underline text-inherit'>
+              <span className='flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container)'>
+                <M3eIcon name='person' />
+              </span>
+              <span className='flex-1'>登录</span>
+            </Link>
+          </div>
+        )}
     </aside>
   );
 }

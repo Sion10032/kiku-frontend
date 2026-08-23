@@ -37,7 +37,7 @@ export function useInfiniteScroll(options: {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loading, rootMargin]);
+  }, [ hasMore, loading, rootMargin ]);
 
   return sentinelRef;
 }

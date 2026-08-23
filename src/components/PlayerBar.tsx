@@ -38,30 +38,30 @@ function stopAnd(fn: () => void) {
  * - 内部渲染 LyricsBar（悬浮于播放条上方的浮动歌词）
  */
 export default function PlayerBar() {
-  const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
-  const playing = usePlayerStore((s) => s.playing);
-  const currentTime = usePlayerStore((s) => s.currentTime);
-  const duration = usePlayerStore((s) => s.duration);
-  const playMode = usePlayerStore((s) => s.playMode);
-  const togglePlaying = usePlayerStore((s) => s.togglePlaying);
-  const previousTrack = usePlayerStore((s) => s.previousTrack);
-  const nextTrack = usePlayerStore((s) => s.nextTrack);
-  const changePlayMode = usePlayerStore((s) => s.changePlayMode);
-  const toggleHide = usePlayerStore((s) => s.toggleHide);
+  const queue = usePlayerStore(s => s.queue);
+  const queueIndex = usePlayerStore(s => s.queueIndex);
+  const playing = usePlayerStore(s => s.playing);
+  const currentTime = usePlayerStore(s => s.currentTime);
+  const duration = usePlayerStore(s => s.duration);
+  const playMode = usePlayerStore(s => s.playMode);
+  const togglePlaying = usePlayerStore(s => s.togglePlaying);
+  const previousTrack = usePlayerStore(s => s.previousTrack);
+  const nextTrack = usePlayerStore(s => s.nextTrack);
+  const changePlayMode = usePlayerStore(s => s.changePlayMode);
+  const toggleHide = usePlayerStore(s => s.toggleHide);
 
-  const [queueOpen, setQueueOpen] = useState(false);
-  const [coverFailed, setCoverFailed] = useState(false);
+  const [ queueOpen, setQueueOpen ] = useState(false);
+  const [ coverFailed, setCoverFailed ] = useState(false);
 
   const track = queue[queueIndex];
   // 切曲后重置封面失败标记
   const coverKey = track?.workId ?? track?.hash;
-  useEffect(() => setCoverFailed(false), [coverKey]);
+  useEffect(() => setCoverFailed(false), [ coverKey ]);
 
   if (queue.length === 0 || !track) return null;
 
   return (
-    <footer className="[grid-area:player] relative flex min-w-0 w-full flex-col border-t border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface-container)">
+    <footer className='[grid-area:player] relative flex min-w-0 w-full flex-col border-t border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface-container)'>
       {/* 浮动歌词（悬浮于播放条上方，绝对定位） */}
       <LyricsBar />
 
@@ -69,12 +69,12 @@ export default function PlayerBar() {
       <ProgressBar />
 
       {/* ── 主体：信息区 + 控制区 ── */}
-      <div className="flex min-w-0 w-full items-center gap-3 px-4 py-2">
+      <div className='flex min-w-0 w-full items-center gap-3 px-4 py-2'>
         {/* ── 信息区：整块 = 展开热区（div 而非 button） ── */}
         <div
-          role="button"
+          role='button'
           tabIndex={0}
-          aria-label="展开播放器"
+          aria-label='展开播放器'
           onClick={toggleHide}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -82,74 +82,69 @@ export default function PlayerBar() {
               toggleHide();
             }
           }}
-          className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
-        >
+          className='group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left'>
           {/* 封面 48px：workId 缺失或加载失败用占位 */}
-          {track.workId && !coverFailed ? (
-            <img
-              src={mediaUrl(`/api/cover/${track.workId}/file?type=sam`)}
-              alt=""
-              loading="lazy"
-              onError={() => setCoverFailed(true)}
-              className="h-12 w-12 shrink-0 rounded-md object-cover"
-            />
-          ) : (
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-(--md-sys-color-surface-container-high)">
-              <M3eIcon name="music_note" />
-            </span>
-          )}
-          <div className="min-w-0 flex-1">
-            <MarqueeText text={track.title} className="text-sm font-medium" />
-            <div className="truncate text-xs opacity-70">
+          {track.workId && !coverFailed
+            ? (
+              <img
+                src={mediaUrl(`/api/cover/${track.workId}/file?type=sam`)}
+                alt=''
+                loading='lazy'
+                onError={() => setCoverFailed(true)}
+                className='h-12 w-12 shrink-0 rounded-md object-cover' />
+            )
+            : (
+              <span className='flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-(--md-sys-color-surface-container-high)'>
+                <M3eIcon name='music_note' />
+              </span>
+            )}
+          <div className='min-w-0 flex-1'>
+            <MarqueeText text={track.title} className='text-sm font-medium' />
+            <div className='truncate text-xs opacity-70'>
               {track.workTitle}
             </div>
           </div>
         </div>
 
         {/* ── 控制区 ── */}
-        <div className="flex shrink-0 items-center">
+        <div className='flex shrink-0 items-center'>
           {/* 时间 */}
-          <span className="mr-1 shrink-0 text-xs tabular-nums opacity-70">
+          <span className='mr-1 shrink-0 text-xs tabular-nums opacity-70'>
             {formatDuration(currentTime)} / {formatDuration(duration)}
           </span>
           {/* 核心组：窄屏保留 ▶/⏸ + ☰，其余 md: 起显示 */}
           <M3eIconButton
-            className="hidden md:inline-flex"
-            aria-label="上一首"
-            onClick={stopAnd(previousTrack)}
-          >
-            <M3eIcon name="skip_previous" />
+            className='hidden md:inline-flex'
+            aria-label='上一首'
+            onClick={stopAnd(previousTrack)}>
+            <M3eIcon name='skip_previous' />
           </M3eIconButton>
           <M3eIconButton
             aria-label={playing ? '暂停' : '播放'}
-            onClick={stopAnd(togglePlaying)}
-          >
+            onClick={stopAnd(togglePlaying)}>
             <M3eIcon name={playing ? 'pause' : 'play_arrow'} />
           </M3eIconButton>
           <M3eIconButton
-            className="hidden md:inline-flex"
-            aria-label="下一首"
-            onClick={stopAnd(nextTrack)}
-          >
-            <M3eIcon name="skip_next" />
+            className='hidden md:inline-flex'
+            aria-label='下一首'
+            onClick={stopAnd(nextTrack)}>
+            <M3eIcon name='skip_next' />
           </M3eIconButton>
 
-          <span className="mx-1 hidden h-6 w-px bg-(--md-sys-color-outline-variant) md:block" />
+          <span className='mx-1 hidden h-6 w-px bg-(--md-sys-color-outline-variant) md:block' />
 
           {/* 次要组：全部 md: 起显示 */}
           <M3eIconButton
-            className="hidden md:inline-flex"
+            className='hidden md:inline-flex'
             aria-label={`播放模式：${PLAY_MODE_LABEL[playMode]}`}
-            onClick={stopAnd(changePlayMode)}
-          >
+            onClick={stopAnd(changePlayMode)}>
             <M3eIcon name={PLAY_MODE_ICON[playMode]} />
           </M3eIconButton>
-          <VolumeControl className="hidden md:block" />
+          <VolumeControl className='hidden md:block' />
           <M3eIconButton
-            aria-label="播放列表"
-            onClick={stopAnd(() => setQueueOpen(true))}
-          >
-            <M3eIcon name="queue_music" />
+            aria-label='播放列表'
+            onClick={stopAnd(() => setQueueOpen(true))}>
+            <M3eIcon name='queue_music' />
           </M3eIconButton>
         </div>
       </div>
@@ -162,11 +157,11 @@ export default function PlayerBar() {
 /**
  * 音量按钮：点击静音；悬停于上方弹出横向滑条（纯 CSS group-hover）。
  */
-function VolumeControl({ className = '' }: { className?: string }) {
-  const volume = usePlayerStore((s) => s.volume);
-  const muted = usePlayerStore((s) => s.muted);
-  const toggleMuted = usePlayerStore((s) => s.toggleMuted);
-  const setVolume = usePlayerStore((s) => s.setVolume);
+function VolumeControl({ className = '' }: { className?: string; }) {
+  const volume = usePlayerStore(s => s.volume);
+  const muted = usePlayerStore(s => s.muted);
+  const toggleMuted = usePlayerStore(s => s.toggleMuted);
+  const setVolume = usePlayerStore(s => s.setVolume);
 
   /** 音量拖动：thumb 为 0–100，写回 0–1。 */
   function handleVolume(e: Event) {
@@ -181,23 +176,19 @@ function VolumeControl({ className = '' }: { className?: string }) {
         onClick={(e) => {
           e.stopPropagation();
           toggleMuted();
-        }}
-      >
+        }}>
         <M3eIcon
-          name={muted || volume === 0 ? 'volume_off' : 'volume_up'}
-        />
+          name={muted || volume === 0 ? 'volume_off' : 'volume_up'} />
       </M3eIconButton>
       <div
-        className="pointer-events-none absolute bottom-full right-[-50px] z-50 mb-1 rounded-full bg-(--md-sys-color-surface-container-high) px-4 py-2 opacity-0 shadow-lg transition-opacity group-hover/vol:pointer-events-auto group-hover/vol:opacity-100"
-        onClick={(e) => e.stopPropagation()}
-      >
+        className='pointer-events-none absolute bottom-full right-[-50px] z-50 mb-1 rounded-full bg-(--md-sys-color-surface-container-high) px-4 py-2 opacity-0 shadow-lg transition-opacity group-hover/vol:pointer-events-auto group-hover/vol:opacity-100'
+        onClick={e => e.stopPropagation()}>
         <M3eSlider
           min={0}
           max={100}
           step={1}
           onInput={handleVolume}
-          className="w-28"
-        >
+          className='w-28'>
           <M3eSliderThumb value={Math.round(volume * 100)} />
         </M3eSlider>
       </div>

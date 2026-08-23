@@ -118,7 +118,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
       play: () => set({ playing: true }),
       pause: () => set({ playing: false }),
-      togglePlaying: () => set((s) => ({ playing: !s.playing })),
+      togglePlaying: () => set(s => ({ playing: !s.playing })),
 
       nextTrack: () => {
         const { queue, queueIndex, playMode } = get();
@@ -158,30 +158,31 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       setQueue: (queue, index = 0) =>
         set({ queue, queueIndex: index, playing: true }),
 
-      addToQueue: (track) => set((s) => ({ queue: [...s.queue, track] })),
+      addToQueue: track => set(s => ({ queue: [ ...s.queue, track ] })),
 
-      removeFromQueue: (index) =>
+      removeFromQueue: index =>
         set((s) => {
           const queue = s.queue.filter((_, i) => i !== index);
           let queueIndex = s.queueIndex;
           if (index === s.queueIndex) {
             // 删除的是当前音轨 → 停止播放
             queueIndex = 0;
-          } else if (index < s.queueIndex) {
+          }
+          else if (index < s.queueIndex) {
             queueIndex = s.queueIndex - 1;
           }
           return { queue, queueIndex };
         }),
 
-      playNext: (track) =>
+      playNext: track =>
         set((s) => {
-          const queue = [...s.queue];
+          const queue = [ ...s.queue ];
           queue.splice(s.queueIndex + 1, 0, track);
           return { queue };
         }),
 
-      setCurrentTime: (time) => set({ currentTime: time }),
-      setDuration: (dur) => set({ duration: dur }),
+      setCurrentTime: time => set({ currentTime: time }),
+      setDuration: dur => set({ duration: dur }),
 
       changePlayMode: () => {
         const current = get().playMode;
@@ -190,26 +191,26 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         set({ playMode: next });
       },
 
-      toggleMuted: () => set((s) => ({ muted: !s.muted })),
-      setVolume: (vol) => set({ volume: vol }),
-      setCurrentLyric: (lyric) => set({ currentLyric: lyric }),
-      setLyrics: (lines) => set({ lyricLines: lines, activeLyricIndex: -1 }),
-      setActiveLyricIndex: (index) => set({ activeLyricIndex: index }),
-      toggleHide: () => set((s) => ({ hide: !s.hide })),
+      toggleMuted: () => set(s => ({ muted: !s.muted })),
+      setVolume: vol => set({ volume: vol }),
+      setCurrentLyric: lyric => set({ currentLyric: lyric }),
+      setLyrics: lines => set({ lyricLines: lines, activeLyricIndex: -1 }),
+      setActiveLyricIndex: index => set({ activeLyricIndex: index }),
+      toggleHide: () => set(s => ({ hide: !s.hide })),
 
-      setRewindSeekTime: (time) => set({ rewindSeekTime: time }),
-      setForwardSeekTime: (time) => set({ forwardSeekTime: time }),
-      triggerRewind: () => set((s) => ({ rewindSeekMode: !s.rewindSeekMode })),
+      setRewindSeekTime: time => set({ rewindSeekTime: time }),
+      setForwardSeekTime: time => set({ forwardSeekTime: time }),
+      triggerRewind: () => set(s => ({ rewindSeekMode: !s.rewindSeekMode })),
       triggerForward: () =>
-        set((s) => ({ forwardSeekMode: !s.forwardSeekMode })),
+        set(s => ({ forwardSeekMode: !s.forwardSeekMode })),
 
-      setSleepTimer: (time) => set({ sleepTime: time, sleepMode: true }),
+      setSleepTimer: time => set({ sleepTime: time, sleepMode: true }),
       clearSleepMode: () => set({ sleepTime: null, sleepMode: false }),
     }),
     {
       name: 'kiku-player',
       // 仅持久化用户偏好，不持久化播放进度/队列（队列含临时 URL，进度应重置）
-      partialize: (state) => ({
+      partialize: state => ({
         volume: state.volume,
         muted: state.muted,
         playMode: state.playMode,

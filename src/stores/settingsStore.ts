@@ -39,22 +39,22 @@ interface SettingsState {
 /** 本地设置（纯用户偏好，localStorage 持久化，不依赖登录态）。 */
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    set => ({
       dynamicColor: true,
       colorMode: 'auto',
-      setDynamicColor: (on) => set({ dynamicColor: on }),
-      setColorMode: (mode) => set({ colorMode: mode }),
+      setDynamicColor: on => set({ dynamicColor: on }),
+      setColorMode: mode => set({ colorMode: mode }),
       mediaNotification: true,
-      setMediaNotification: (on) => set({ mediaNotification: on }),
+      setMediaNotification: on => set({ mediaNotification: on }),
       floatingLyrics: { enabled: false, fontSize: 14, lines: 2, opacity: 0.8 },
       coverBlurMode: 'hover',
-      setFloatingLyrics: (patch) =>
-        set((s) => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
-      setCoverBlurMode: (mode) => set({ coverBlurMode: mode }),
+      setFloatingLyrics: patch =>
+        set(s => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
+      setCoverBlurMode: mode => set({ coverBlurMode: mode }),
     }),
     {
       name: 'kiku-settings',
-      partialize: (s) => ({
+      partialize: s => ({
         dynamicColor: s.dynamicColor,
         colorMode: s.colorMode,
         mediaNotification: s.mediaNotification,

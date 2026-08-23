@@ -15,9 +15,9 @@ export function useReviewMutation() {
   return useMutation({
     mutationFn: (input: SubmitReviewInput) => api.submitReview(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['works'] });
-      queryClient.invalidateQueries({ queryKey: ['work'] });
-      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: [ 'works' ] });
+      queryClient.invalidateQueries({ queryKey: [ 'work' ] });
+      queryClient.invalidateQueries({ queryKey: [ 'reviews' ] });
     },
   });
 }
@@ -28,9 +28,9 @@ export function useDeleteReviewMutation() {
   return useMutation({
     mutationFn: (workId: string) => api.deleteReview(workId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['works'] });
-      queryClient.invalidateQueries({ queryKey: ['work'] });
-      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: [ 'works' ] });
+      queryClient.invalidateQueries({ queryKey: [ 'work' ] });
+      queryClient.invalidateQueries({ queryKey: [ 'reviews' ] });
     },
   });
 }

@@ -44,10 +44,11 @@ export default function Works() {
   const navigate = worksRoute.useNavigate();
 
   // 视图模式（state 驱动，初始读 localStorage）
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+  const [ viewMode, setViewMode ] = useState<'grid' | 'list'>(() => {
     try {
       return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid';
-    } catch {
+    }
+    catch {
       return 'grid';
     }
   });
@@ -57,22 +58,22 @@ export default function Works() {
     if (search.order && search.sort) {
       return (
         SORT_OPTIONS.find(
-          (o) => o.order === search.order && o.sort === search.sort,
+          o => o.order === search.order && o.sort === search.sort,
         ) ?? DEFAULT_SORT
       );
     }
     return loadSortOption();
-  }, [search.order, search.sort]);
+  }, [ search.order, search.sort ]);
 
   // 随机排序时生成一次 seed（切到 random 时刷新）
   const seed = search.seed ?? 7;
 
   // 查询：无筛选走无限滚动，有筛选走单次拉取
   const isFiltered =
-    search.circleId != null ||
-    search.tagId != null ||
-    search.vaId != null ||
-    !!search.keyword;
+    search.circleId != null
+    || search.tagId != null
+    || search.vaId != null
+    || !!search.keyword;
 
   const infinite = useWorksInfinite({
     order: sortOption.order,
@@ -88,7 +89,7 @@ export default function Works() {
   // 统一拍平为 Work[]
   const works: Work[] = useMemo(() => {
     if (!isFiltered) {
-      return infinite.data?.pages.flatMap((p) => p.works) ?? [];
+      return infinite.data?.pages.flatMap(p => p.works) ?? [];
     }
     if (search.circleId != null) return circleWorks.data ?? [];
     if (search.tagId != null) return tagWorks.data ?? [];
@@ -113,11 +114,11 @@ export default function Works() {
     : works.length;
 
   const loading =
-    infinite.isLoading ||
-    circleWorks.isLoading ||
-    tagWorks.isLoading ||
-    vaWorks.isLoading ||
-    searchWorks_.isLoading;
+    infinite.isLoading
+    || circleWorks.isLoading
+    || tagWorks.isLoading
+    || vaWorks.isLoading
+    || searchWorks_.isLoading;
 
   // 无限滚动
   const sentinelRef = useInfiniteScroll({
@@ -129,11 +130,11 @@ export default function Works() {
   // 排序变更：写 URL（search params）+ 持久化
   function onSortChange(e: Event) {
     const value = (e.target as M3eSelectElement).value as string;
-    const opt = SORT_OPTIONS.find((o) => `${o.order}:${o.sort}` === value);
+    const opt = SORT_OPTIONS.find(o => `${o.order}:${o.sort}` === value);
     if (!opt) return;
     saveSortOption(opt);
     navigate({
-      search: (prev) => ({ ...prev, order: opt.order, sort: opt.sort }),
+      search: prev => ({ ...prev, order: opt.order, sort: opt.sort }),
     });
   }
 
@@ -142,7 +143,8 @@ export default function Works() {
       const next = prev === 'grid' ? 'list' : 'grid';
       try {
         localStorage.setItem(VIEW_KEY, next);
-      } catch {
+      }
+      catch {
         /* noop */
       }
       return next;
@@ -153,27 +155,27 @@ export default function Works() {
   useEffect(() => {
     if ((sortOption.order === 'random' || sortOption.order === 'betterRandom') && search.seed == null) {
       navigate({
-        search: (prev) => ({ ...prev, seed: Math.floor(Math.random() * 100) }),
+        search: prev => ({ ...prev, seed: Math.floor(Math.random() * 100) }),
       });
     }
-  }, [sortOption.order]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ sortOption.order ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="mx-auto max-w-[1680px]">
+    <div className='mx-auto max-w-[1680px]'>
       {/* 顶部工具栏 */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-xl">
+      <div className='mb-4 flex flex-wrap items-center gap-3'>
+        <h1 className='m-0 text-xl'>
           作品库
           {totalCount != null && (
-            <span className="ml-2 text-base opacity-60">({totalCount})</span>
+            <span className='ml-2 text-base opacity-60'>({totalCount})</span>
           )}
         </h1>
 
-        <div className="ms-auto flex items-center gap-2">
+        <div className='ms-auto flex items-center gap-2'>
           {/* 搜索结果不支持排序，搜索时隐藏排序控件 */}
           {!search.keyword && (
-            <M3eFormField variant="outlined" hideSubscript='always' className="min-w-48">
-              <label slot="label">排序</label>
+            <M3eFormField variant='outlined' hideSubscript='always' className='min-w-48'>
+              <label slot='label'>排序</label>
               <M3eSelect onChange={onSortChange}>
                 {SORT_OPTIONS.map((o) => {
                   const v = `${o.order}:${o.sort}`;
@@ -181,8 +183,7 @@ export default function Works() {
                     <M3eOption
                       key={v}
                       value={v}
-                      selected={v === `${sortOption.order}:${sortOption.sort}`}
-                    >
+                      selected={v === `${sortOption.order}:${sortOption.sort}`}>
                       {o.label}
                     </M3eOption>
                   );
@@ -191,7 +192,7 @@ export default function Works() {
             </M3eFormField>
           )}
 
-          <M3eIconButton onClick={toggleView} aria-label="切换视图">
+          <M3eIconButton onClick={toggleView} aria-label='切换视图'>
             <M3eIcon name={viewMode === 'grid' ? 'view_list' : 'apps'} />
           </M3eIconButton>
         </div>
@@ -199,7 +200,7 @@ export default function Works() {
 
       {/* 筛选状态提示 */}
       {isFiltered && (
-        <div className="mb-3 flex items-center gap-2 text-sm opacity-70">
+        <div className='mb-3 flex items-center gap-2 text-sm opacity-70'>
           <span>
             筛选中：
             {search.keyword && `关键词「${search.keyword}」`}
@@ -207,7 +208,7 @@ export default function Works() {
             {search.tagId && `标签`}
             {search.vaId && `声优`}
           </span>
-          <Link to="/works" className="no-underline">
+          <Link to='/works' className='no-underline'>
             清除
           </Link>
         </div>
@@ -215,7 +216,7 @@ export default function Works() {
 
       {/* 加载中 */}
       {loading && (
-        <div className="flex justify-center py-12">
+        <div className='flex justify-center py-12'>
           <M3eCircularProgressIndicator />
         </div>
       )}
@@ -223,7 +224,7 @@ export default function Works() {
       {/* 列表视图 */}
       {!loading && viewMode === 'list' && (
         <M3eList>
-          {works.map((work) => (
+          {works.map(work => (
             <WorkListItem key={work.id} work={work} />
           ))}
         </M3eList>
@@ -231,8 +232,8 @@ export default function Works() {
 
       {/* 网格视图 */}
       {!loading && viewMode === 'grid' && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {works.map((work) => (
+        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
+          {works.map(work => (
             <WorkCard key={work.id} work={work} />
           ))}
         </div>
@@ -240,7 +241,7 @@ export default function Works() {
 
       {/* 空状态 */}
       {!loading && works.length === 0 && (
-        <div className="py-16 text-center opacity-60">
+        <div className='py-16 text-center opacity-60'>
           {search.keyword
             ? `未找到与「${search.keyword}」相关的作品`
             : '暂无作品'}
@@ -249,10 +250,10 @@ export default function Works() {
 
       {/* 无限滚动哨兵 */}
       {!loading && works.length > 0 && (
-        <div ref={sentinelRef} className="h-1 w-full" />
+        <div ref={sentinelRef} className='h-1 w-full' />
       )}
       {!loading && infinite.isFetchingNextPage && (
-        <div className="flex justify-center py-8">
+        <div className='flex justify-center py-8'>
           <M3eCircularProgressIndicator />
         </div>
       )}

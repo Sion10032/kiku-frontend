@@ -9,9 +9,9 @@ import type { ProgressRow, ReportProgressInput } from '../types';
  */
 export function reportProgress(
   input: ReportProgressInput,
-  opts?: { keepalive?: boolean },
-): Promise<{ success: boolean }> {
-  return apiFetch<{ success: boolean }>('progress', {
+  opts?: { keepalive?: boolean; },
+): Promise<{ success: boolean; }> {
+  return apiFetch<{ success: boolean; }>('progress', {
     method: 'PUT',
     json: input,
     keepalive: opts?.keepalive,
@@ -24,8 +24,8 @@ export function getWorkProgress(workId: string): Promise<ProgressRow[]> {
 }
 
 /** 删除作品全部播放进度（回到未读态）：DELETE /api/progress/:workId */
-export function deleteWorkProgress(workId: string): Promise<{ deleted: number }> {
-  return apiFetch<{ deleted: number }>(`progress/${encodeURIComponent(workId)}`, {
+export function deleteWorkProgress(workId: string): Promise<{ deleted: number; }> {
+  return apiFetch<{ deleted: number; }>(`progress/${encodeURIComponent(workId)}`, {
     method: 'DELETE',
   });
 }

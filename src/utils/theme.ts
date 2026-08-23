@@ -18,7 +18,8 @@ export async function getSeedColorFromUrl(
     img.src = imageUrl;
     await img.decode();
     return await getColorFromImage(img);
-  } catch {
+  }
+  catch {
     return null;
   }
 }

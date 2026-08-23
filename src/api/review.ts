@@ -24,8 +24,8 @@ export function submitReview(input: SubmitReviewInput): Promise<Review | null> {
 }
 
 /** 删除评价：DELETE /api/review */
-export function deleteReview(workId: string): Promise<{ message: string }> {
-  return apiFetch<{ message: string }>('review', {
+export function deleteReview(workId: string): Promise<{ message: string; }> {
+  return apiFetch<{ message: string; }>('review', {
     method: 'DELETE',
     json: { work_id: workId },
   });

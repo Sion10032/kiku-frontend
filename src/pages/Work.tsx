@@ -19,7 +19,7 @@ export default function Work() {
 
   if (workQuery.isLoading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className='flex justify-center py-12'>
         <M3eCircularProgressIndicator />
       </div>
     );
@@ -27,27 +27,26 @@ export default function Work() {
 
   if (workQuery.isError || !workQuery.data) {
     return (
-      <div className="py-16 text-center opacity-60">作品不存在或加载失败</div>
+      <div className='py-16 text-center opacity-60'>作品不存在或加载失败</div>
     );
   }
 
   const work = workQuery.data;
 
   return (
-    <div className="mx-auto flex max-w-350 flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="w-full shrink-0 lg:w-90">
+    <div className='mx-auto flex max-w-350 flex-col gap-6 lg:flex-row lg:items-start'>
+      <div className='w-full shrink-0 lg:w-90'>
         <WorkDetails work={work} />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className='min-w-0 flex-1'>
         {/* 继续播放/删除播放记录（登录且有进度时渲染） */}
-        <div className="mb-3">
+        <div className='mb-3'>
           <WorkResume work={work} tree={tracksQuery.data ?? []} />
         </div>
         <WorkTree
           work={work}
           tree={tracksQuery.data ?? []}
-          loading={tracksQuery.isLoading}
-        />
+          loading={tracksQuery.isLoading} />
       </div>
     </div>
   );

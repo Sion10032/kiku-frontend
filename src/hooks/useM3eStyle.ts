@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { createStyleElement, type CssInput } from "../utils/css";
+import { useEffect, useRef } from 'react';
+import { createStyleElement, type CssInput } from '../utils/css';
 
 /** 带 updateComplete 的元素（Lit 系 web component 的结构化约束）。 */
 export type M3eStyleElement = Element & {

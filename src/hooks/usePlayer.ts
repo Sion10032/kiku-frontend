@@ -67,15 +67,15 @@ function resolveSrc(track: Track): string | undefined {
  * - StrictMode 下 effect 双执行：cleanup 卸载旧实例，保证幂等
  */
 export function usePlayer(): void {
-  const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
-  const playing = usePlayerStore((s) => s.playing);
-  const volume = usePlayerStore((s) => s.volume);
-  const muted = usePlayerStore((s) => s.muted);
-  const rewindSeekMode = usePlayerStore((s) => s.rewindSeekMode);
-  const forwardSeekMode = usePlayerStore((s) => s.forwardSeekMode);
-  const sleepMode = usePlayerStore((s) => s.sleepMode);
-  const sleepTime = usePlayerStore((s) => s.sleepTime);
+  const queue = usePlayerStore(s => s.queue);
+  const queueIndex = usePlayerStore(s => s.queueIndex);
+  const playing = usePlayerStore(s => s.playing);
+  const volume = usePlayerStore(s => s.volume);
+  const muted = usePlayerStore(s => s.muted);
+  const rewindSeekMode = usePlayerStore(s => s.rewindSeekMode);
+  const forwardSeekMode = usePlayerStore(s => s.forwardSeekMode);
+  const sleepMode = usePlayerStore(s => s.sleepMode);
+  const sleepTime = usePlayerStore(s => s.sleepTime);
 
   const currentTrack = queue[queueIndex];
 
@@ -116,7 +116,7 @@ export function usePlayer(): void {
       usePlayerStore.getState();
 
     const sound = new Howl({
-      src: [src],
+      src: [ src ],
       html5: true, // 流式播放，避免大文件全量下载
       volume: m ? 0 : v,
       onload: () => {
@@ -166,8 +166,7 @@ export function usePlayer(): void {
       if (howl === sound) howl = null;
     };
     // 依赖曲目身份；音量/播放态变化不应重建音频
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrack]);
+  }, [ currentTrack ]);
 
   // —— 播放/暂停同步（含切曲后新实例的启动） ——
 
@@ -180,13 +179,13 @@ export function usePlayer(): void {
       // 暂停即 flush 进度（页面可能一直停在暂停态）
       flushProgress();
     }
-  }, [playing, currentTrack]);
+  }, [ playing, currentTrack ]);
 
   // —— 音量/静音同步 ——
 
   useEffect(() => {
     howl?.volume(muted ? 0 : volume);
-  }, [volume, muted]);
+  }, [ volume, muted ]);
 
   // —— 时间轮询：播放中每 250ms 写回 currentTime（并节流上报播放进度） ——
 
@@ -219,13 +218,13 @@ export function usePlayer(): void {
     // 用 howl 实时值，store 里的 currentTime 可能过期
     const next = Math.max(
       0,
-      (sound.seek() as number) -
-        usePlayerStore.getState().rewindSeekTime,
+      (sound.seek() as number)
+      - usePlayerStore.getState().rewindSeekTime,
     );
     sound.seek(next);
     usePlayerStore.getState().setCurrentTime(next);
     syncLyric(next);
-  }, [rewindSeekMode]);
+  }, [ rewindSeekMode ]);
 
   // —— 快进（clamp 到 duration） ——
 
@@ -238,13 +237,13 @@ export function usePlayer(): void {
     const dur = sound.duration();
     const next = Math.min(
       dur > 0 ? dur : Infinity,
-      (sound.seek() as number) +
-        usePlayerStore.getState().forwardSeekTime,
+      (sound.seek() as number)
+      + usePlayerStore.getState().forwardSeekTime,
     );
     sound.seek(next);
     usePlayerStore.getState().setCurrentTime(next);
     syncLyric(next);
-  }, [forwardSeekMode]);
+  }, [ forwardSeekMode ]);
 
   // —— 睡眠定时器：到达 sleepTime 后暂停并清除（分钟精度） ——
 
@@ -252,10 +251,10 @@ export function usePlayer(): void {
     if (!sleepMode || !sleepTime) return;
     const timer = setInterval(() => {
       const now = new Date();
-      const [h, m] = sleepTime.split(':').map(Number);
+      const [ h, m ] = sleepTime.split(':').map(Number);
       if (
-        now.getHours() > h ||
-        (now.getHours() === h && now.getMinutes() >= m)
+        now.getHours() > h
+        || (now.getHours() === h && now.getMinutes() >= m)
       ) {
         const state = usePlayerStore.getState();
         state.pause();
@@ -263,5 +262,5 @@ export function usePlayer(): void {
       }
     }, 10_000);
     return () => clearInterval(timer);
-  }, [sleepMode, sleepTime]);
+  }, [ sleepMode, sleepTime ]);
 }

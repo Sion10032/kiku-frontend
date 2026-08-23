@@ -34,8 +34,8 @@ export const api = ky.create({
   },
   retry: {
     limit: 2,
-    statusCodes: [408, 429, 500, 502, 503, 504],
-    methods: ['get', 'put', 'delete', 'post'],
+    statusCodes: [ 408, 429, 500, 502, 503, 504 ],
+    methods: [ 'get', 'put', 'delete', 'post' ],
   },
 });
 
@@ -71,14 +71,15 @@ export async function apiFetch<T>(
 
     if (res.status === 204) return undefined as T;
     return (await res.json()) as T;
-  } catch (err) {
+  }
+  catch (err) {
     if (err instanceof HTTPError) {
       const response = err.response;
       const body = await response
         .json()
         .catch(() => ({ error: response.statusText }));
       throw new ApiError(
-        (body as { error?: string })?.error || response.statusText,
+        (body as { error?: string; })?.error || response.statusText,
         response.status,
       );
     }

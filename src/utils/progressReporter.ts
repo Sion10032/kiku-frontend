@@ -52,9 +52,9 @@ function isAuthed(): boolean {
   // 登录态双重校验：store 标记（restoreSession/login 置位）+ 实际持有 token；
   // 任一缺失即未登录，不发请求（未登录浏览、会话恢复中、已登出）
   return (
-    !disabled &&
-    useUserStore.getState().auth &&
-    !!getToken()
+    !disabled
+    && useUserStore.getState().auth
+    && !!getToken()
   );
 }
 

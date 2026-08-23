@@ -26,7 +26,7 @@ export const workRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/work/$id',
   params: {
-    parse: (raw) => ({ id: normalizeRJId(raw.id) }),
+    parse: raw => ({ id: normalizeRJId(raw.id) }),
     stringify: ({ id }) => ({ id: String(id) }),
   },
   component: Work,

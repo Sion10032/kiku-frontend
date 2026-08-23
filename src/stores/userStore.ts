@@ -9,11 +9,11 @@ interface UserState {
   logout: () => void;
 }
 
-export const useUserStore = create<UserState>((set) => ({
+export const useUserStore = create<UserState>(set => ({
   auth: false,
   name: '',
   group: '',
-  setAuth: (auth) => set({ auth }),
+  setAuth: auth => set({ auth }),
   setUser: (name, group) => set({ name, group }),
   logout: () => set({ name: '', group: '', auth: false }),
 }));

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/star';
 
-const STAR_POINTS = [1, 2, 3, 4, 5] as const;
+const STAR_POINTS = [ 1, 2, 3, 4, 5 ] as const;
 
 interface StarRatingProps {
   /** 当前评分（0-5，0 表示未评分） */
@@ -31,39 +31,36 @@ export default function StarRating({
   size = '1.5rem',
   disabled = false,
 }: StarRatingProps) {
-  const [hover, setHover] = useState(0);
+  const [ hover, setHover ] = useState(0);
   // 悬停预览优先于已选值
   const active = hover > 0 ? hover : value;
 
   return (
     <div
-      role="radiogroup"
-      aria-label="评分"
-      className="flex items-center"
-      onMouseLeave={() => setHover(0)}
-    >
-      {STAR_POINTS.map((n) => (
+      role='radiogroup'
+      aria-label='评分'
+      className='flex items-center'
+      onMouseLeave={() => setHover(0)}>
+      {STAR_POINTS.map(n => (
         <button
           key={n}
-          type="button"
-          role="radio"
+          type='button'
+          role='radio'
           aria-checked={value === n}
           aria-label={`${n} 星`}
           disabled={disabled}
           onClick={() => onChange(n)}
           onMouseEnter={() => setHover(n)}
-          className="cursor-pointer border-none bg-transparent p-0 leading-none disabled:cursor-default"
-          style={{ fontSize: size }}
-        >
+          className='cursor-pointer border-none bg-transparent p-0 leading-none disabled:cursor-default'
+          style={{ fontSize: size }}>
           <M3eIcon
-            name="star"
+            name='star'
             filled={n <= active}
             className={
               n <= active
                 ? 'text-[var(--md-sys-color-primary)]'
                 : 'opacity-25'
-            }
-          />
+            } />
         </button>
       ))}
     </div>
