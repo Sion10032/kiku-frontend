@@ -19,15 +19,12 @@ interface WorkResumeProps {
   tree: TrackNode[];
 }
 
-/** 轨名截断(按钮内不换行)。 */
-function truncate(s: string, n = 16): string {
-  return s.length > n ? `${s.slice(0, n)}…` : s;
-}
-
 /**
  * 「继续播放 + 删除播放记录」区块(作品详情页,文件树上方)。
  *
  * - 有进度(work.userProgress 非空,即登录且播放过)才渲染
+ * - 布局:单行 继续播放按钮(轨名随宽度自适应压缩省略,不折行) +
+ *   已听轨数 + 删除按钮(不换行,窄屏仅压缩轨名)
  * - 继续播放:整棵树深度优先扁平化为音频队列,定位上次音轨与时间点
  *   (Track.startAt,usePlayer 加载完成后 seek);上次音轨找不到(文件
  *   改名/移动)回退第一轨从头播放
@@ -68,13 +65,19 @@ export default function WorkResume({ work, tree }: WorkResumeProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <M3eButton variant="tonal" onClick={resume} disabled={!hasTree}>
+    <div className="flex items-center gap-2">
+      <M3eButton
+        variant="tonal"
+        onClick={resume}
+        disabled={!hasTree}
+        className="min-w-0 flex-1"
+      >
+        {/* 轨名随可用宽度自适应压缩(组件 .label 自带 ellipsis),不折行 */}
         <M3eIcon slot="icon" name="play_arrow" />
-        {truncate(progress.trackTitle ?? '继续播放')} · {formatDuration(progress.position)}
+        {progress.trackTitle ?? '继续播放'} · {formatDuration(progress.position)}
       </M3eButton>
 
-      <span className="text-sm opacity-70">
+      <span className="shrink-0 text-sm opacity-70">
         已听 {progress.listenedCount} 轨
       </span>
 
