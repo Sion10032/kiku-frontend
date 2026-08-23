@@ -14,7 +14,7 @@ import '@m3e/icons/outlined/download';
 import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/queue_music';
 import '@m3e/icons/outlined/open_in_new';
-import '@m3e/icons/outlined/arrow_right';
+import '@m3e/icons/outlined/arrow_back';
 import { usePlayerStore } from '../stores/playerStore';
 import { downloadUrl, streamUrl } from '../api/media';
 import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../types';
@@ -163,6 +163,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
 
       {!loading && fatherFolder.length > 0 && (
         <M3eSelectionList variant='segmented' hide-selection-indicator>
+          {path.length > 0 && <ParentListItem onBack={() => setPath(path.slice(0, -1))} />}
           {fatherFolder.map((node) =>
             node.type === 'folder' ? (
               <TrackFolderListItem
@@ -222,6 +223,26 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   );
 }
 
+/** 返回上一层目录的行（子目录顶部显示 ".."）。 */
+function ParentListItem({ onBack }: { onBack: () => void }) {
+  const ref = useM3eListOptionStyle({
+    style: {
+      '.content': {
+        flex: '1 !important',
+      },
+    },
+  });
+
+  return (
+    <M3eListOption ref={ref} onClick={onBack}>
+      <span slot="leading" className="me-3">
+        <M3eIcon name="arrow_back" />
+      </span>
+      <span className="min-w-0 flex-1 truncate">..</span>
+    </M3eListOption>
+  );
+}
+
 /** 文件夹行：folder 图标 + 标题 + 子项数。 */
 function TrackFolderListItem({ node, onEnter }: { node: TrackFolder; onEnter: () => void }) {
   const ref = useM3eListOptionStyle({
@@ -243,9 +264,6 @@ function TrackFolderListItem({ node, onEnter }: { node: TrackFolder; onEnter: ()
         className="truncate text-xs opacity-60"
       >
         {node.children.length} 个项目
-      </span>
-      <span slot="trailing" className="me-3">
-        <M3eIcon name="arrow_right" />
       </span>
     </M3eListOption>
   );
