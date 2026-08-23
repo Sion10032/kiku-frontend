@@ -155,18 +155,15 @@ export default function List({ type }: { type: ListType }) {
 
       {/* 列表 */}
       {!loading && !isError && entries.length > 0 && (
-        <M3eActionList>
+        <M3eActionList style={{
+          '--m3e-list-item-container-shape': 'calc(infinity * 1px)',
+          '--m3e-list-item-hover-container-shape': 'calc(infinity * 1px)',
+        } as React.CSSProperties}>
           {entries.map((entry) => (
             <M3eListAction
               key={entry.key}
               onClick={() => navigate({ to: '/works', search: entry.search })}
             >
-              <style>{`
-                * {
-                  --m3e-list-item-container-shape: calc(infinity * 1px);
-                  --m3e-list-item-hover-container-shape: calc(infinity * 1px);
-                }
-              `}</style>
               <span
                 slot="leading"
                 className="me-3 flex items-center opacity-60"

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { M3eCard } from '@m3e/react/card';
-import { M3eAssistChip, M3eChipSet, M3eFilterChip, M3eFilterChipSet } from '@m3e/react/chips';
+import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
 import '@m3e/icons/outlined/mic';
 import type { Work } from '../types';
 import CoverSFW from './CoverSFW';
@@ -121,12 +121,16 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
                 </M3eChipSet>
               )}
               {work.vas.length > 0 && (
-                <M3eFilterChipSet className='density-1' hideSelectionIndicator multi>
+                <M3eChipSet
+                  className='density-1'
+                  style={{
+                    '--m3e-elevated-chip-container-color': 'var(--md-sys-color-primary)',
+                    '--m3e-chip-label-text-color': 'var(--md-sys-color-on-primary)',
+                    '--m3e-chip-icon-color': 'var(--md-sys-color-on-primary)',
+                  } as React.CSSProperties}>
                   {work.vas.slice(0, 6).map((va) => (
-                    <M3eFilterChip
-                      key={va.id}
-                      // variant='elevated'
-                      selected
+                    <M3eAssistChip
+                      variant='elevated'
                       onClick={e => {
                         e.preventDefault();
                         navigate({
@@ -136,9 +140,9 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
                       }}>
                       <M3eIcon slot="icon" name="mic"></M3eIcon>
                       {va.name}
-                    </M3eFilterChip>
+                    </M3eAssistChip>
                   ))}
-                </M3eFilterChipSet>
+                </M3eChipSet>
               )}
             </div>
           )}

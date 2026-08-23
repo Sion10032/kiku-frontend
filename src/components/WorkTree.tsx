@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { M3eListOption, M3eSelectionList } from '@m3e/react/list';
+import { M3eListOption, M3eSelectionList, type M3eListOptionElement } from '@m3e/react/list';
 import { M3eMenu, M3eMenuItem, type M3eMenuElement } from '@m3e/react/menu';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
@@ -19,7 +19,7 @@ import { usePlayerStore } from '../stores/playerStore';
 import { downloadUrl, streamUrl } from '../api/media';
 import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../types';
 import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
-import { useM3eListOptionStyle } from '../hooks/useM3eListOptionStyle';
+import { useM3eStyle } from '../hooks/useM3eStyle';
 import { toTrack } from '../utils/track';
 
 interface WorkTreeProps {
@@ -249,7 +249,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
 
 /** 返回上一层目录的行（子目录顶部显示 ".."）。 */
 function ParentListItem({ onBack }: { onBack: () => void }) {
-  const ref = useM3eListOptionStyle({
+  const ref = useM3eStyle<M3eListOptionElement>({
     style: {
       '.content': {
         flex: '1 !important',
@@ -269,7 +269,7 @@ function ParentListItem({ onBack }: { onBack: () => void }) {
 
 /** 文件夹行：folder 图标 + 标题 + 子项数。 */
 function TrackFolderListItem({ node, onEnter }: { node: TrackFolder; onEnter: () => void }) {
-  const ref = useM3eListOptionStyle({
+  const ref = useM3eStyle<M3eListOptionElement>({
     style: {
       '.content': {
         flex: '1 !important',
@@ -308,7 +308,7 @@ function TrackLeafListItem({
   onPlay,
   onOpenMenu,
 }: TrackLeafListItemProps) {
-  const ref = useM3eListOptionStyle({
+  const ref = useM3eStyle<M3eListOptionElement>({
     style: {
       '.content': {
         flex: '1 !important',
