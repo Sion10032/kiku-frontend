@@ -6,7 +6,7 @@ import {
 } from '@m3e/react/segmented-button';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
-import { useSettingsStore, type ColorMode } from '../stores/settingsStore';
+import { useSettingsStore, type ColorMode, type CoverBlurMode } from '../stores/settingsStore';
 import { useThemeStore, DEFAULT_SEED } from '../stores/themeStore';
 
 const COLOR_MODES: { value: ColorMode; label: string }[] = [
@@ -16,6 +16,12 @@ const COLOR_MODES: { value: ColorMode; label: string }[] = [
 ];
 
 const LYRIC_LINE_COUNTS = [1, 2, 3];
+
+const COVER_BLUR_MODES: { value: CoverBlurMode; label: string }[] = [
+  { value: 'always', label: '始终模糊' },
+  { value: 'hover', label: '悬浮显示' },
+  { value: 'never', label: '始终显示' },
+];
 
 /**
  * 设置页：纯本地偏好（settingsStore，localStorage 持久化），
@@ -36,6 +42,8 @@ export default function Settings() {
   const setMediaNotification = useSettingsStore((s) => s.setMediaNotification);
   const floatingLyrics = useSettingsStore((s) => s.floatingLyrics);
   const setFloatingLyrics = useSettingsStore((s) => s.setFloatingLyrics);
+  const coverBlurMode = useSettingsStore((s) => s.coverBlurMode);
+  const setCoverBlurMode = useSettingsStore((s) => s.setCoverBlurMode);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
@@ -79,6 +87,31 @@ export default function Settings() {
                 if (!on) useThemeStore.getState().setSeed(DEFAULT_SEED);
               }}
             />
+          </div>
+
+          {/* NSFW 封面 */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex flex-col">
+              <span>NSFW 封面</span>
+              <span className="text-sm opacity-70">始终模糊 / 默认模糊悬浮显示 / 始终清晰显示</span>
+            </span>
+            <M3eSegmentedButton
+              onInput={(e) =>
+                setCoverBlurMode(
+                  (e.target as HTMLInputElement).value as CoverBlurMode,
+                )
+              }
+            >
+              {COVER_BLUR_MODES.map((m) => (
+                <M3eButtonSegment
+                  key={m.value}
+                  value={m.value}
+                  checked={coverBlurMode === m.value}
+                >
+                  {m.label}
+                </M3eButtonSegment>
+              ))}
+            </M3eSegmentedButton>
           </div>
 
           {/* 媒体通知 */}

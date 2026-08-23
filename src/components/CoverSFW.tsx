@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { mediaUrl } from '../api/client';
+import { useSettingsStore } from '../stores/settingsStore';
 
 interface CoverSFWProps {
   /** 作品 id，完整 RJ code（如 "RJ01173549"） */
@@ -16,7 +17,8 @@ interface CoverSFWProps {
  *
  * - 显示 RJ 编号角标与发售日期（加载失败时同样显示）
  * - 加载失败时仅用同尺寸占位替换 img，角标/日期 overlay 不受影响
- * - PC 端 NSFW 封面默认模糊，鼠标悬停显示；移动端始终清晰显示
+ * - 模糊行为由设置项「NSFW 封面」控制（settingsStore.coverBlurMode）：
+ *   始终模糊 / 悬浮显示（默认模糊，鼠标悬停显示）/ 始终显示，对所有端生效
  *
  * 后端 cover 端点：/api/cover/:id（?type=sam 缩略图）。
  */
@@ -25,11 +27,12 @@ export default function CoverSFW({
   nsfw = true,
   release,
 }: CoverSFWProps) {
-  const [blur, setBlur] = useState(true);
+  const [hovering, setHovering] = useState(false);
   const [failed, setFailed] = useState(false);
+  const blurMode = useSettingsStore((s) => s.coverBlurMode);
   const src = mediaUrl(`/api/cover/${workId}/file`);
 
-  const shouldBlur = nsfw && blur && !isMobile();
+  const shouldBlur = nsfw && (blurMode === 'always' || (blurMode === 'hover' && !hovering));
 
   // img 与占位共享的尺寸类，失败时占位保持与封面相同的占位大小
   const frameClass = 'aspect-[4/3] w-full';
@@ -47,8 +50,8 @@ export default function CoverSFW({
         'relative block w-full',
         'overflow-hidden rounded-t-xl',
       ].join(' ')}
-      onMouseEnter={() => setBlur(false)}
-      onMouseLeave={() => setBlur(true)}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
     >
       {failed ? (
         <div className={['bg-black/10', frameClass].join(' ')} />
@@ -76,9 +79,4 @@ export default function CoverSFW({
       )}
     </Link>
   );
-}
-
-function isMobile(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(pointer: coarse)').matches;
 }
