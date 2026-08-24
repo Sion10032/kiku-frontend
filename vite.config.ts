@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -20,5 +21,8 @@ export default defineConfig({
       // 后端 + SSE 端点 (/api/scanner/events) 复用同一代理
       '/api': 'http://localhost:8888',
     },
+  },
+  test: {
+    environment: 'node', // pure-function tests; add jsdom here later for component tests
   },
 });
