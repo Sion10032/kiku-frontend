@@ -3,7 +3,7 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { M3eSearchBar } from '@m3e/react/search';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/search';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 /**
  * 顶栏全局搜索框：输入防抖 300ms 后导航到 /works 并写入 keyword。

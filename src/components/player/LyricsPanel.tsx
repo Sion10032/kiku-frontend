@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/play_arrow';
-import { usePlayerStore } from '../stores/playerStore';
-import { seekTo } from '../hooks/usePlayer';
-import { formatDuration } from '../utils/format';
+import { usePlayerStore } from '../../stores/playerStore';
+import { seekTo } from '../../hooks/usePlayer';
+import { formatDuration } from '../../utils/format';
 
 /**
  * 全屏播放器歌词面板。

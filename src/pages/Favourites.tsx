@@ -5,7 +5,7 @@ import { M3eList } from '@m3e/react/list';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { useUserStore } from '../stores/userStore';
 import { useReviewsByUser, useWorkMap } from '../queries/useReviewsQuery';
-import FavListItem from '../components/FavListItem';
+import FavListItem from '../components/favourites/FavListItem';
 import { PROGRESS_LABELS } from '../constants';
 import type { Progress, Review, Work } from '../types';
 

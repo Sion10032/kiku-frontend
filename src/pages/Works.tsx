@@ -24,8 +24,8 @@ import {
   saveSortOption,
   DEFAULT_SORT,
 } from '../utils/sort';
-import WorkCard from '../components/WorkCard';
-import WorkListItem from '../components/WorkListItem';
+import WorkCard from '../components/works/WorkCard';
+import WorkListItem from '../components/works/WorkListItem';
 import type { Work } from '../types';
 
 const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'

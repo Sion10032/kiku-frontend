@@ -4,11 +4,11 @@ import { M3eAppBar } from '@m3e/react/app-bar';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import '@m3e/icons/outlined/menu';
-import GlobalSearchBar from '../components/GlobalSearchBar';
-import NavDrawer from '../components/NavDrawer';
-import AudioElement from '../components/AudioElement';
-import AudioPlayer from '../components/AudioPlayer';
-import PlayerBar from '../components/PlayerBar';
+import GlobalSearchBar from '../components/player/GlobalSearchBar';
+import NavDrawer from '../components/player/NavDrawer';
+import AudioElement from '../components/player/AudioElement';
+import AudioPlayer from '../components/player/AudioPlayer';
+import PlayerBar from '../components/player/PlayerBar';
 import { useUiStore } from '../stores/uiStore';
 
 /** 视口 ≥1024px（lg 断点）视为宽屏；窄屏时侧栏自动收起。 */

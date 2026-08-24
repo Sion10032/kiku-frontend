@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { mediaUrl } from '../api/client';
+import { mediaUrl } from '../../api/client';
 
 interface CoverThumbnailProps {
   /** 作品 id，完整 RJ code（如 "RJ01173549"） */

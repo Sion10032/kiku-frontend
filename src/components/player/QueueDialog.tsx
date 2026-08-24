@@ -18,7 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/drag_indicator';
-import { usePlayerStore, type Track } from '../stores/playerStore';
+import { usePlayerStore, type Track } from '../../stores/playerStore';
 
 /**
  * 播放列表对话框：列出队列、当前曲目高亮、点击切曲、拖拽排序。

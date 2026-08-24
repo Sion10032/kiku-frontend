@@ -2,11 +2,11 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { M3eCard } from '@m3e/react/card';
 import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
 import '@m3e/icons/outlined/mic';
-import type { Work } from '../types';
-import CoverSFW from './CoverSFW';
+import type { Work } from '../../types';
+import CoverSFW from '../common/CoverSFW';
 import { M3eIcon } from '@m3e/react/icon';
-import { UnreadDot, ReadDot } from './WorkProgress';
-import { useUserStore } from '../stores/userStore';
+import { UnreadDot, ReadDot } from '../common/WorkProgress';
+import { useUserStore } from '../../stores/userStore';
 
 interface WorkCardProps {
   work: Work;

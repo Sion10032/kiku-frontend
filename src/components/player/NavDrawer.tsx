@@ -15,7 +15,7 @@ import '@m3e/icons/outlined/admin_panel_settings';
 import '@m3e/icons/outlined/settings';
 import '@m3e/icons/outlined/person';
 import '@m3e/icons/outlined/logout';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 
 /**
  * 桌面端侧栏导航（方案 B：侧栏通顶到底，YT Music 式）。

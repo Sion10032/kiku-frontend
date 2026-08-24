@@ -22,11 +22,11 @@ import '@m3e/icons/outlined/music_note';
 import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
 import QueueDialog from './QueueDialog';
-import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../constants';
-import { usePlayerStore } from '../stores/playerStore';
-import { mediaUrl } from '../api/client';
-import { seekTo } from '../hooks/usePlayer';
-import { formatDuration } from '../utils/format';
+import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../../constants';
+import { usePlayerStore } from '../../stores/playerStore';
+import { mediaUrl } from '../../api/client';
+import { seekTo } from '../../hooks/usePlayer';
+import { formatDuration } from '../../utils/format';
 
 /**
  * 全屏播放器覆盖层：hide=false 时显示。

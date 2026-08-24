@@ -1,5 +1,5 @@
-import { usePlayer } from '../hooks/usePlayer';
-import { useMediaSession } from '../hooks/useMediaSession';
+import { usePlayer } from '../../hooks/usePlayer';
+import { useMediaSession } from '../../hooks/useMediaSession';
 
 /**
  * 音频实例载体（无 UI）：在 MainLayout 挂载一次，

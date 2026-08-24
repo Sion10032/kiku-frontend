@@ -3,9 +3,9 @@ import { M3eListItem } from '@m3e/react/list';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eChip } from '@m3e/react/chips';
 import '@m3e/icons/outlined/star';
-import type { Review, Work } from '../types';
-import { PROGRESS_LABELS } from '../constants';
-import CoverThumbnail from './CoverThumbnail';
+import type { Review, Work } from '../../types';
+import { PROGRESS_LABELS } from '../../constants';
+import CoverThumbnail from '../common/CoverThumbnail';
 
 interface FavListItemProps {
   work: Work;

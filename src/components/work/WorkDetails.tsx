@@ -7,11 +7,11 @@ import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/star';
 import '@m3e/icons/outlined/chat';
 import '@m3e/icons/outlined/open_in_new';
-import type { Work } from '../types';
-import { useThemeStore, DEFAULT_SEED } from '../stores/themeStore';
-import { useSettingsStore } from '../stores/settingsStore';
-import { getSeedColorForWork } from '../utils/theme';
-import CoverSFW from './CoverSFW';
+import type { Work } from '../../types';
+import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { getSeedColorForWork } from '../../utils/theme';
+import CoverSFW from '../common/CoverSFW';
 import WriteReview from './WriteReview';
 
 interface WorkDetailsProps {

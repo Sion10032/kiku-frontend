@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { mediaUrl } from '../api/client';
-import { useSettingsStore } from '../stores/settingsStore';
+import { mediaUrl } from '../../api/client';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface CoverSFWProps {
   /** 作品 id，完整 RJ code（如 "RJ01173549"） */

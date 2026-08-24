@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router';
 import { M3eListAction } from '@m3e/react/list';
-import type { Work } from '../types';
-import CoverThumbnail from './CoverThumbnail';
-import { useM3eListActionStyle } from '../hooks/useM3eListActionStyle';
-import { UnreadDot, ReadDot } from './WorkProgress';
-import { useUserStore } from '../stores/userStore';
+import type { Work } from '../../types';
+import CoverThumbnail from '../common/CoverThumbnail';
+import { useM3eListActionStyle } from '../../hooks/useM3eListActionStyle';
+import { UnreadDot, ReadDot } from '../common/WorkProgress';
+import { useUserStore } from '../../stores/userStore';
 
 interface WorkListItemProps {
   work: Work;

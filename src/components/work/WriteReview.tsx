@@ -5,15 +5,15 @@ import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
 import { M3eOption } from '@m3e/react/option';
 import { M3eSnackbar } from '@m3e/react/snackbar';
-import { useUserStore } from '../stores/userStore';
-import { useReviewsByUser } from '../queries/useReviewsQuery';
+import { useUserStore } from '../../stores/userStore';
+import { useReviewsByUser } from '../../queries/useReviewsQuery';
 import {
   useReviewMutation,
   useDeleteReviewMutation,
-} from '../queries/useReviewMutation';
-import StarRating from './StarRating';
-import { PROGRESS_LABELS } from '../constants';
-import type { Progress, Work } from '../types';
+} from '../../queries/useReviewMutation';
+import StarRating from '../common/StarRating';
+import { PROGRESS_LABELS } from '../../constants';
+import type { Progress, Work } from '../../types';
 
 /** 进度选项顺序（与 PROGRESS_LABELS 同源）。 */
 const PROGRESS_ORDER: Progress[] = [

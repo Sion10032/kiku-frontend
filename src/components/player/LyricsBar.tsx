@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { usePlayerStore } from '../stores/playerStore';
-import { useSettingsStore } from '../stores/settingsStore';
+import { usePlayerStore } from '../../stores/playerStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 /** 单行滚动速度（px/s）：无行时长数据时的兜底，与短促行的上限。 */
 const FALLBACK_SPEED = 40;

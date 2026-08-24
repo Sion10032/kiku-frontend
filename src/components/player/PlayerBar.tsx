@@ -11,14 +11,14 @@ import '@m3e/icons/outlined/queue_music';
 import '@m3e/icons/outlined/music_note';
 import '@m3e/icons/outlined/volume_up';
 import '@m3e/icons/outlined/volume_off';
-import { usePlayerStore } from '../stores/playerStore';
-import { mediaUrl } from '../api/client';
-import { formatDuration } from '../utils/format';
+import { usePlayerStore } from '../../stores/playerStore';
+import { mediaUrl } from '../../api/client';
+import { formatDuration } from '../../utils/format';
 import LyricsBar from './LyricsBar';
 import MarqueeText from './MarqueeText';
 import ProgressBar from './ProgressBar';
 import QueueDialog from './QueueDialog';
-import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../constants';
+import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../../constants';
 
 /** 包装 onClick：阻止冒泡到信息区展开热区后执行 action（M3e 组件回调为原生 Event）。 */
 function stopAnd(fn: () => void) {

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
-import { usePlayerStore } from '../stores/playerStore';
-import { seekTo } from '../hooks/usePlayer';
-import { formatDuration } from '../utils/format';
+import { usePlayerStore } from '../../stores/playerStore';
+import { seekTo } from '../../hooks/usePlayer';
+import { formatDuration } from '../../utils/format';
 
 /**
  * 底栏进度条：h-1.5 轨道，hover/拖拽时加粗至 h-2.5；

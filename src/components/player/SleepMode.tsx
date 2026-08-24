@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eButton } from '@m3e/react/button';
 import { M3eFormField } from '@m3e/react/form-field';
-import { usePlayerStore } from '../stores/playerStore';
+import { usePlayerStore } from '../../stores/playerStore';
 
 interface SleepModeProps {
   open: boolean;

@@ -1,9 +1,9 @@
 import { workRoute } from '../routes/work';
 import { useWorkQuery, useTracksQuery } from '../queries/useWorksQuery';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
-import WorkDetails from '../components/WorkDetails';
-import WorkTree from '../components/WorkTree';
-import WorkResume from '../components/WorkResume';
+import WorkDetails from '../components/work/WorkDetails';
+import WorkTree from '../components/work/WorkTree';
+import WorkResume from '../components/work/WorkResume';
 
 /**
  * 作品详情页。

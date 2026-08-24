@@ -6,12 +6,12 @@ import { M3eDialog } from '@m3e/react/dialog';
 import '@m3e/icons/outlined/play_arrow';
 import '@m3e/icons/outlined/delete';
 import '@m3e/icons/outlined/music_note';
-import type { TrackNode, Work } from '../types';
-import { formatDuration } from '../utils/format';
-import { toTrack, flattenAudioLeaves } from '../utils/track';
-import { usePlayerStore } from '../stores/playerStore';
-import { useDeleteProgressMutation } from '../queries/useProgressMutation';
-import { suppressWorkProgress } from '../utils/progressReporter';
+import type { TrackNode, Work } from '../../types';
+import { formatDuration } from '../../utils/format';
+import { toTrack, flattenAudioLeaves } from '../../utils/track';
+import { usePlayerStore } from '../../stores/playerStore';
+import { useDeleteProgressMutation } from '../../queries/useProgressMutation';
+import { suppressWorkProgress } from '../../utils/progressReporter';
 
 interface WorkResumeProps {
   work: Work;
