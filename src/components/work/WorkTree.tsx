@@ -261,7 +261,10 @@ function ParentListItem({ onBack }: { onBack: () => void; }) {
   });
 
   return (
-    <M3eListOption ref={ref} onClick={onBack}>
+    <M3eListOption
+      ref={ref}
+      onBeforeInput={e => e.preventDefault()}
+      onClick={onBack}>
       <span slot='leading' className='me-3'>
         <M3eIcon name='arrow_back' />
       </span>
@@ -281,7 +284,10 @@ function TrackFolderListItem({ node, onEnter }: { node: TrackFolder; onEnter: ()
   });
 
   return (
-    <M3eListOption ref={ref} onClick={onEnter}>
+    <M3eListOption
+      ref={ref}
+      onBeforeInput={e => e.preventDefault()}
+      onClick={onEnter}>
       <span slot='leading' className='me-3'>
         <M3eIcon name='folder' />
       </span>
@@ -321,8 +327,9 @@ function TrackLeafListItem({
   return (
     <M3eListOption
       ref={ref}
+      onBeforeInput={e => e.preventDefault()}
       onClick={() => node.type === 'audio' && onPlay(node)}
-      selected={current}>
+      selected={node.type === 'audio' && current}>
       <span slot='leading' className='me-3'>
         <M3eIcon name={leafIcon(node.type)} />
       </span>
