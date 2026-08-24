@@ -10,6 +10,7 @@ import '@m3e/icons/outlined/fit_screen';
 import '@m3e/icons/outlined/refresh';
 import { streamUrl } from '../../api/media';
 import type { PreviewerProps } from './types';
+import { M3eCard } from '@m3e/react/card';
 
 /** 缩放范围与步进（几何级 ×1.25）。 */
 const MIN_SCALE = 0.2;
@@ -86,8 +87,58 @@ export function ImagePreview({ file }: PreviewerProps) {
 
   return (
     <div className='flex h-full min-h-0 flex-col'>
+      {/* 画布 */}
+      <M3eCard className='min-h-0 flex-1'>
+        <div
+          ref={containerRef}
+          className='relative min-h-0 flex-1 overflow-hidden'
+          style={{ cursor: scale > 1 ? 'grab' : 'default' }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onDoubleClick={() => (scale === 1 ? zoomBy(2) : reset())}>
+          {status === 'loading' && (
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <M3eCircularProgressIndicator />
+            </div>
+          )}
+          {status === 'error' && (
+            <div className='absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-70'>
+              <span>图片加载失败</span>
+              <M3eIconButton
+                aria-label='重试'
+                onClick={() => {
+                  reset();
+                  setStatus('loading');
+                  setAttempt(a => a + 1);
+                }}>
+                <M3eIcon name='refresh' />
+              </M3eIconButton>
+            </div>
+          )}
+          <img
+            src={`${url}${url.includes('?') ? '&' : '?'}_=${attempt}`}
+            alt={file.title}
+            draggable={false}
+            className={
+              status === 'done'
+                ? 'absolute inset-0 m-auto max-h-full max-w-full select-none object-contain'
+                : 'hidden'
+            }
+            style={{
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)`,
+              transformOrigin: 'center center',
+              // 拖拽中禁用过渡，避免平移滞后；松手/缩放恢复平滑
+              transition: dragging ? 'none' : 'transform 0.15s ease-out',
+            }}
+            onLoad={() => setStatus('done')}
+            onError={() => setStatus('error')} />
+        </div>
+      </M3eCard>
+
       {/* 工具条 */}
-      <div className='flex flex-none items-center gap-1 pb-2'>
+      <div className='flex items-center gap-1 pt-2'>
         <M3eIconButton aria-label='缩小' onClick={() => zoomBy(1 / SCALE_STEP)}>
           <M3eIcon name='zoom_out' />
         </M3eIconButton>
@@ -105,54 +156,6 @@ export function ImagePreview({ file }: PreviewerProps) {
         <M3eIconButton aria-label='重置视图' onClick={reset}>
           <M3eIcon name='fit_screen' />
         </M3eIconButton>
-      </div>
-
-      {/* 画布 */}
-      <div
-        ref={containerRef}
-        className='relative min-h-0 flex-1 overflow-hidden rounded-sm bg-black/5'
-        style={{ cursor: scale > 1 ? 'grab' : 'default' }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onDoubleClick={() => (scale === 1 ? zoomBy(2) : reset())}>
-        {status === 'loading' && (
-          <div className='absolute inset-0 flex items-center justify-center'>
-            <M3eCircularProgressIndicator />
-          </div>
-        )}
-        {status === 'error' && (
-          <div className='absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-70'>
-            <span>图片加载失败</span>
-            <M3eIconButton
-              aria-label='重试'
-              onClick={() => {
-                reset();
-                setStatus('loading');
-                setAttempt(a => a + 1);
-              }}>
-              <M3eIcon name='refresh' />
-            </M3eIconButton>
-          </div>
-        )}
-        <img
-          src={`${url}${url.includes('?') ? '&' : '?'}_=${attempt}`}
-          alt={file.title}
-          draggable={false}
-          className={
-            status === 'done'
-              ? 'absolute inset-0 m-auto max-h-full max-w-full select-none object-contain'
-              : 'hidden'
-          }
-          style={{
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)`,
-            transformOrigin: 'center center',
-            // 拖拽中禁用过渡，避免平移滞后；松手/缩放恢复平滑
-            transition: dragging ? 'none' : 'transform 0.15s ease-out',
-          }}
-          onLoad={() => setStatus('done')}
-          onError={() => setStatus('error')} />
       </div>
     </div>
   );

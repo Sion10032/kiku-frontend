@@ -10,6 +10,7 @@ import { streamUrl } from '../../api/media';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { decodeTextData, type DecodedText } from './encoding';
 import type { PreviewerProps } from './types';
+import { M3eCard } from '@m3e/react/card';
 
 /** 渲染层字符截断（解码用完整 buffer，见 encoding.ts 注释）。 */
 const MAX_CHARS = 200_000;
@@ -57,8 +58,46 @@ export function TextPreview({ file }: PreviewerProps) {
 
   return (
     <div className='flex h-full min-h-0 flex-col'>
-      {/* 工具条 */}
-      <div className='flex flex-none items-center gap-1 pb-2'>
+      <M3eCard className='min-h-0'>
+        {state.status === 'loading' && (
+          <div className='flex min-h-full items-center justify-center'>
+            <M3eCircularProgressIndicator />
+          </div>
+        )}
+        {state.status === 'error' && (
+          <div className='flex min-h-full flex-col items-center justify-center gap-3 opacity-70'>
+            <span>加载失败：{state.message}</span>
+            <M3eIconButton
+              aria-label='重试'
+              onClick={() => {
+                setState({ status: 'loading' });
+                setAttempt(a => a + 1);
+              }}>
+              <M3eIcon name='refresh' />
+            </M3eIconButton>
+          </div>
+        )}
+        {state.status === 'done' && (
+          <div
+            className='px-2 my-3 overflow-auto'
+            style={{
+              fontSize: `${fontSize}px`,
+              lineHeight: 1.7,
+              whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+              wordBreak: wordWrap ? 'break-word' : 'normal',
+            }}>
+            {state.result.text.slice(0, MAX_CHARS)}
+            {state.result.text.length > MAX_CHARS && (
+              <span className='mt-4 block text-xs opacity-60'>
+                （文件过大，仅显示前 {MAX_CHARS.toLocaleString()} 字符，完整内容请下载查看）
+              </span>
+            )}
+          </div>
+        )}
+      </M3eCard>
+
+      {/* 工具条（卡片外，底部） */}
+      <div className='flex flex-none items-center gap-1 pt-2'>
         <M3eIconButton
           aria-label='减小字号'
           disabled={fontSize <= 12}
@@ -85,43 +124,6 @@ export function TextPreview({ file }: PreviewerProps) {
           <span className='ms-2 text-xs opacity-60'>{state.result.encoding}</span>
         )}
       </div>
-
-      {/* 文本区 */}
-      {state.status === 'loading' && (
-        <div className='flex min-h-0 flex-1 items-center justify-center'>
-          <M3eCircularProgressIndicator />
-        </div>
-      )}
-      {state.status === 'error' && (
-        <div className='flex min-h-0 flex-1 flex-col items-center justify-center gap-3 opacity-70'>
-          <span>加载失败：{state.message}</span>
-          <M3eIconButton
-            aria-label='重试'
-            onClick={() => {
-              setState({ status: 'loading' });
-              setAttempt(a => a + 1);
-            }}>
-            <M3eIcon name='refresh' />
-          </M3eIconButton>
-        </div>
-      )}
-      {state.status === 'done' && (
-        <div
-          className='min-h-0 flex-1 overflow-auto rounded-sm bg-black/5 p-3'
-          style={{
-            fontSize: `${fontSize}px`,
-            lineHeight: 1.7,
-            whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
-            wordBreak: wordWrap ? 'break-word' : 'normal',
-          }}>
-          {state.result.text.slice(0, MAX_CHARS)}
-          {state.result.text.length > MAX_CHARS && (
-            <span className='mt-4 block text-xs opacity-60'>
-              （文件过大，仅显示前 {MAX_CHARS.toLocaleString()} 字符，完整内容请下载查看）
-            </span>
-          )}
-        </div>
-      )}
     </div>
   );
 }

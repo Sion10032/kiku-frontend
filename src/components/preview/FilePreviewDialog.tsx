@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { M3eDialog } from '@m3e/react/dialog';
+import type { M3eDialogElement } from '@m3e/react/dialog';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/chevron_left';
@@ -10,11 +11,13 @@ import '@m3e/icons/outlined/open_in_new';
 import { downloadUrl, streamUrl } from '../../api/media';
 import { findPreviewer } from './registry';
 import type { PreviewFile } from './types';
+import { useM3eStyle } from '../../hooks/useM3eStyle';
 
 /**
  * 覆写 m3e 默认 35rem 宽度上限：CSS 变量从祖先 div 继承进
  * shadow DOM（不依赖 React wrapper 对 host style 的透传）。
- * 高度无变量，由内容区 h-[80vh] 决定。
+ * 高度由 useM3eStyle 注入 shadow DOM（.base 90dvh + .content flex:1），
+ * 见下方 dialogRef。
  */
 const WRAPPER_STYLE = { '--m3e-dialog-max-width': '95vw' } as CSSProperties;
 
@@ -43,6 +46,17 @@ export function FilePreviewDialog({
   const file = files[index];
   const previewer = file ? findPreviewer(file) : undefined;
   const hasGallery = files.length > 1;
+
+  const dialogRef = useM3eStyle<M3eDialogElement>({
+    style: {
+      '.base': { height: '90dvh' },
+      '.content': {
+        flex: 1,
+        paddingBottom: 'var(--md-sys-measurement-space300, 24px)',
+        marginBottom: '0 !important',
+      },
+    },
+  });
 
   function go(delta: number) {
     onIndexChange((index + delta + files.length) % files.length);
@@ -76,7 +90,7 @@ export function FilePreviewDialog({
 
   return (
     <div style={WRAPPER_STYLE}>
-      <M3eDialog open={open} onClosed={onClose} dismissible closeLabel='关闭'>
+      <M3eDialog ref={dialogRef} open={open} onClosed={onClose} dismissible closeLabel='关闭'>
         <span slot='header' className='flex min-w-0 flex-1 items-center gap-1'>
           <span className='truncate'>{file?.title}</span>
           {hasGallery && (
@@ -94,26 +108,26 @@ export function FilePreviewDialog({
           </span>
         </span>
 
-        <div className='relative h-[80vh] w-full'>
+        {/* 内容区擑满 .content（h-full），预览器自身 h-full 铺满并内部滚动；
+            翻页按钮绝对定位悬浮两侧 */}
+        <div className='relative h-full w-full'>
           {hasGallery && (
             <>
-              <div className='absolute inset-y-0 left-0 z-10 flex items-center'>
+              <div className='absolute inset-y-1/2 left-1 z-10 flex items-center'>
                 <M3eIconButton aria-label='上一个' onClick={() => go(-1)}>
                   <M3eIcon name='chevron_left' />
                 </M3eIconButton>
               </div>
-              <div className='absolute inset-y-0 right-0 z-10 flex items-center'>
+              <div className='absolute inset-y-1/2 right-1 z-10 flex items-center'>
                 <M3eIconButton aria-label='下一个' onClick={() => go(1)}>
                   <M3eIcon name='chevron_right' />
                 </M3eIconButton>
               </div>
             </>
           )}
-          <div className='h-full px-2'>
-            {open && file && previewer && (
-              <previewer.component key={file.hash} file={file} />
-            )}
-          </div>
+          {open && file && previewer && (
+            <previewer.component key={file.hash} file={file} />
+          )}
         </div>
       </M3eDialog>
     </div>
