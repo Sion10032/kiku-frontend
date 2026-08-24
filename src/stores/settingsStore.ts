@@ -18,6 +18,14 @@ export interface FloatingLyricsSettings {
   opacity: number;
 }
 
+/** 文件预览设置。 */
+export interface PreviewSettings {
+  /** 文本预览字号（px），12–32 */
+  textFontSize: number;
+  /** 文本自动换行（false 时横向滚动） */
+  textWordWrap: boolean;
+}
+
 interface SettingsState {
   /** 动态取色：开启后进入作品详情时从封面提取主题种子色 */
   dynamicColor: boolean;
@@ -27,12 +35,15 @@ interface SettingsState {
   mediaNotification: boolean;
   /** 悬浮歌词（LyricsBar）设置 */
   floatingLyrics: FloatingLyricsSettings;
+  /** 文件预览设置 */
+  preview: PreviewSettings;
   /** NSFW 封面显示模式：always 始终模糊 / hover 悬浮显示 / never 始终显示 */
   coverBlurMode: CoverBlurMode;
   setDynamicColor: (on: boolean) => void;
   setColorMode: (mode: ColorMode) => void;
   setMediaNotification: (on: boolean) => void;
   setFloatingLyrics: (patch: Partial<FloatingLyricsSettings>) => void;
+  setPreview: (patch: Partial<PreviewSettings>) => void;
   setCoverBlurMode: (mode: CoverBlurMode) => void;
 }
 
@@ -47,9 +58,11 @@ export const useSettingsStore = create<SettingsState>()(
       mediaNotification: true,
       setMediaNotification: on => set({ mediaNotification: on }),
       floatingLyrics: { enabled: false, fontSize: 14, lines: 2, opacity: 0.8 },
+      preview: { textFontSize: 14, textWordWrap: true },
       coverBlurMode: 'hover',
       setFloatingLyrics: patch =>
         set(s => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
+      setPreview: patch => set(s => ({ preview: { ...s.preview, ...patch } })),
       setCoverBlurMode: mode => set({ coverBlurMode: mode }),
     }),
     {
@@ -59,6 +72,7 @@ export const useSettingsStore = create<SettingsState>()(
         colorMode: s.colorMode,
         mediaNotification: s.mediaNotification,
         floatingLyrics: s.floatingLyrics,
+        preview: s.preview,
         coverBlurMode: s.coverBlurMode,
       }),
     },
