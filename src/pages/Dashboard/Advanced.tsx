@@ -283,10 +283,6 @@ export default function Advanced() {
                 className='w-full border-none bg-transparent py-2 text-sm outline-none' />
             </M3eFormField>
             <FieldRow
-              label='Cover 文件夹'
-              value={String(form.coverFolderDir ?? '')}
-              onChange={v => updateField('coverFolderDir', v)} />
-            <FieldRow
               label='数据库文件夹'
               value={String(form.databaseFolderDir ?? '')}
               onChange={v => updateField('databaseFolderDir', v)} />

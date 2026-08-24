@@ -251,7 +251,6 @@ export interface AdminConfig extends SharedConfig {
   checkBetaUpdate: boolean;
   maxParallelism: number;
   rootFolders: RootFolder[];
-  coverFolderDir: string;
   databaseFolderDir: string;
   md5secret: string;
   jwtsecret: string;
