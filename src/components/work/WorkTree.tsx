@@ -15,12 +15,16 @@ import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/queue_music';
 import '@m3e/icons/outlined/open_in_new';
 import '@m3e/icons/outlined/arrow_back';
+import '@m3e/icons/outlined/visibility';
 import { usePlayerStore } from '../../stores/playerStore';
 import { downloadUrl, streamUrl } from '../../api/media';
 import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../../types';
 import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
 import { useM3eStyle } from '../../hooks/useM3eStyle';
 import { toTrack } from '../../utils/track';
+import { FilePreviewDialog } from '../preview/FilePreviewDialog';
+import { isPreviewable } from '../preview/registry';
+import { toPreviewFile, type PreviewFile } from '../preview/types';
 
 interface WorkTreeProps {
   work: Work;
@@ -97,6 +101,19 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
     [ fatherFolder, work ],
   );
 
+  // 预览状态：打开目录的可预览文件快照 + 当前下标
+  const [ preview, setPreview ] = useState<{ files: PreviewFile[]; index: number; } | null>(null);
+
+  // 当前目录可预览文件（画廊范围）
+  const previewFiles = useMemo(
+    () =>
+      fatherFolder
+        .filter((n): n is TrackLeaf => n.type !== 'folder')
+        .map(n => toPreviewFile(work.id, n))
+        .filter(isPreviewable),
+    [ fatherFolder, work.id ],
+  );
+
   // 当前正在播放的曲目（需属于本作品，避免跨作品同名高亮）
   const currentTrack =
     queue[queueIndex]?.workId === work.id ? queue[queueIndex] : undefined;
@@ -134,6 +151,20 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
     window.open(streamUrl(work.id, leaf.hash), '_blank', 'noopener');
   }
 
+  function openPreview(leaf: TrackLeaf) {
+    const index = previewFiles.findIndex(f => f.hash === leaf.hash);
+    if (index >= 0) setPreview({ files: previewFiles, index });
+  }
+
+  /** 行点击分流：音频播放；其余可预览文件开预览；不可预览无动作（走 ⋮ 下载）。 */
+  function handleLeafClick(leaf: TrackLeaf) {
+    if (leaf.type === 'audio') {
+      playLeaf(leaf);
+      return;
+    }
+    if (isPreviewable(toPreviewFile(work.id, leaf))) openPreview(leaf);
+  }
+
   /** 打开菜单：以 ⋮ 按钮为锚点（m3e-menu 自动翻转防溢出）。 */
   function openMenu(leaf: TrackLeaf, anchor: HTMLElement) {
     setMenu({ node: leaf, anchor });
@@ -156,6 +187,10 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
       setListMinHeight(undefined),
     );
   }, [ listMinHeight, fatherFolder ]);
+
+  // 当前 ⋮ 菜单目标是否可预览（决定「预览」菜单项显隐）
+  const menuPreviewable =
+    menu != null && isPreviewable(toPreviewFile(work.id, menu.node));
 
   return (
     <div className='flex flex-col gap-3'>
@@ -203,7 +238,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
                     key={node.hash}
                     node={node}
                     current={isCurrent(node)}
-                    onPlay={playLeaf}
+                    onLeafClick={handleLeafClick}
                     onOpenMenu={openMenu} />
                 ),
             )}
@@ -213,6 +248,14 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
 
       {/* 上下文菜单（⋮ 按钮触发；定位 / 翻转 / 关闭均由 m3e-menu 处理） */}
       <M3eMenu ref={menuRef}>
+        {menu && menuPreviewable && (
+          <M3eMenuItem onClick={() => openPreview(menu.node)}>
+            <span slot='icon'>
+              <M3eIcon name='visibility' />
+            </span>
+            预览
+          </M3eMenuItem>
+        )}
         {menu && menu.node.type === 'audio' && (
           <>
             <M3eMenuItem onClick={() => addToQueue(toTrack(work, menu.node))}>
@@ -246,6 +289,14 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
           </M3eMenuItem>
         )}
       </M3eMenu>
+
+      {/* 文件预览（常驻受控，open=false 时不渲染内容） */}
+      <FilePreviewDialog
+        open={preview !== null}
+        files={preview?.files ?? []}
+        index={preview?.index ?? 0}
+        onIndexChange={i => setPreview(p => (p ? { ...p, index: i } : p))}
+        onClose={() => setPreview(null)} />
     </div>
   );
 }
@@ -305,7 +356,7 @@ interface TrackLeafListItemProps {
   node: TrackLeaf;
   /** 是否为当前播放曲目（高亮显示）。 */
   current: boolean;
-  onPlay: (node: TrackLeaf) => void;
+  onLeafClick: (node: TrackLeaf) => void;
   onOpenMenu: (node: TrackLeaf, anchor: HTMLElement) => void;
 }
 
@@ -313,7 +364,7 @@ interface TrackLeafListItemProps {
 function TrackLeafListItem({
   node,
   current,
-  onPlay,
+  onLeafClick,
   onOpenMenu,
 }: TrackLeafListItemProps) {
   const ref = useM3eStyle<M3eListOptionElement>({
@@ -328,7 +379,7 @@ function TrackLeafListItem({
     <M3eListOption
       ref={ref}
       onBeforeInput={e => e.preventDefault()}
-      onClick={() => node.type === 'audio' && onPlay(node)}
+      onClick={() => onLeafClick(node)}
       selected={node.type === 'audio' && current}>
       <span slot='leading' className='me-3'>
         <M3eIcon name={leafIcon(node.type)} />
