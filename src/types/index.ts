@@ -305,8 +305,30 @@ export interface CheckLrcResponse {
 
 export type ScanEventType = string;
 
+export interface ScanTaskPayload {
+  id: number;
+  title: string;
+  status: 'pending' | 'scanning' | 'completed' | 'failed';
+  error?: string;
+}
+
+export interface ScanLogPayload {
+  level: string;
+  message: string;
+  timestamp: string;
+}
+
+/** 重连补播快照（SCAN_INIT_STATE 携带） */
+export interface ScanSnapshot {
+  tasks: ScanTaskPayload[];
+  failedTasks: ScanTaskPayload[];
+  completed: number;
+  logs: ScanLogPayload[];
+}
+
 export interface ScanInitState {
   isScanning: boolean;
+  snapshot: ScanSnapshot | null;
 }
 
 export interface ScanEvent {
