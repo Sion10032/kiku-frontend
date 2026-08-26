@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { ProgressRow, ReportProgressInput } from '../types';
+import type { ProgressRow, ReportProgressInput, WorksPage } from '../types';
 
 /**
  * 上报播放进度：PUT /api/progress
@@ -28,4 +28,16 @@ export function deleteWorkProgress(workId: string): Promise<{ deleted: number; }
   return apiFetch<{ deleted: number; }>(`progress/${encodeURIComponent(workId)}`, {
     method: 'DELETE',
   });
+}
+
+/** 用户收听历史（按作品去重，最近收听时间倒序）：GET /api/history */
+export function getHistory(params: {
+  page?: number;
+  pageSize?: number;
+}): Promise<WorksPage> {
+  const qs = new URLSearchParams();
+  if (params.page != null) qs.set('page', String(params.page));
+  if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
+  const suffix = qs.size > 0 ? `?${qs}` : '';
+  return apiFetch<WorksPage>(`history${suffix}`);
 }
