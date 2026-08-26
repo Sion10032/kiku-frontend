@@ -54,6 +54,8 @@ interface SettingsState {
   worksPaginationMode: WorksPaginationMode;
   /** 作品库分页控件显示位置（默认两处都显示） */
   worksPaginatorPosition: WorksPaginatorPosition;
+  /** 作品库是否显示「最近收听」条（默认显示） */
+  worksHistoryStrip: boolean;
   setDynamicColor: (on: boolean) => void;
   setColorMode: (mode: ColorMode) => void;
   setMediaNotification: (on: boolean) => void;
@@ -63,6 +65,7 @@ interface SettingsState {
   setTimeDisplayMode: (mode: TimeDisplayMode) => void;
   setWorksPaginationMode: (mode: WorksPaginationMode) => void;
   setWorksPaginatorPosition: (position: WorksPaginatorPosition) => void;
+  setShowHistoryStrip: (on: boolean) => void;
 }
 
 /** 本地设置（纯用户偏好，localStorage 持久化，不依赖登录态）。 */
@@ -81,6 +84,7 @@ export const useSettingsStore = create<SettingsState>()(
       timeDisplayMode: 'total',
       worksPaginationMode: 'paginate',
       worksPaginatorPosition: 'both',
+      worksHistoryStrip: true,
       setFloatingLyrics: patch =>
         set(s => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: patch => set(s => ({ preview: { ...s.preview, ...patch } })),
@@ -88,6 +92,7 @@ export const useSettingsStore = create<SettingsState>()(
       setTimeDisplayMode: mode => set({ timeDisplayMode: mode }),
       setWorksPaginationMode: mode => set({ worksPaginationMode: mode }),
       setWorksPaginatorPosition: position => set({ worksPaginatorPosition: position }),
+      setShowHistoryStrip: on => set({ worksHistoryStrip: on }),
     }),
     {
       name: 'kiku-settings',
@@ -101,6 +106,7 @@ export const useSettingsStore = create<SettingsState>()(
         timeDisplayMode: s.timeDisplayMode,
         worksPaginationMode: s.worksPaginationMode,
         worksPaginatorPosition: s.worksPaginatorPosition,
+        worksHistoryStrip: s.worksHistoryStrip,
       }),
     },
   ),

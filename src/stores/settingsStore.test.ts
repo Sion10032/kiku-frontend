@@ -16,6 +16,10 @@ describe('settingsStore 默认值', () => {
       'both',
     );
   });
+
+  it('worksHistoryStrip 默认为 true', () => {
+    expect(useSettingsStore.getInitialState().worksHistoryStrip).toBe(true);
+  });
 });
 
 describe('settingsStore worksPaginationMode', () => {
@@ -39,5 +43,17 @@ describe('settingsStore worksPaginatorPosition', () => {
   it('setWorksPaginatorPosition 切换到 top', () => {
     useSettingsStore.getState().setWorksPaginatorPosition('top');
     expect(useSettingsStore.getState().worksPaginatorPosition).toBe('top');
+  });
+});
+
+describe('settingsStore worksHistoryStrip', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState({ worksHistoryStrip: true });
+  });
+
+  it('setShowHistoryStrip 切换到 false', () => {
+    useSettingsStore.getState().setShowHistoryStrip(false);
+    expect(useSettingsStore.getState().worksHistoryStrip).toBe(false);
   });
 });

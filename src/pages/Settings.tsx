@@ -50,6 +50,7 @@ const WORKS_PAGINATOR_POSITIONS: { value: WorksPaginatorPosition; label: string;
  * - 时间显示：总时长（22:33）/ 剩余时间（-1:39），作用 PlayerBar 与全屏播放器
  * - 作品库翻页方式：分页（可跳页）/ 无限滚动
  * - 分页控件位置：作品库分页控件显示在顶部 / 底部 / 顶部和底部
+ * - 最近收听：作品库首页是否显示「最近收听」条
  * - 悬浮歌词：LyricsBar 的字体大小 / 换行行数上限 / 背景透明度
  */
 export default function Settings() {
@@ -69,6 +70,8 @@ export default function Settings() {
   const setWorksPaginationMode = useSettingsStore(s => s.setWorksPaginationMode);
   const worksPaginatorPosition = useSettingsStore(s => s.worksPaginatorPosition);
   const setWorksPaginatorPosition = useSettingsStore(s => s.setWorksPaginatorPosition);
+  const worksHistoryStrip = useSettingsStore(s => s.worksHistoryStrip);
+  const setShowHistoryStrip = useSettingsStore(s => s.setShowHistoryStrip);
 
   return (
     <div className='mx-auto flex max-w-2xl flex-col gap-4'>
@@ -201,6 +204,18 @@ export default function Settings() {
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
+          </div>
+
+          {/* 最近收听条 */}
+          <div className='flex cursor-pointer items-center justify-between gap-4'>
+            <span className='flex flex-col'>
+              <span>最近收听</span>
+              <span className='text-sm opacity-70'>在作品库首页顶部显示最近收听条</span>
+            </span>
+            <M3eSwitch
+              checked={worksHistoryStrip}
+              onInput={e =>
+                setShowHistoryStrip((e.target as HTMLInputElement).checked)} />
           </div>
 
           {/* 媒体通知 */}

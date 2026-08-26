@@ -51,6 +51,7 @@ export default function Works() {
   const isPaginated = paginationMode === 'paginate';
   // 分页控件显示位置（设置项）：top 顶部 / bottom 底部 / both 两处
   const paginatorPosition = useSettingsStore(s => s.worksPaginatorPosition);
+  const worksHistoryStrip = useSettingsStore(s => s.worksHistoryStrip);
   const page = search.page ?? 1;
 
   // 视图模式（state 驱动，初始读 localStorage）
@@ -85,7 +86,7 @@ export default function Works() {
     || !!search.keyword;
 
   const authed = useUserStore(s => s.auth);
-  const showHistoryStrip = authed && !isFiltered && (page === 1 || !isPaginated);
+  const showHistoryStrip = worksHistoryStrip && authed && !isFiltered && (page === 1 || !isPaginated);
 
   // 筛选与排序参数：统一分页端点（后端按筛选自动路由子端点）
   const filterParams = {
