@@ -3,29 +3,57 @@ import {
   useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query';
-import {
-  getWorks,
-  getWork,
-  getTracks,
-  getCircleWorks,
-  getTagWorks,
-  getVaWorks,
-  searchWorks,
-} from '../api/works';
-import type { WorksParams } from '../types';
+import { getWorksList, getWork, getTracks } from '../api/works';
+import type { WorksFilter, WorksParams } from '../types';
+
+type ListParams = Omit<WorksParams, keyof WorksFilter> & WorksFilter;
 
 /**
- * 作品库无限滚动查询（仅 /works，含分页）。
+ * 排序+筛选部分作为 key 主体，page 单独维度。
  *
- * 筛选（circleId/tagId/vaId/keyword）后端返回裸数组无分页，
- * 请改用 useFilteredWorks / useSearchWorks。
+ * base 对象显式写全 order/sort/seed/circleId/tagId/vaId/keyword 七个键
+ * （键序固定），确保 queryKey hash 两侧同构，不会因调用方构造差异而漂移。
  */
-export function useWorksInfinite(
-  params: Omit<WorksParams, 'circleId' | 'tagId' | 'vaId' | 'keyword'> = {},
+function listKeyParts(params: ListParams & { page: number; }) {
+  const { order, sort, seed, circleId, tagId, vaId, keyword, page } = params;
+  const base = {
+    order,
+    sort,
+    seed,
+    circleId,
+    tagId,
+    vaId,
+    keyword,
+  };
+  return [ base, page ] as const;
+}
+
+/** 列表 query key 构造（loader 与 hooks 共用，避免漂移）。 */
+export function worksListQueryKey(params: ListParams & { page: number; }) {
+  const [ base, page ] = listKeyParts(params);
+  return [ 'works', base, page ] as const;
+}
+
+/** 作品库按页查询（分页模式）。keepPreviousData 避免翻页闪 loading。 */
+export function useWorksPage(
+  params: ListParams & { page: number; },
+  enabled = true,
 ) {
+  return useQuery({
+    queryKey: worksListQueryKey(params),
+    queryFn: () => getWorksList(params),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    enabled,
+  });
+}
+
+/** 作品库无限滚动查询（无限模式，key 为 ['works', base]，与按页 key 不冲突）。 */
+export function useWorksInfinite(params: ListParams = {}, enabled = true) {
+  const [ base ] = listKeyParts({ ...params, page: 1 });
   return useInfiniteQuery({
-    queryKey: [ 'works', params ],
-    queryFn: ({ pageParam }) => getWorks({ ...params, page: pageParam }),
+    queryKey: [ 'works', base ],
+    queryFn: ({ pageParam }) => getWorksList({ ...params, page: pageParam }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const { currentPage, pageSize, totalCount } = lastPage.pagination;
@@ -33,44 +61,7 @@ export function useWorksInfinite(
         ? currentPage + 1
         : undefined;
     },
-  });
-}
-
-/** 按社团筛选的作品（一次拉全，后端无分页）。 */
-export function useCircleWorks(circleId: number | undefined) {
-  return useQuery({
-    queryKey: [ 'works', 'circle', circleId ],
-    queryFn: () => getCircleWorks(circleId!),
-    enabled: circleId != null,
-  });
-}
-
-/** 按标签筛选的作品。 */
-export function useTagWorks(tagId: number | undefined) {
-  return useQuery({
-    queryKey: [ 'works', 'tag', tagId ],
-    queryFn: () => getTagWorks(tagId!),
-    enabled: tagId != null,
-  });
-}
-
-/** 按声优筛选的作品。 */
-export function useVaWorks(vaId: string | undefined) {
-  return useQuery({
-    queryKey: [ 'works', 'va', vaId ],
-    queryFn: () => getVaWorks(vaId!),
-    enabled: vaId != null,
-  });
-}
-
-/** 搜索结果（一次拉全，后端无分页）。保留旧结果避免关键词变化时闪 loading。 */
-export function useSearchWorks(keyword: string | undefined) {
-  return useQuery({
-    queryKey: [ 'works', 'search', keyword ],
-    queryFn: () => searchWorks(keyword!),
-    enabled: !!keyword,
-    placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    enabled,
   });
 }
 

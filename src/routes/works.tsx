@@ -2,7 +2,8 @@ import { createRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { mainLayoutRoute } from './__root';
 import Works from '../pages/Works';
-import { getWorks } from '../api/works';
+import { getWorksList } from '../api/works';
+import { worksListQueryKey } from '../queries/useWorksQuery';
 
 /**
  * 作品库路由。
@@ -33,29 +34,25 @@ export const worksRoute = createRoute({
     vaId: z.string().optional(),
     keyword: z.string().optional(),
   }),
-  // 预取作品列表缓存：key 与 useWorksInfinite 完全一致（['works', {order,sort,seed}]），
-  // 命中后页面不再重复请求。筛选场景由页面上的独立查询负责，此处跳过。
+  // 预取作品列表缓存：key 由 worksListQueryKey 构造，与 useWorksPage 完全一致
+  // （['works', {order,sort,seed,circleId,tagId,vaId,keyword}, page]），
+  // 命中后页面不再重复请求。含筛选场景同样预取（getWorksList 自动路由子端点）。
   loaderDeps: ({ search }) => search,
   loader: ({ deps, context }) => {
-    const filtered =
-      deps.circleId != null
-      || deps.tagId != null
-      || deps.vaId != null
-      || !!deps.keyword;
-    if (filtered) return undefined;
+    // 键序与 useWorksPage 侧同构（listKeyParts 内部显式写全七个键，不会漂移）
     const params = {
       order: deps.order,
       sort: deps.sort,
       seed: deps.seed,
+      circleId: deps.circleId,
+      tagId: deps.tagId,
+      vaId: deps.vaId,
+      keyword: deps.keyword,
     };
     const page = deps.page ?? 1;
     return context.queryClient.ensureQueryData({
-      queryKey: [ 'works', params ],
-      queryFn: async () => {
-        const result = await getWorks({ ...params, page });
-        // 包装为 useInfiniteQuery 期望的 { pages, pageParams } 结构
-        return { pages: [ result ], pageParams: [ page ] };
-      },
+      queryKey: worksListQueryKey({ ...params, page }),
+      queryFn: () => getWorksList({ ...params, page }),
     });
   },
   component: Works,

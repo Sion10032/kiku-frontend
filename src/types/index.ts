@@ -79,6 +79,14 @@ export interface WorksParams {
   keyword?: string;
 }
 
+/** 作品列表筛选条件（circle/tag/va/keyword，互斥使用）。 */
+export interface WorksFilter {
+  circleId?: number;
+  tagId?: number;
+  vaId?: string;
+  keyword?: string;
+}
+
 /** /works 列表响应（含分页） */
 export interface WorksPage {
   works: Work[];

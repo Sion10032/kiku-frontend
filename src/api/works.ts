@@ -5,6 +5,7 @@ import type {
   Tracks,
   Va,
   Work,
+  WorksFilter,
   WorksPage,
   WorksParams,
 } from '../types';
@@ -24,13 +25,44 @@ function worksSearchParams(
 /**
  * 获取作品列表（含分页）：GET /api/works
  *
- * 通用入口——筛选（circleId/tagId/vaId/keyword）使用各自的子端点，
- * 见 getCircleWorks / getTagWorks / getVaWorks / searchWorks。
+ * 仅无筛选场景；筛选（circleId/tagId/vaId/keyword）请用 getWorksList
+ * 或各子端点函数。
  */
 export function getWorks(params: WorksParams = {}): Promise<WorksPage> {
   return apiFetch<WorksPage>('works', {
     searchParams: worksSearchParams(params),
   });
+}
+
+/**
+ * 统一作品列表入口：按筛选路由到对应端点（均已分页）。
+ * 无筛选 GET /works；筛选走 circles/tags/vas/search 子端点。
+ */
+export function getWorksList(
+  params: WorksParams & WorksFilter,
+): Promise<WorksPage> {
+  const { circleId, tagId, vaId, keyword, ...rest } = params;
+  if (circleId != null) {
+    return apiFetch<WorksPage>(`circles/${circleId}/works`, {
+      searchParams: worksSearchParams(rest),
+    });
+  }
+  if (tagId != null) {
+    return apiFetch<WorksPage>(`tags/${tagId}/works`, {
+      searchParams: worksSearchParams(rest),
+    });
+  }
+  if (vaId != null) {
+    return apiFetch<WorksPage>(`vas/${encodeURIComponent(vaId)}/works`, {
+      searchParams: worksSearchParams(rest),
+    });
+  }
+  if (keyword) {
+    return apiFetch<WorksPage>(`search/${encodeURIComponent(keyword)}`, {
+      searchParams: worksSearchParams(rest),
+    });
+  }
+  return apiFetch<WorksPage>('works', { searchParams: worksSearchParams(rest) });
 }
 
 /** 作品详情：GET /api/work/:id（id 为完整 RJ code） */
@@ -45,41 +77,44 @@ export function getTracks(id: string): Promise<Tracks> {
   return apiFetch<Tracks>(`tracks/${id}`);
 }
 
-/** 社团下的作品：GET /api/circles/:id/works （返回裸数组） */
+/** 社团下的作品：GET /api/circles/:id/works （分页响应） */
 export function getCircleWorks(
   id: number,
   params: Omit<WorksParams, 'circleId' | 'tagId' | 'vaId' | 'keyword'> = {},
-): Promise<Work[]> {
-  return apiFetch<Work[]>(`circles/${id}/works`, {
+): Promise<WorksPage> {
+  return apiFetch<WorksPage>(`circles/${id}/works`, {
     searchParams: worksSearchParams(params),
   });
 }
 
-/** 标签下的作品：GET /api/tags/:id/works （返回裸数组） */
+/** 标签下的作品：GET /api/tags/:id/works （分页响应） */
 export function getTagWorks(
   id: number,
   params: Omit<WorksParams, 'circleId' | 'tagId' | 'vaId' | 'keyword'> = {},
-): Promise<Work[]> {
-  return apiFetch<Work[]>(`tags/${id}/works`, {
+): Promise<WorksPage> {
+  return apiFetch<WorksPage>(`tags/${id}/works`, {
     searchParams: worksSearchParams(params),
   });
 }
 
-/** 声优下的作品：GET /api/vas/:id/works （返回裸数组） */
+/** 声优下的作品：GET /api/vas/:id/works （分页响应） */
 export function getVaWorks(
   id: string,
   params: Omit<WorksParams, 'circleId' | 'tagId' | 'vaId' | 'keyword'> = {},
-): Promise<Work[]> {
-  return apiFetch<Work[]>(`vas/${encodeURIComponent(id)}/works`, {
+): Promise<WorksPage> {
+  return apiFetch<WorksPage>(`vas/${encodeURIComponent(id)}/works`, {
     searchParams: worksSearchParams(params),
   });
 }
 
-/** 搜索：GET /api/search/:keyword （返回 {works}，无分页） */
-export function searchWorks(keyword: string): Promise<{ works: Work[]; }> {
-  return apiFetch<{ works: Work[]; }>(
-    `search/${encodeURIComponent(keyword)}`,
-  );
+/** 搜索：GET /api/search/:keyword （分页响应，透传 page/order/sort） */
+export function searchWorks(
+  keyword: string,
+  params: Omit<WorksParams, 'circleId' | 'tagId' | 'vaId' | 'keyword'> = {},
+): Promise<WorksPage> {
+  return apiFetch<WorksPage>(`search/${encodeURIComponent(keyword)}`, {
+    searchParams: worksSearchParams(params),
+  });
 }
 
 // ---------- 社团 / 标签 / 声优 列表 ----------
