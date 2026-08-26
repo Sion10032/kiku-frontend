@@ -23,11 +23,11 @@ export default function HistoryStrip() {
     <section className='mb-6'>
       <div className='mb-2 flex items-center justify-between'>
         <h2 className='m-0 text-base opacity-80'>最近收听</h2>
-        <M3eIconButton
-          onClick={() => { window.location.href = '/history'; }}
-          aria-label='查看全部收听历史'>
-          <M3eIcon name='arrow_forward' />
-        </M3eIconButton>
+        <Link to='/history' aria-label='查看全部收听历史'>
+          <M3eIconButton>
+            <M3eIcon name='arrow_forward' />
+          </M3eIconButton>
+        </Link>
       </div>
 
       <div className='flex gap-4 overflow-x-auto pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden'>
