@@ -9,6 +9,9 @@ export type CoverBlurMode = 'always' | 'hover' | 'never';
 /** 播放器时间显示模式：total 总时长 / remaining 剩余时间（-mm:ss）。 */
 export type TimeDisplayMode = 'total' | 'remaining';
 
+/** 作品库翻页方式：paginate 分页 / infinite 无限滚动。 */
+export type WorksPaginationMode = 'paginate' | 'infinite';
+
 /** 悬浮歌词（LyricsBar）设置。 */
 export interface FloatingLyricsSettings {
   /** 是否显示悬浮歌词 */
@@ -44,6 +47,8 @@ interface SettingsState {
   coverBlurMode: CoverBlurMode;
   /** 播放器时间显示：total 总时长 / remaining 剩余时间 */
   timeDisplayMode: TimeDisplayMode;
+  /** 作品库翻页方式（默认分页） */
+  worksPaginationMode: WorksPaginationMode;
   setDynamicColor: (on: boolean) => void;
   setColorMode: (mode: ColorMode) => void;
   setMediaNotification: (on: boolean) => void;
@@ -51,6 +56,7 @@ interface SettingsState {
   setPreview: (patch: Partial<PreviewSettings>) => void;
   setCoverBlurMode: (mode: CoverBlurMode) => void;
   setTimeDisplayMode: (mode: TimeDisplayMode) => void;
+  setWorksPaginationMode: (mode: WorksPaginationMode) => void;
 }
 
 /** 本地设置（纯用户偏好，localStorage 持久化，不依赖登录态）。 */
@@ -67,11 +73,13 @@ export const useSettingsStore = create<SettingsState>()(
       preview: { textFontSize: 14, textWordWrap: true },
       coverBlurMode: 'hover',
       timeDisplayMode: 'total',
+      worksPaginationMode: 'paginate',
       setFloatingLyrics: patch =>
         set(s => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: patch => set(s => ({ preview: { ...s.preview, ...patch } })),
       setCoverBlurMode: mode => set({ coverBlurMode: mode }),
       setTimeDisplayMode: mode => set({ timeDisplayMode: mode }),
+      setWorksPaginationMode: mode => set({ worksPaginationMode: mode }),
     }),
     {
       name: 'kiku-settings',
@@ -83,6 +91,7 @@ export const useSettingsStore = create<SettingsState>()(
         preview: s.preview,
         coverBlurMode: s.coverBlurMode,
         timeDisplayMode: s.timeDisplayMode,
+        worksPaginationMode: s.worksPaginationMode,
       }),
     },
   ),
