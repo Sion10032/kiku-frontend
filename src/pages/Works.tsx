@@ -247,8 +247,10 @@ export default function Works() {
         <div className='ms-auto flex items-center gap-2'>
           {/* 搜索结果不支持排序，搜索时隐藏排序控件 */}
           {!search.keyword && (
-            <M3eFormField variant='outlined' hideSubscript='always' className='min-w-48'>
-              <label slot='label'>排序</label>
+            <M3eFormField
+              variant='outlined'
+              hideSubscript='always'
+              className='min-w-48 [--m3e-form-field-width:12rem] density-3'>
               <M3eSelect onChange={onSortChange}>
                 {SORT_OPTIONS.map((o) => {
                   const v = `${o.order}:${o.sort}`;

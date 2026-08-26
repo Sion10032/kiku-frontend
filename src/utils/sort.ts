@@ -9,10 +9,10 @@ export interface SortOption {
 
 /** 作品库排序选项（对齐后端 schema）。 */
 export const SORT_OPTIONS: SortOption[] = [
-  { label: '按照发售日期新到老的顺序', order: 'release', sort: 'desc' },
-  { label: '按照发售日期老到新的顺序', order: 'release', sort: 'asc' },
-  { label: '按照RJ号大到小的顺序', order: 'id', sort: 'desc' },
-  { label: '按照RJ号小到大的顺序', order: 'id', sort: 'asc' },
+  { label: '发售日期新到老', order: 'release', sort: 'desc' },
+  { label: '发售日期老到新', order: 'release', sort: 'asc' },
+  { label: 'RJ号大到小', order: 'id', sort: 'desc' },
+  { label: 'RJ号小到大', order: 'id', sort: 'asc' },
   { label: '随机排序', order: 'random', sort: 'desc' },
   { label: '更好的随机排序', order: 'betterRandom', sort: 'desc' },
 ];

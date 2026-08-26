@@ -22,8 +22,8 @@ export default function HistoryStrip() {
 
   return (
     <section className='mb-6'>
-      <div className='mb-2 flex items-center justify-between'>
-        <h2 className='m-0 text-base opacity-80'>最近收听</h2>
+      <div className='mb-4 flex items-center justify-between'>
+        <h1 className='m-0 text-xl'>最近收听</h1>
         <Link to='/history' aria-label='查看全部收听历史'>
           <M3eIconButton>
             <M3eIcon name='arrow_forward' />
