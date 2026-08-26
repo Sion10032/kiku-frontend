@@ -1,6 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-// 须最先导入：node 环境无 localStorage，store 的 persist 需在创建时绑定此内存实现
-import '../test/localStorageStub';
 import { useSettingsStore } from './settingsStore';
 
 // 默认值断言：zustand v5 的 getInitialState() 返回 store 创建时的初始快照，

@@ -37,7 +37,7 @@ const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'
  * - URL search params（类型安全）：order/sort/page/seed + circleId/tagId/vaId/keyword
  * - 筛选与无筛选统一分页端点；翻页方式（分页/无限滚动）由设置控制
  * - 分页模式下 title 同步筛选名与页码
- * - 搜索输入在顶栏（GlobalSearchBar），写 URL keyword；排序不支持搜索结果，搜索时隐藏排序控件
+ * - 搜索输入在顶栏（GlobalSearchBar），写 URL keyword；搜索场景不提供排序入口（后端已支持 order/sort，仅 random 退化），搜索时隐藏排序控件
  * - 网格 / 列表切换，排序与视图模式持久化到 localStorage
  */
 export default function Works() {

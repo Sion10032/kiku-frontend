@@ -4,9 +4,10 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import { getWorksList, getWork, getTracks } from '../api/works';
-import type { WorksFilter, WorksParams } from '../types';
+import type { WorksParams } from '../types';
 
-type ListParams = Omit<WorksParams, keyof WorksFilter> & WorksFilter;
+/** 语义别名：WorksFilter 的字段已全部含于 WorksParams，直接复用。 */
+type ListParams = WorksParams;
 
 /**
  * 排序+筛选部分作为 key 主体，page 单独维度。

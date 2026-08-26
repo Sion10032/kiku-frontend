@@ -24,5 +24,6 @@ export default defineConfig({
   },
   test: {
     environment: 'node', // pure-function tests; add jsdom here later for component tests
+    setupFiles: [ 'src/test/setup.ts' ],
   },
 });

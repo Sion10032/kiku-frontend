@@ -5,7 +5,6 @@ import type {
   Tracks,
   Va,
   Work,
-  WorksFilter,
   WorksPage,
   WorksParams,
 } from '../types';
@@ -38,9 +37,7 @@ export function getWorks(params: WorksParams = {}): Promise<WorksPage> {
  * 统一作品列表入口：按筛选路由到对应端点（均已分页）。
  * 无筛选 GET /works；筛选走 circles/tags/vas/search 子端点。
  */
-export function getWorksList(
-  params: WorksParams & WorksFilter,
-): Promise<WorksPage> {
+export function getWorksList(params: WorksParams): Promise<WorksPage> {
   const { circleId, tagId, vaId, keyword, ...rest } = params;
   if (circleId != null) {
     return apiFetch<WorksPage>(`circles/${circleId}/works`, {
