@@ -12,6 +12,9 @@ export type TimeDisplayMode = 'total' | 'remaining';
 /** 作品库翻页方式：paginate 分页 / infinite 无限滚动。 */
 export type WorksPaginationMode = 'paginate' | 'infinite';
 
+/** 作品库分页控件显示位置：top 顶部 / bottom 底部 / both 两处都显示。 */
+export type WorksPaginatorPosition = 'top' | 'bottom' | 'both';
+
 /** 悬浮歌词（LyricsBar）设置。 */
 export interface FloatingLyricsSettings {
   /** 是否显示悬浮歌词 */
@@ -49,6 +52,8 @@ interface SettingsState {
   timeDisplayMode: TimeDisplayMode;
   /** 作品库翻页方式（默认分页） */
   worksPaginationMode: WorksPaginationMode;
+  /** 作品库分页控件显示位置（默认两处都显示） */
+  worksPaginatorPosition: WorksPaginatorPosition;
   setDynamicColor: (on: boolean) => void;
   setColorMode: (mode: ColorMode) => void;
   setMediaNotification: (on: boolean) => void;
@@ -57,6 +62,7 @@ interface SettingsState {
   setCoverBlurMode: (mode: CoverBlurMode) => void;
   setTimeDisplayMode: (mode: TimeDisplayMode) => void;
   setWorksPaginationMode: (mode: WorksPaginationMode) => void;
+  setWorksPaginatorPosition: (position: WorksPaginatorPosition) => void;
 }
 
 /** 本地设置（纯用户偏好，localStorage 持久化，不依赖登录态）。 */
@@ -74,12 +80,14 @@ export const useSettingsStore = create<SettingsState>()(
       coverBlurMode: 'hover',
       timeDisplayMode: 'total',
       worksPaginationMode: 'paginate',
+      worksPaginatorPosition: 'both',
       setFloatingLyrics: patch =>
         set(s => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: patch => set(s => ({ preview: { ...s.preview, ...patch } })),
       setCoverBlurMode: mode => set({ coverBlurMode: mode }),
       setTimeDisplayMode: mode => set({ timeDisplayMode: mode }),
       setWorksPaginationMode: mode => set({ worksPaginationMode: mode }),
+      setWorksPaginatorPosition: position => set({ worksPaginatorPosition: position }),
     }),
     {
       name: 'kiku-settings',
@@ -92,6 +100,7 @@ export const useSettingsStore = create<SettingsState>()(
         coverBlurMode: s.coverBlurMode,
         timeDisplayMode: s.timeDisplayMode,
         worksPaginationMode: s.worksPaginationMode,
+        worksPaginatorPosition: s.worksPaginatorPosition,
       }),
     },
   ),

@@ -18,3 +18,19 @@ describe('settingsStore worksPaginationMode', () => {
     expect(useSettingsStore.getState().worksPaginationMode).toBe('infinite');
   });
 });
+
+describe('settingsStore worksPaginatorPosition', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState({ worksPaginatorPosition: 'both' });
+  });
+
+  it('默认为 both', () => {
+    expect(useSettingsStore.getState().worksPaginatorPosition).toBe('both');
+  });
+
+  it('setWorksPaginatorPosition 切换到 top', () => {
+    useSettingsStore.getState().setWorksPaginatorPosition('top');
+    expect(useSettingsStore.getState().worksPaginatorPosition).toBe('top');
+  });
+});

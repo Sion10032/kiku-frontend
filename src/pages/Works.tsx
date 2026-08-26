@@ -7,16 +7,17 @@ import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { M3eList } from '@m3e/react/list';
+import {
+  M3ePaginator,
+  type PaginatorPageEventDetail,
+} from '@m3e/react/paginator';
 import '@m3e/icons/outlined/apps';
 import '@m3e/icons/outlined/view_list';
+import { useQuery } from '@tanstack/react-query';
 import { worksRoute } from '../routes/works';
-import {
-  useWorksInfinite,
-  useCircleWorks,
-  useTagWorks,
-  useVaWorks,
-  useSearchWorks,
-} from '../queries/useWorksQuery';
+import { useWorksPage, useWorksInfinite } from '../queries/useWorksQuery';
+import { getCircle, getTag, getVa } from '../api/works';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import {
   SORT_OPTIONS,
@@ -34,14 +35,21 @@ const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'
  * 作品库页面。
  *
  * - URL search params（类型安全）：order/sort/page/seed + circleId/tagId/vaId/keyword
- * - 无筛选：无限滚动分页（useWorksInfinite）
- * - 筛选：一次拉全（后端筛选端点无分页）
+ * - 筛选与无筛选统一分页端点；翻页方式（分页/无限滚动）由设置控制
+ * - 分页模式下 title 同步筛选名与页码
  * - 搜索输入在顶栏（GlobalSearchBar），写 URL keyword；排序不支持搜索结果，搜索时隐藏排序控件
  * - 网格 / 列表切换，排序与视图模式持久化到 localStorage
  */
 export default function Works() {
   const search = worksRoute.useSearch();
   const navigate = worksRoute.useNavigate();
+
+  // 翻页方式（设置项）：paginate 分页 / infinite 无限滚动
+  const paginationMode = useSettingsStore(s => s.worksPaginationMode);
+  const isPaginated = paginationMode === 'paginate';
+  // 分页控件显示位置（设置项）：top 顶部 / bottom 底部 / both 两处
+  const paginatorPosition = useSettingsStore(s => s.worksPaginatorPosition);
+  const page = search.page ?? 1;
 
   // 视图模式（state 驱动，初始读 localStorage）
   const [ viewMode, setViewMode ] = useState<'grid' | 'list'>(() => {
@@ -68,75 +76,118 @@ export default function Works() {
   // 随机排序时生成一次 seed（切到 random 时刷新）
   const seed = search.seed ?? 7;
 
-  // 查询：无筛选走无限滚动，有筛选走单次拉取
   const isFiltered =
     search.circleId != null
     || search.tagId != null
     || search.vaId != null
     || !!search.keyword;
 
-  const infinite = useWorksInfinite({
+  // 筛选与排序参数：统一分页端点（后端按筛选自动路由子端点）
+  const filterParams = {
+    circleId: search.circleId,
+    tagId: search.tagId,
+    vaId: search.vaId,
+    keyword: search.keyword,
+  };
+  const sortParams = {
     order: sortOption.order,
     sort: sortOption.sort,
     seed: (sortOption.order === 'random' || sortOption.order === 'betterRandom') ? seed : undefined,
-  });
+  };
 
-  const circleWorks = useCircleWorks(search.circleId);
-  const tagWorks = useTagWorks(search.tagId);
-  const vaWorks = useVaWorks(search.vaId);
-  const searchWorks_ = useSearchWorks(search.keyword);
+  // 查询：分页模式按页拉取（keepPreviousData 防翻页闪 loading），无限模式滚动追加
+  const paged = useWorksPage({ ...filterParams, ...sortParams, page }, isPaginated);
+  const infinite = useWorksInfinite({ ...filterParams, ...sortParams }, !isPaginated);
 
   // 统一拍平为 Work[]
-  const works: Work[] = useMemo(() => {
-    if (!isFiltered) {
-      return infinite.data?.pages.flatMap(p => p.works) ?? [];
-    }
-    if (search.circleId != null) return circleWorks.data ?? [];
-    if (search.tagId != null) return tagWorks.data ?? [];
-    if (search.vaId != null) return vaWorks.data ?? [];
-    if (search.keyword) return searchWorks_.data?.works ?? [];
-    return [];
-  }, [
-    isFiltered,
-    infinite.data,
-    search.circleId,
-    search.tagId,
-    search.vaId,
-    search.keyword,
-    circleWorks.data,
-    tagWorks.data,
-    vaWorks.data,
-    searchWorks_.data,
-  ]);
+  const works: Work[] = useMemo(
+    () => isPaginated
+      ? paged.data?.works ?? []
+      : infinite.data?.pages.flatMap(p => p.works) ?? [],
+    [ isPaginated, paged.data, infinite.data ],
+  );
 
-  const totalCount = !isFiltered
-    ? infinite.data?.pages[0]?.pagination.totalCount
-    : works.length;
+  const pagination = isPaginated
+    ? paged.data?.pagination
+    : infinite.data?.pages[0]?.pagination;
+  const totalCount = pagination?.totalCount;
+  const loading = isPaginated ? paged.isLoading : infinite.isLoading;
 
-  const loading =
-    infinite.isLoading
-    || circleWorks.isLoading
-    || tagWorks.isLoading
-    || vaWorks.isLoading
-    || searchWorks_.isLoading;
+  // 筛选条件名称（title 显示用）；keyword 直接可用，其余按需查询
+  const circle = useQuery({
+    queryKey: [ 'circle', search.circleId ],
+    queryFn: () => getCircle(search.circleId!),
+    enabled: search.circleId != null,
+    staleTime: 5 * 60_000,
+  });
+  const tag = useQuery({
+    queryKey: [ 'tag', search.tagId ],
+    queryFn: () => getTag(search.tagId!),
+    enabled: search.tagId != null,
+    staleTime: 5 * 60_000,
+  });
+  const va = useQuery({
+    queryKey: [ 'va', search.vaId ],
+    queryFn: () => getVa(search.vaId!),
+    enabled: search.vaId != null,
+    staleTime: 5 * 60_000,
+  });
+  const filterName = search.keyword
+    ? `「${search.keyword}」`
+    : search.circleId != null
+      ? circle.data?.name
+      : search.tagId != null
+        ? tag.data?.name
+        : search.vaId != null
+          ? va.data?.name
+          : undefined;
 
-  // 无限滚动
+  // 无限滚动（仅无限模式；分页模式 hasMore 恒 false）
   const sentinelRef = useInfiniteScroll({
     onLoadMore: () => infinite.fetchNextPage(),
-    hasMore: !!infinite.hasNextPage && !isFiltered,
+    hasMore: !!infinite.hasNextPage && !isPaginated,
     loading: infinite.isFetchingNextPage,
   });
 
-  // 排序变更：写 URL（search params）+ 持久化
+  // 跳页：写 URL search（page=1 时移除参数）
+  function onPageChange(e: CustomEvent<PaginatorPageEventDetail>) {
+    const next = e.detail.pageIndex + 1; // pageIndex 从 0 开始
+    navigate({
+      search: prev => ({ ...prev, page: next === 1 ? undefined : next }),
+    });
+  }
+
+  // 排序变更：写 URL（search params，重置页码）+ 持久化
   function onSortChange(e: Event) {
     const value = (e.target as M3eSelectElement).value as string;
     const opt = SORT_OPTIONS.find(o => `${o.order}:${o.sort}` === value);
     if (!opt) return;
     saveSortOption(opt);
     navigate({
-      search: prev => ({ ...prev, order: opt.order, sort: opt.sort }),
+      search: prev => ({ ...prev, order: opt.order, sort: opt.sort, page: undefined }),
     });
   }
+
+  // 分页控件（仅分页模式）：提取为局部元素，按设置在网格前/后渲染，两处共用同一 props
+  const paginator = isPaginated && !loading && pagination && pagination.totalCount > 0
+    ? (
+      <div className='mt-6 flex justify-center'>
+        <M3ePaginator
+          length={pagination.totalCount}
+          pageSize={pagination.pageSize}
+          pageIndex={page - 1}
+          hidePageSize
+          showFirstLastButtons
+          disabled={paged.isFetching}
+          itemsPerPageLabel='每页条数：'
+          previousPageLabel='上一页'
+          nextPageLabel='下一页'
+          firstPageLabel='第一页'
+          lastPageLabel='最后一页'
+          onPage={onPageChange} />
+      </div>
+    )
+    : null;
 
   function toggleView() {
     setViewMode((prev) => {
@@ -159,6 +210,20 @@ export default function Works() {
       });
     }
   }, [ sortOption.order ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // title 同步筛选名与页码（分页模式）；卸载/切模式时恢复默认
+  useEffect(() => {
+    const base = filterName ? `${filterName} · 作品库` : '作品库';
+    const totalPages = pagination
+      ? Math.max(1, Math.ceil(pagination.totalCount / pagination.pageSize))
+      : 1;
+    document.title = isPaginated && pagination && page > 1
+      ? `${base} · 第 ${page}/${totalPages} 页 · Kiku`
+      : `${base} · Kiku`;
+    return () => {
+      document.title = 'Kiku';
+    };
+  }, [ isPaginated, page, filterName, pagination ]);
 
   return (
     <div className='mx-auto max-w-[1680px]'>
@@ -214,6 +279,9 @@ export default function Works() {
         </div>
       )}
 
+      {/* 分页控件（分页模式）：top/both 时在作品网格前渲染 */}
+      {(paginatorPosition === 'top' || paginatorPosition === 'both') && paginator}
+
       {/* 加载中 */}
       {loading && (
         <div className='flex justify-center py-12'>
@@ -248,11 +316,14 @@ export default function Works() {
         </div>
       )}
 
-      {/* 无限滚动哨兵 */}
-      {!loading && works.length > 0 && (
+      {/* 分页控件（分页模式）：bottom/both 时在空状态之后渲染 */}
+      {(paginatorPosition === 'bottom' || paginatorPosition === 'both') && paginator}
+
+      {/* 无限滚动哨兵（无限模式） */}
+      {!isPaginated && !loading && works.length > 0 && (
         <div ref={sentinelRef} className='h-1 w-full' />
       )}
-      {!loading && infinite.isFetchingNextPage && (
+      {!isPaginated && !loading && works.length > 0 && infinite.isFetchingNextPage && (
         <div className='flex justify-center py-8'>
           <M3eCircularProgressIndicator />
         </div>
