@@ -18,6 +18,7 @@ import { worksRoute } from '../routes/works';
 import { useWorksPage, useWorksInfinite } from '../queries/useWorksQuery';
 import { getCircle, getTag, getVa } from '../api/works';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useUserStore } from '../stores/userStore';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import {
   SORT_OPTIONS,
@@ -27,6 +28,7 @@ import {
 } from '../utils/sort';
 import WorkCard from '../components/works/WorkCard';
 import WorkListItem from '../components/works/WorkListItem';
+import HistoryStrip from '../components/works/HistoryStrip';
 import type { Work } from '../types';
 
 const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'
@@ -81,6 +83,9 @@ export default function Works() {
     || search.tagId != null
     || search.vaId != null
     || !!search.keyword;
+
+  const authed = useUserStore(s => s.auth);
+  const showHistoryStrip = authed && !isFiltered && (page === 1 || !isPaginated);
 
   // 筛选与排序参数：统一分页端点（后端按筛选自动路由子端点）
   const filterParams = {
@@ -227,6 +232,9 @@ export default function Works() {
 
   return (
     <div className='mx-auto max-w-[1680px]'>
+      {/* 最近收听条带 */}
+      {showHistoryStrip && <HistoryStrip />}
+
       {/* 顶部工具栏 */}
       <div className='mb-4 flex flex-wrap items-center gap-3'>
         <h1 className='m-0 text-xl'>
