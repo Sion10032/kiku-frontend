@@ -2,8 +2,6 @@ import { createRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { mainLayoutRoute } from './__root';
 import Works from '../pages/Works';
-import { getWorksList } from '../api/works';
-import { worksListQueryKey } from '../queries/useWorksQuery';
 
 /**
  * 作品库路由。
@@ -12,7 +10,8 @@ import { worksListQueryKey } from '../queries/useWorksQuery';
  *   <Link to="/works" search={{ order: 'release', sort: 'desc' }} />
  *   const { order, sort } = worksRoute.useSearch();
  *
- * 数据预取（loader + ensureQueryData）：进入页面时提前写入 QueryClient 缓存。
+ * 数据不预取（无 loader）：组件挂载时自行请求（useWorksPage / useWorksInfinite），
+ * keepPreviousData 提供翻页时的旧数据缓冲。
  */
 export const worksRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
@@ -34,26 +33,5 @@ export const worksRoute = createRoute({
     vaId: z.string().optional(),
     keyword: z.string().optional(),
   }),
-  // 预取作品列表缓存：key 由 worksListQueryKey 构造，与 useWorksPage 完全一致
-  // （['works', {order,sort,seed,circleId,tagId,vaId,keyword}, page]），
-  // 命中后页面不再重复请求。含筛选场景同样预取（getWorksList 自动路由子端点）。
-  loaderDeps: ({ search }) => search,
-  loader: ({ deps, context }) => {
-    // 键序与 useWorksPage 侧同构（listKeyParts 内部显式写全七个键，不会漂移）
-    const params = {
-      order: deps.order,
-      sort: deps.sort,
-      seed: deps.seed,
-      circleId: deps.circleId,
-      tagId: deps.tagId,
-      vaId: deps.vaId,
-      keyword: deps.keyword,
-    };
-    const page = deps.page ?? 1;
-    return context.queryClient.ensureQueryData({
-      queryKey: worksListQueryKey({ ...params, page }),
-      queryFn: () => getWorksList({ ...params, page }),
-    });
-  },
   component: Works,
 });

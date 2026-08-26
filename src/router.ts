@@ -6,7 +6,6 @@ export const queryClient = new QueryClient();
 
 export const router = createRouter({
   routeTree,
-  context: { queryClient },
   defaultPreload: 'intent', // 悬停/聚焦时预取
 });
 

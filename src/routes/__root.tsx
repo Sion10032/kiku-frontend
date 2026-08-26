@@ -1,10 +1,9 @@
 import {
-  createRootRouteWithContext,
+  createRootRoute,
   createRoute,
   Outlet,
   redirect,
 } from '@tanstack/react-router';
-import type { QueryClient } from '@tanstack/react-query';
 import { useUserStore } from '../stores/userStore';
 import { restoreSession } from '../hooks/useAuth';
 import {
@@ -17,15 +16,13 @@ import MainLayout from '../layouts/MainLayout';
 import DashboardLayout from '../layouts/DashboardLayout';
 
 /**
- * 根路由：承载 router context（QueryClient），仅渲染 <Outlet/>。
+ * 根路由：仅渲染 <Outlet/>。
  * 404、/login、/setup、/register 作为 root 的直接子路由（无布局包裹）。
  *
  * beforeLoad：恢复会话 → 拉取 setup 状态与 sharedConfig（均 promise 缓存）。
  * 首次部署（用户表为空）时，除 /setup 外一律重定向到 /setup 向导。
  */
-export const rootRoute = createRootRouteWithContext<{
-  queryClient: QueryClient;
-}>()({
+export const rootRoute = createRootRoute({
   beforeLoad: async ({ location }) => {
     await restoreSession();
     await Promise.all([ ensureSetupStatus(), ensureSharedConfig() ]);
