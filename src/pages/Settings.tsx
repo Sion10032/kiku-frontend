@@ -6,7 +6,7 @@ import {
 } from '@m3e/react/segmented-button';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
-import { useSettingsStore, type ColorMode, type CoverBlurMode, type TimeDisplayMode } from '../stores/settingsStore';
+import { useSettingsStore, type ColorMode, type CoverBlurMode, type TimeDisplayMode, type WorksPaginationMode, type WorksPaginatorPosition } from '../stores/settingsStore';
 import { useThemeStore, DEFAULT_SEED } from '../stores/themeStore';
 
 const COLOR_MODES: { value: ColorMode; label: string; }[] = [
@@ -28,6 +28,17 @@ const TIME_DISPLAY_MODES: { value: TimeDisplayMode; label: string; }[] = [
   { value: 'remaining', label: '剩余时间' },
 ];
 
+const WORKS_PAGINATION_MODES: { value: WorksPaginationMode; label: string; }[] = [
+  { value: 'paginate', label: '分页' },
+  { value: 'infinite', label: '无限滚动' },
+];
+
+const WORKS_PAGINATOR_POSITIONS: { value: WorksPaginatorPosition; label: string; }[] = [
+  { value: 'top', label: '顶部' },
+  { value: 'bottom', label: '底部' },
+  { value: 'both', label: '顶部和底部' },
+];
+
 /**
  * 设置页：纯本地偏好（settingsStore，localStorage 持久化），
  * 不依赖 userStore / 登录态；改动即时生效，无需保存按钮。
@@ -37,6 +48,8 @@ const TIME_DISPLAY_MODES: { value: TimeDisplayMode; label: string; }[] = [
  * - 颜色模式：auto / light / dark，经 ThemeRoot 传给 M3eTheme
  * - 媒体通知：开关 MediaSession（锁屏/系统媒体面板），useMediaSession 读取
  * - 时间显示：总时长（22:33）/ 剩余时间（-1:39），作用 PlayerBar 与全屏播放器
+ * - 作品库翻页方式：分页（可跳页）/ 无限滚动
+ * - 分页控件位置：作品库分页控件显示在顶部 / 底部 / 顶部和底部
  * - 悬浮歌词：LyricsBar 的字体大小 / 换行行数上限 / 背景透明度
  */
 export default function Settings() {
@@ -52,6 +65,10 @@ export default function Settings() {
   const setCoverBlurMode = useSettingsStore(s => s.setCoverBlurMode);
   const timeDisplayMode = useSettingsStore(s => s.timeDisplayMode);
   const setTimeDisplayMode = useSettingsStore(s => s.setTimeDisplayMode);
+  const worksPaginationMode = useSettingsStore(s => s.worksPaginationMode);
+  const setWorksPaginationMode = useSettingsStore(s => s.setWorksPaginationMode);
+  const worksPaginatorPosition = useSettingsStore(s => s.worksPaginatorPosition);
+  const setWorksPaginatorPosition = useSettingsStore(s => s.setWorksPaginatorPosition);
 
   return (
     <div className='mx-auto flex max-w-2xl flex-col gap-4'>
@@ -135,6 +152,52 @@ export default function Settings() {
                   value={m.value}
                   checked={timeDisplayMode === m.value}>
                   {m.label}
+                </M3eButtonSegment>
+              ))}
+            </M3eSegmentedButton>
+          </div>
+
+          {/* 作品库翻页方式 */}
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+            <span className='flex flex-col'>
+              <span>作品库翻页方式</span>
+              <span className='text-sm opacity-70'>分页（可跳页，页码与筛选同步到地址栏和标题）或无限滚动</span>
+            </span>
+            <M3eSegmentedButton
+              className='w-full sm:w-auto'
+              onInput={e =>
+                setWorksPaginationMode(
+                  (e.target as HTMLInputElement).value as WorksPaginationMode,
+                )}>
+              {WORKS_PAGINATION_MODES.map(m => (
+                <M3eButtonSegment
+                  key={m.value}
+                  value={m.value}
+                  checked={worksPaginationMode === m.value}>
+                  {m.label}
+                </M3eButtonSegment>
+              ))}
+            </M3eSegmentedButton>
+          </div>
+
+          {/* 分页控件显示位置 */}
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+            <span className='flex flex-col'>
+              <span>分页控件显示位置</span>
+              <span className='text-sm opacity-70'>作品库分页控件显示在列表顶部、底部或两者</span>
+            </span>
+            <M3eSegmentedButton
+              className='w-full sm:w-auto'
+              onInput={e =>
+                setWorksPaginatorPosition(
+                  (e.target as HTMLInputElement).value as WorksPaginatorPosition,
+                )}>
+              {WORKS_PAGINATOR_POSITIONS.map(p => (
+                <M3eButtonSegment
+                  key={p.value}
+                  value={p.value}
+                  checked={worksPaginatorPosition === p.value}>
+                  {p.label}
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
