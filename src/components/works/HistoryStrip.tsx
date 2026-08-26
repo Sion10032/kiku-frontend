@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/arrow_forward';
+import { M3eCard } from '@m3e/react/card';
 import CoverSFW from '../common/CoverSFW';
 import { useRecentHistory } from '../../queries/useHistoryQuery';
 import type { Work } from '../../types';
@@ -42,14 +43,18 @@ export default function HistoryStrip() {
 /** 条带内轻量卡片：固定宽度封面 + 两行截断标题。 */
 function HistoryCard({ work }: { work: Work; }) {
   return (
-    <div className='w-40 shrink-0'>
-      <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
-      <Link
-        to='/work/$id'
-        params={{ id: work.id }}
-        className='mt-1.5 line-clamp-2 text-sm no-underline'>
-        {work.title}
-      </Link>
-    </div>
+    <M3eCard className='w-48 shrink-0 [--m3e-card-padding:0px]'>
+      <div slot='header' className='relative p-0'>
+        <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
+      </div>
+      <div slot='content' className='flex flex-col gap-1 p-2'>
+        <Link
+          to='/work/$id'
+          params={{ id: work.id }}
+          className='line-clamp-2 text-sm no-underline'>
+          {work.title}
+        </Link>
+      </div>
+    </M3eCard>
   );
 }
