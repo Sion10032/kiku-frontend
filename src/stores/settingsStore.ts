@@ -6,6 +6,9 @@ export type ColorMode = 'light' | 'dark' | 'auto';
 /** NSFW 封面显示模式。 */
 export type CoverBlurMode = 'always' | 'hover' | 'never';
 
+/** 播放器时间显示模式：total 总时长 / remaining 剩余时间（-mm:ss）。 */
+export type TimeDisplayMode = 'total' | 'remaining';
+
 /** 悬浮歌词（LyricsBar）设置。 */
 export interface FloatingLyricsSettings {
   /** 是否显示悬浮歌词 */
@@ -39,12 +42,15 @@ interface SettingsState {
   preview: PreviewSettings;
   /** NSFW 封面显示模式：always 始终模糊 / hover 悬浮显示 / never 始终显示 */
   coverBlurMode: CoverBlurMode;
+  /** 播放器时间显示：total 总时长 / remaining 剩余时间 */
+  timeDisplayMode: TimeDisplayMode;
   setDynamicColor: (on: boolean) => void;
   setColorMode: (mode: ColorMode) => void;
   setMediaNotification: (on: boolean) => void;
   setFloatingLyrics: (patch: Partial<FloatingLyricsSettings>) => void;
   setPreview: (patch: Partial<PreviewSettings>) => void;
   setCoverBlurMode: (mode: CoverBlurMode) => void;
+  setTimeDisplayMode: (mode: TimeDisplayMode) => void;
 }
 
 /** 本地设置（纯用户偏好，localStorage 持久化，不依赖登录态）。 */
@@ -60,10 +66,12 @@ export const useSettingsStore = create<SettingsState>()(
       floatingLyrics: { enabled: false, fontSize: 14, lines: 2, opacity: 0.8 },
       preview: { textFontSize: 14, textWordWrap: true },
       coverBlurMode: 'hover',
+      timeDisplayMode: 'total',
       setFloatingLyrics: patch =>
         set(s => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: patch => set(s => ({ preview: { ...s.preview, ...patch } })),
       setCoverBlurMode: mode => set({ coverBlurMode: mode }),
+      setTimeDisplayMode: mode => set({ timeDisplayMode: mode }),
     }),
     {
       name: 'kiku-settings',
@@ -74,6 +82,7 @@ export const useSettingsStore = create<SettingsState>()(
         floatingLyrics: s.floatingLyrics,
         preview: s.preview,
         coverBlurMode: s.coverBlurMode,
+        timeDisplayMode: s.timeDisplayMode,
       }),
     },
   ),

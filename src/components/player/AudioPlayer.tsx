@@ -24,9 +24,10 @@ import LyricsPanel from './LyricsPanel';
 import QueueDialog from './QueueDialog';
 import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../../constants';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { mediaUrl } from '../../api/client';
 import { seekTo } from '../../hooks/usePlayer';
-import { formatDuration } from '../../utils/format';
+import { formatDuration, formatRemaining } from '../../utils/format';
 
 /**
  * 全屏播放器覆盖层：hide=false 时显示。
@@ -61,6 +62,7 @@ export default function AudioPlayer() {
   const triggerForward = usePlayerStore(s => s.triggerForward);
   const toggleHide = usePlayerStore(s => s.toggleHide);
   const lyricLines = usePlayerStore(s => s.lyricLines);
+  const timeDisplayMode = useSettingsStore(s => s.timeDisplayMode);
 
   const [ queueOpen, setQueueOpen ] = useState(false);
   const [ sleepOpen, setSleepOpen ] = useState(false);
@@ -176,7 +178,9 @@ export default function AudioPlayer() {
             <M3eSliderThumb value={Math.floor(currentTime)} />
           </M3eSlider>
           <span className='shrink-0 text-xs tabular-nums opacity-70'>
-            {formatDuration(duration)}
+            {timeDisplayMode === 'remaining'
+              ? formatRemaining(currentTime, duration)
+              : formatDuration(duration)}
           </span>
         </div>
 

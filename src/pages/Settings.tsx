@@ -6,7 +6,7 @@ import {
 } from '@m3e/react/segmented-button';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
-import { useSettingsStore, type ColorMode, type CoverBlurMode } from '../stores/settingsStore';
+import { useSettingsStore, type ColorMode, type CoverBlurMode, type TimeDisplayMode } from '../stores/settingsStore';
 import { useThemeStore, DEFAULT_SEED } from '../stores/themeStore';
 
 const COLOR_MODES: { value: ColorMode; label: string; }[] = [
@@ -23,6 +23,11 @@ const COVER_BLUR_MODES: { value: CoverBlurMode; label: string; }[] = [
   { value: 'never', label: '始终显示' },
 ];
 
+const TIME_DISPLAY_MODES: { value: TimeDisplayMode; label: string; }[] = [
+  { value: 'total', label: '总时长' },
+  { value: 'remaining', label: '剩余时间' },
+];
+
 /**
  * 设置页：纯本地偏好（settingsStore，localStorage 持久化），
  * 不依赖 userStore / 登录态；改动即时生效，无需保存按钮。
@@ -31,6 +36,7 @@ const COVER_BLUR_MODES: { value: CoverBlurMode; label: string; }[] = [
  *   关闭瞬间恢复默认紫（#6750A4），详情页不再换色
  * - 颜色模式：auto / light / dark，经 ThemeRoot 传给 M3eTheme
  * - 媒体通知：开关 MediaSession（锁屏/系统媒体面板），useMediaSession 读取
+ * - 时间显示：总时长（22:33）/ 剩余时间（-1:39），作用 PlayerBar 与全屏播放器
  * - 悬浮歌词：LyricsBar 的字体大小 / 换行行数上限 / 背景透明度
  */
 export default function Settings() {
@@ -44,6 +50,8 @@ export default function Settings() {
   const setFloatingLyrics = useSettingsStore(s => s.setFloatingLyrics);
   const coverBlurMode = useSettingsStore(s => s.coverBlurMode);
   const setCoverBlurMode = useSettingsStore(s => s.setCoverBlurMode);
+  const timeDisplayMode = useSettingsStore(s => s.timeDisplayMode);
+  const setTimeDisplayMode = useSettingsStore(s => s.setTimeDisplayMode);
 
   return (
     <div className='mx-auto flex max-w-2xl flex-col gap-4'>
@@ -103,6 +111,29 @@ export default function Settings() {
                   key={m.value}
                   value={m.value}
                   checked={coverBlurMode === m.value}>
+                  {m.label}
+                </M3eButtonSegment>
+              ))}
+            </M3eSegmentedButton>
+          </div>
+
+          {/* 时间显示模式 */}
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+            <span className='flex flex-col'>
+              <span>时间显示</span>
+              <span className='text-sm opacity-70'>播放器中显示总时长（22:33）或剩余时间（-1:39）</span>
+            </span>
+            <M3eSegmentedButton
+              className='w-full sm:w-auto'
+              onInput={e =>
+                setTimeDisplayMode(
+                  (e.target as HTMLInputElement).value as TimeDisplayMode,
+                )}>
+              {TIME_DISPLAY_MODES.map(m => (
+                <M3eButtonSegment
+                  key={m.value}
+                  value={m.value}
+                  checked={timeDisplayMode === m.value}>
                   {m.label}
                 </M3eButtonSegment>
               ))}

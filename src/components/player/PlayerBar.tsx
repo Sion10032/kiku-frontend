@@ -12,8 +12,9 @@ import '@m3e/icons/outlined/music_note';
 import '@m3e/icons/outlined/volume_up';
 import '@m3e/icons/outlined/volume_off';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { mediaUrl } from '../../api/client';
-import { formatDuration } from '../../utils/format';
+import { formatDuration, formatRemaining } from '../../utils/format';
 import LyricsBar from './LyricsBar';
 import MarqueeText from './MarqueeText';
 import ProgressBar from './ProgressBar';
@@ -50,6 +51,7 @@ export default function PlayerBar() {
   const nextTrack = usePlayerStore(s => s.nextTrack);
   const changePlayMode = usePlayerStore(s => s.changePlayMode);
   const toggleHide = usePlayerStore(s => s.toggleHide);
+  const timeDisplayMode = useSettingsStore(s => s.timeDisplayMode);
 
   const [ queueOpen, setQueueOpen ] = useState(false);
   const [ coverFailed, setCoverFailed ] = useState(false);
@@ -115,7 +117,15 @@ export default function PlayerBar() {
         <div className='flex shrink-0 items-center'>
           {/* 时间 */}
           <span className='mr-1 shrink-0 text-xs tabular-nums opacity-70'>
-            {formatDuration(currentTime)} / {formatDuration(duration)}
+            {formatDuration(currentTime)}
+            {' '}
+            /
+            {' '}
+            {
+              timeDisplayMode === 'remaining'
+                ? formatRemaining(currentTime, duration)
+                : formatDuration(duration)
+            }
           </span>
           {/* 核心组：窄屏保留 ▶/⏸ + ☰，其余 md: 起显示 */}
           <M3eIconButton
