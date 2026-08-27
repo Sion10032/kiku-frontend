@@ -1,13 +1,10 @@
 import { useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
-import {
-  M3ePaginator,
-  type PaginatorPageEventDetail,
-} from '@m3e/react/paginator';
 import { useHistoryPage } from '../queries/useHistoryQuery';
 import { useUserStore } from '../stores/userStore';
 import { historyRoute } from '../routes/history';
+import Paginator from '../components/common/Paginator';
 import WorkCard from '../components/works/WorkCard';
 
 /**
@@ -31,8 +28,8 @@ export default function History() {
     ? Math.max(1, Math.ceil(pagination.totalCount / pagination.pageSize))
     : 1;
 
-  function onPageChange(e: CustomEvent<PaginatorPageEventDetail>) {
-    const next = e.detail.pageIndex + 1;
+  function onPageChange(index: number) {
+    const next = index + 1; // 页码从 0 起，转 1 起写 URL
     navigate({
       search: { page: next === 1 ? undefined : next },
     });
@@ -95,18 +92,11 @@ export default function History() {
 
       {/* 分页器 */}
       {!isLoading && pagination && totalCount != null && totalCount > 0 && (
-        <div className='mt-6 flex justify-center'>
-          <M3ePaginator
+        <div className='mt-6 flex items-center justify-center gap-2'>
+          <Paginator
             length={totalCount}
             pageSize={pagination.pageSize}
             pageIndex={page - 1}
-            hidePageSize
-            showFirstLastButtons
-            itemsPerPageLabel='每页条数：'
-            previousPageLabel='上一页'
-            nextPageLabel='下一页'
-            firstPageLabel='第一页'
-            lastPageLabel='最后一页'
             onPage={onPageChange} />
         </div>
       )}

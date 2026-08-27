@@ -7,10 +7,6 @@ import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { M3eList } from '@m3e/react/list';
-import {
-  M3ePaginator,
-  type PaginatorPageEventDetail,
-} from '@m3e/react/paginator';
 import '@m3e/icons/outlined/apps';
 import '@m3e/icons/outlined/view_list';
 import { useQuery } from '@tanstack/react-query';
@@ -26,6 +22,7 @@ import {
   saveSortOption,
   DEFAULT_SORT,
 } from '../utils/sort';
+import Paginator from '../components/common/Paginator';
 import WorkCard from '../components/works/WorkCard';
 import WorkListItem from '../components/works/WorkListItem';
 import HistoryStrip from '../components/works/HistoryStrip';
@@ -156,8 +153,8 @@ export default function Works() {
   });
 
   // 跳页：写 URL search（page=1 时移除参数）
-  function onPageChange(e: CustomEvent<PaginatorPageEventDetail>) {
-    const next = e.detail.pageIndex + 1; // pageIndex 从 0 开始
+  function onPageChange(index: number) {
+    const next = index + 1; // 页码从 0 起，转 1 起写 URL
     navigate({
       search: prev => ({ ...prev, page: next === 1 ? undefined : next }),
     });
@@ -177,19 +174,12 @@ export default function Works() {
   // 分页控件（仅分页模式）：提取为局部元素，按设置在网格前/后渲染，两处共用同一 props
   const paginator = isPaginated && !loading && pagination && pagination.totalCount > 0
     ? (
-      <div className='mt-6 flex justify-center'>
-        <M3ePaginator
+      <div className='mt-6 flex items-center justify-center gap-2'>
+        <Paginator
           length={pagination.totalCount}
           pageSize={pagination.pageSize}
           pageIndex={page - 1}
-          hidePageSize
-          showFirstLastButtons
           disabled={paged.isFetching}
-          itemsPerPageLabel='每页条数：'
-          previousPageLabel='上一页'
-          nextPageLabel='下一页'
-          firstPageLabel='第一页'
-          lastPageLabel='最后一页'
           onPage={onPageChange} />
       </div>
     )
