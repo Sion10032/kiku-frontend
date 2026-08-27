@@ -62,15 +62,20 @@ export default function DashboardLayout() {
         </span>
       </M3eAppBar>
 
-      <M3eTabs className='min-h-12 flex-none border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] px-4'>
+      <M3eTabs
+        className='[--m3e-tab-spacing:0] sm:[--m3e-tab-spacing:var(--md-sys-measurement-space100)]'
+        stretch
+      >
         {NAV_ENTRIES.map((entry) => (
           <M3eTab
             key={entry.to}
             selected={isActive(pathname, entry)}
+            aria-label={entry.label}
             onClick={() => navigate({ to: entry.to })}
           >
             <M3eIcon slot='icon' name={entry.icon} />
-            {entry.label}
+            {/* 窄屏仅图标（文字隐藏后可访问名由 aria-label 保证），≥sm 恢复图标+文字 */}
+            <span className='hidden sm:inline'>{entry.label}</span>
           </M3eTab>
         ))}
       </M3eTabs>
