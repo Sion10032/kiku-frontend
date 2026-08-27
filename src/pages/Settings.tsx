@@ -57,6 +57,7 @@ const WORKS_PAGINATOR_POSITIONS: {
  * - 动态取色：开启后进入作品详情时从封面提取主题种子色；
  *   关闭瞬间恢复默认紫（#6750A4），详情页不再换色
  * - 颜色模式：auto / light / dark，经 ThemeRoot 传给 M3eTheme
+ * - 界面大小：全局缩放（80%–130%），首次使用按屏幕像素密度自动选择一次
  * - 媒体通知：开关 MediaSession（锁屏/系统媒体面板），useMediaSession 读取
  * - 时间显示：总时长（22:33）/ 剩余时间（-1:39），作用 PlayerBar 与全屏播放器
  * - 作品库翻页方式：分页（可跳页）/ 无限滚动
@@ -89,6 +90,8 @@ export default function Settings() {
   );
   const worksHistoryStrip = useSettingsStore((s) => s.worksHistoryStrip);
   const setShowHistoryStrip = useSettingsStore((s) => s.setShowHistoryStrip);
+  const uiScale = useSettingsStore((s) => s.uiScale);
+  const setUiScale = useSettingsStore((s) => s.setUiScale);
 
   return (
     <div className='mx-auto flex max-w-2xl flex-col gap-4'>
@@ -116,6 +119,30 @@ export default function Settings() {
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
+          </div>
+
+          {/* 界面大小：rem 尺寸体系，改 html font-size 全屏等比缩放；
+              自动仅在首次使用时按屏幕像素密度推断一次 */}
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center justify-between gap-4'>
+              <span className='flex flex-col'>
+                <span>界面大小</span>
+              </span>
+              <span className='shrink-0 text-sm tabular-nums opacity-70'>
+                {uiScale}%
+              </span>
+            </div>
+            <M3eSlider
+              min={80}
+              max={130}
+              step={5}
+              labelled
+              onInput={(e) =>
+                setUiScale((e.target as M3eSliderThumbElement).value ?? 100)
+              }
+            >
+              <M3eSliderThumb value={uiScale} />
+            </M3eSlider>
           </div>
 
           {/* 动态取色 */}

@@ -15,6 +15,20 @@ export type WorksPaginationMode = 'paginate' | 'infinite';
 /** 作品库分页控件显示位置：top 顶部 / bottom 底部 / both 两处都显示。 */
 export type WorksPaginatorPosition = 'top' | 'bottom' | 'both';
 
+/**
+ * 根据屏幕像素密度（devicePixelRatio）推断界面缩放档位（%）。<br />
+ * dpr=1 → 100%；dpr 每高 1 放大约 12%，dpr<1 反向缩小；按 5% 取整并夹在 80–130。
+ * 例：dpr=2 → 110%，dpr=1.25 → 105%，dpr=0.75 → 95%。
+ */
+export function detectUiScale(): number {
+  const dpr = window.devicePixelRatio;
+  return clamp(Math.round((100 + (dpr - 1) * 12) / 5) * 5, 80, 130);
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
 /** 悬浮歌词（LyricsBar）设置。 */
 export interface FloatingLyricsSettings {
   /** 是否显示悬浮歌词 */
@@ -56,6 +70,10 @@ interface SettingsState {
   worksPaginatorPosition: WorksPaginatorPosition;
   /** 作品库是否显示「最近收听」条（默认显示） */
   worksHistoryStrip: boolean;
+  /** 界面整体缩放（%，80–130 步进 5），改 html font-size 全局等比缩放 */
+  uiScale: number;
+  /** 是否在首次加载时按屏幕像素密度自动推断 uiScale（推断一次后置 false，内部标记不对外暴露） */
+  uiScaleAuto: boolean;
   setDynamicColor: (on: boolean) => void;
   setColorMode: (mode: ColorMode) => void;
   setMediaNotification: (on: boolean) => void;
@@ -66,6 +84,7 @@ interface SettingsState {
   setWorksPaginationMode: (mode: WorksPaginationMode) => void;
   setWorksPaginatorPosition: (position: WorksPaginatorPosition) => void;
   setShowHistoryStrip: (on: boolean) => void;
+  setUiScale: (scale: number) => void;
 }
 
 /** 本地设置（纯用户偏好，localStorage 持久化，不依赖登录态）。 */
@@ -85,6 +104,8 @@ export const useSettingsStore = create<SettingsState>()(
       worksPaginationMode: 'paginate',
       worksPaginatorPosition: 'both',
       worksHistoryStrip: true,
+      uiScale: 100,
+      uiScaleAuto: true,
       setFloatingLyrics: (patch) =>
         set((s) => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: (patch) =>
@@ -95,6 +116,7 @@ export const useSettingsStore = create<SettingsState>()(
       setWorksPaginatorPosition: (position) =>
         set({ worksPaginatorPosition: position }),
       setShowHistoryStrip: (on) => set({ worksHistoryStrip: on }),
+      setUiScale: (scale) => set({ uiScale: scale }),
     }),
     {
       name: 'kiku-settings',
@@ -109,7 +131,16 @@ export const useSettingsStore = create<SettingsState>()(
         worksPaginationMode: s.worksPaginationMode,
         worksPaginatorPosition: s.worksPaginatorPosition,
         worksHistoryStrip: s.worksHistoryStrip,
+        uiScale: s.uiScale,
+        uiScaleAuto: s.uiScaleAuto,
       }),
+      // 首次使用时按屏幕像素密度推断一次界面缩放档位，之后沿用持久化值
+      onRehydrateStorage: () => (state) => {
+        if (state?.uiScaleAuto) {
+          useSettingsStore.setState({ uiScaleAuto: false });
+          state.setUiScale(detectUiScale());
+        }
+      },
     },
   ),
 );

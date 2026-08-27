@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { M3eTheme } from '@m3e/react/theme';
 import App from './App';
@@ -9,6 +10,11 @@ export default function ThemeRoot() {
   // seed 由封面取色写入，colorMode 由设置页切换（auto 跟随系统）。
   const seed = useThemeStore((s) => s.seed);
   const colorMode = useSettingsStore((s) => s.colorMode);
+  // 界面缩放：尺寸体系基于 rem，改 html font-size 即可全屏等比缩放
+  const uiScale = useSettingsStore((s) => s.uiScale);
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${(16 * uiScale) / 100}px`;
+  }, [uiScale]);
   // m3e-theme 只有作为 <body> 的直接子元素，才会把动态色彩变量注入
   // document 级样式表（html { --md-sys-color-* } ...），并为 body 应用
   // 主题背景/前景/滚动条颜色、接管 html 的 color-scheme（ThemeElement.ts
