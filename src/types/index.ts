@@ -320,6 +320,8 @@ export interface ScanSnapshot {
   failedTasks: ScanTaskPayload[];
   completed: number;
   logs: ScanLogPayload[];
+  /** 产出该快照的运行模式；缺省视为 'scan' */
+  mode?: 'scan' | 'update';
 }
 
 export interface ScanInitState {

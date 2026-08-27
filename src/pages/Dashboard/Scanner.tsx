@@ -8,7 +8,7 @@ import '@m3e/icons/outlined/sync';
 import '@m3e/icons/outlined/check_circle';
 import '@m3e/icons/outlined/error';
 import { useSSE } from '../../hooks/useSSE';
-import { startScan, killScan } from '../../api/scanner';
+import { startScan, killScan, type ScanMode } from '../../api/scanner';
 import type {
   ScanInitState,
   ScanLogPayload,
@@ -39,6 +39,7 @@ export default function Scanner() {
     failed: number;
     skipped: number;
   } | null>(null);
+  const modeRef = useRef<ScanMode>('scan'); // SCAN_FINISHED 时区分文案
 
   // 用 ref 持有最新 state，避免 SSE 回调闭包陈旧；每次渲染后同步
   const stateRef = useRef(state);
@@ -55,6 +56,7 @@ export default function Scanner() {
         if (init.isScanning) {
           setState('running');
           if (init.snapshot) {
+            if (init.snapshot.mode) modeRef.current = init.snapshot.mode;
             setTasks(init.snapshot.tasks);
             setFailedTasks(init.snapshot.failedTasks);
             setMainLogs(init.snapshot.logs);
@@ -111,8 +113,12 @@ export default function Scanner() {
         setState('finished');
         setResultMessage(
           r
-            ? `扫描完成：新增 ${r.added}，更新 ${r.updated}，失败 ${r.failed}，跳过 ${r.skipped}`
-            : '扫描完成',
+            ? modeRef.current === 'update'
+              ? `刷新完成：更新 ${r.updated}，失败 ${r.failed}`
+              : `扫描完成：新增 ${r.added}，更新 ${r.updated}，失败 ${r.failed}，跳过 ${r.skipped}`
+            : modeRef.current === 'update'
+              ? '刷新完成'
+              : '扫描完成',
         );
         break;
       }
@@ -125,7 +131,8 @@ export default function Scanner() {
 
   useSSE('/api/scanner/events', handleEvent);
 
-  async function handleScan() {
+  async function handleStart(mode: ScanMode) {
+    modeRef.current = mode;
     setTasks([]);
     setFailedTasks([]);
     setMainLogs([]);
@@ -134,10 +141,16 @@ export default function Scanner() {
     setState('running');
     resultsRef.current = null;
     try {
-      await startScan();
+      await startScan(mode);
     } catch (err) {
       setState('error');
-      M3eSnackbar.open(err instanceof Error ? err.message : '扫描启动失败');
+      M3eSnackbar.open(
+        err instanceof Error
+          ? err.message
+          : mode === 'update'
+            ? '刷新启动失败'
+            : '扫描启动失败',
+      );
     }
   }
 
@@ -156,11 +169,19 @@ export default function Scanner() {
     <div className='flex flex-col gap-4'>
       {/* 操作按钮 */}
       <div className='flex flex-wrap gap-3'>
-        <M3eButton variant='filled' disabled={isRunning} onClick={handleScan}>
+        <M3eButton
+          variant='filled'
+          disabled={isRunning}
+          onClick={() => handleStart('scan')}
+        >
           <M3eIcon slot='leadingIcon' name='play_arrow' />
           扫描本地音声库
         </M3eButton>
-        <M3eButton variant='tonal' disabled={isRunning} onClick={handleScan}>
+        <M3eButton
+          variant='tonal'
+          disabled={isRunning}
+          onClick={() => handleStart('update')}
+        >
           <M3eIcon slot='leadingIcon' name='sync' />
           刷新音声库信息
         </M3eButton>
