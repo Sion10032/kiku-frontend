@@ -170,25 +170,34 @@ function LeaveGuard({ isDirty }: { isDirty: boolean }) {
     withResolver: true,
     enableBeforeUnload: true,
   });
-  if (blocker.status !== 'blocked') return null;
-  // 上面 early return 后 TS 已将 blocker 窄化为 blocked 分支，reset/proceed 必然存在
+  // 常驻挂载 + open 控制
+  const blocked = blocker.status === 'blocked';
   return (
     <M3eDialog
-      open
+      open={blocked}
       dismissible
       closeLabel='关闭'
-      onClosed={() => blocker.reset()}
+      onClosed={() => {
+        if (blocker.status === 'blocked') blocker.reset();
+      }}
     >
       <span slot='header'>有未保存的更改</span>
       <p className='m-0 text-sm'>离开将丢弃当前修改，确定继续吗？</p>
       <div slot='actions' className='flex justify-end gap-2'>
-        <M3eButton variant='text' onClick={() => blocker.reset()}>
+        <M3eButton
+          variant='text'
+          onClick={() => {
+            if (blocker.status === 'blocked') blocker.reset();
+          }}
+        >
           留下
         </M3eButton>
         <M3eButton
           variant='text'
           className='text-[var(--md-sys-color-error)]'
-          onClick={() => blocker.proceed()}
+          onClick={() => {
+            if (blocker.status === 'blocked') blocker.proceed();
+          }}
         >
           离开
         </M3eButton>
