@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { M3eButton } from '@m3e/react/button';
 import { M3eCard } from '@m3e/react/card';
+import { M3eDialog } from '@m3e/react/dialog';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
 import { M3eOption } from '@m3e/react/option';
@@ -146,59 +147,23 @@ export default function UserManage() {
                 </div>
 
                 <div className='flex shrink-0 gap-1'>
-                  {editingUser === user.name ? (
-                    <>
-                      <M3eFormField variant='outlined' hideSubscript='always'>
-                        <label slot='label' htmlFor={`pwd-${user.name}`}>
-                          新密码
-                        </label>
-                        <input
-                          id={`pwd-${user.name}`}
-                          type='password'
-                          value={newPwd}
-                          onChange={(e) => setNewPwd(e.target.value)}
-                          placeholder='至少 5 个字符'
-                          className='w-full border-none bg-transparent py-2 text-sm outline-none'
-                        />
-                      </M3eFormField>
-                      <M3eButton
-                        variant='text'
-                        onClick={() => {
-                          setEditingUser(null);
-                          setNewPwd('');
-                        }}
-                      >
-                        取消
-                      </M3eButton>
-                      <M3eButton
-                        variant='filled'
-                        disabled={saving}
-                        onClick={handleUpdatePassword}
-                      >
-                        保存
-                      </M3eButton>
-                    </>
-                  ) : (
-                    <>
-                      <M3eButton
-                        variant='text'
-                        onClick={() => {
-                          setEditingUser(user.name);
-                          setNewPwd('');
-                        }}
-                      >
-                        改密
-                      </M3eButton>
-                      <M3eButton
-                        variant='text'
-                        className='text-[var(--md-sys-color-error)]'
-                        disabled={saving}
-                        onClick={() => handleDelete(user.name)}
-                      >
-                        删除
-                      </M3eButton>
-                    </>
-                  )}
+                  <M3eButton
+                    variant='text'
+                    onClick={() => {
+                      setEditingUser(user.name);
+                      setNewPwd('');
+                    }}
+                  >
+                    改密
+                  </M3eButton>
+                  <M3eButton
+                    variant='text'
+                    className='text-[var(--md-sys-color-error)]'
+                    disabled={saving}
+                    onClick={() => handleDelete(user.name)}
+                  >
+                    删除
+                  </M3eButton>
                 </div>
               </div>
             ))}
@@ -275,6 +240,70 @@ export default function UserManage() {
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />
+
+      {/* 修改密码 */}
+      <PasswordDialog
+        user={editingUser}
+        pwd={newPwd}
+        saving={pwdMutation.isPending}
+        onPwdChange={setNewPwd}
+        onSave={handleUpdatePassword}
+        onClose={() => setEditingUser(null)}
+      />
     </div>
+  );
+}
+
+/** 改密弹窗：常驻挂载 + open 控制。 */
+function PasswordDialog({
+  user,
+  pwd,
+  saving,
+  onPwdChange,
+  onSave,
+  onClose,
+}: {
+  user: string | null;
+  pwd: string;
+  saving: boolean;
+  onPwdChange: (value: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <M3eDialog
+      open={user !== null}
+      dismissible
+      closeLabel='关闭'
+      onClosed={onClose}
+    >
+      <span slot='header'>修改密码</span>
+      <div className='flex flex-col gap-4 py-2'>
+        <p className='m-0 text-sm opacity-70'>用户：{user}</p>
+        <p className='m-0 text-sm opacity-70'>新密码（至少 5 个字符）</p>
+        <M3eFormField
+          variant='outlined'
+          hideSubscript='always'
+          floatLabel='always'
+        >
+          <input
+            id='dlg-new-pwd'
+            aria-label='新密码'
+            type='password'
+            value={pwd}
+            onChange={(e) => onPwdChange(e.target.value)}
+            className='w-full border-none bg-transparent py-2 text-sm outline-none'
+          />
+        </M3eFormField>
+      </div>
+      <div slot='actions' className='flex justify-end gap-2'>
+        <M3eButton variant='text' onClick={onClose}>
+          取消
+        </M3eButton>
+        <M3eButton variant='filled' disabled={saving} onClick={onSave}>
+          保存
+        </M3eButton>
+      </div>
+    </M3eDialog>
   );
 }
