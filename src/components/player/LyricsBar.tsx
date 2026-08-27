@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import clsx from 'clsx';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 
@@ -75,9 +76,10 @@ export default function LyricsBar() {
           WebkitLineClamp: lines,
         }),
       }}
-      className={`absolute inset-x-0 bottom-full mx-auto mb-2 w-max max-w-[min(90vw,560px)] rounded-full py-1.5 shadow-lg animate-[fade-in_0.3s_ease-out] ${
-        scrolling ? 'flex px-3' : 'overflow-hidden px-4 text-center'
-      }`}
+      className={clsx(
+        'absolute inset-x-0 bottom-full mx-auto mb-2 w-max max-w-[min(90vw,560px)] rounded-full py-1.5 shadow-lg animate-[fade-in_0.3s_ease-out]',
+        scrolling ? 'flex px-3' : 'overflow-hidden px-4 text-center',
+      )}
     >
       {lines === 1 ? (
         /* 裁切/渐隐都在这层视口（无 padding），胶囊 px-3 保持实底；

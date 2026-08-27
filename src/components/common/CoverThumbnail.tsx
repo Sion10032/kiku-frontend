@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import clsx from 'clsx';
 import { Link } from '@tanstack/react-router';
 import { mediaUrl } from '../../api/client';
 
@@ -33,7 +34,10 @@ export default function CoverThumbnail({
     <Link
       to='/work/$id'
       params={{ id: workId }}
-      className={`relative block shrink-0 overflow-hidden rounded-lg ${sizeClass}`}
+      className={clsx(
+        'relative block shrink-0 overflow-hidden rounded-lg',
+        sizeClass,
+      )}
     >
       {failed ? (
         <div className='h-full w-full bg-black/10' />

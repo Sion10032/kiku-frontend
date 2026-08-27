@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import clsx from 'clsx';
 
 /**
  * 单行文本；溢出时 hover 滚动一轮（0 → -50% → 0 往返），不溢出保持静止。
@@ -27,12 +28,13 @@ export default function MarqueeText({
   }, [text]);
 
   return (
-    <span ref={ref} className={`block truncate ${className}`}>
+    <span ref={ref} className={clsx('block truncate', className)}>
       {/* 内层：溢出且 hover 时加 marquee 动画；文本重复两份实现无缝往返 */}
       <span
-        className={`inline-block whitespace-nowrap ${
-          overflow ? 'group-hover:animate-marquee' : 'truncate'
-        }`}
+        className={clsx(
+          'inline-block whitespace-nowrap',
+          overflow ? 'group-hover:animate-marquee' : 'truncate',
+        )}
       >
         {text}
         {overflow && <span className='pl-8'>{text}</span>}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import clsx from 'clsx';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -121,13 +122,13 @@ export default function AudioPlayer() {
                 }
               : undefined
           }
-          className={[
+          className={clsx(
             'flex flex-col items-center justify-center gap-4 overflow-y-auto transition-opacity duration-300',
             'max-lg:absolute max-lg:inset-0 max-lg:px-6 max-lg:pb-6 lg:flex-1',
             showLyrics
               ? 'max-lg:pointer-events-none max-lg:opacity-0'
               : 'max-lg:opacity-100',
-          ].join(' ')}
+          )}
         >
           {track.workId ? (
             <img
@@ -149,7 +150,7 @@ export default function AudioPlayer() {
         {/* 歌词面板：宽屏常驻（无歌词时隐藏）；窄屏点空白处返回封面 */}
         <div
           onClick={() => setShowLyrics(false)}
-          className={[
+          className={clsx(
             'flex min-h-0 flex-col transition-opacity duration-300',
             'max-lg:absolute max-lg:inset-0 max-lg:px-6 max-lg:pt-8 max-lg:pb-6',
             'lg:flex-1 lg:py-8',
@@ -157,7 +158,7 @@ export default function AudioPlayer() {
               ? 'max-lg:opacity-100'
               : 'max-lg:pointer-events-none max-lg:opacity-0',
             hasLyrics ? 'lg:flex' : 'lg:hidden',
-          ].join(' ')}
+          )}
         >
           <LyricsPanel />
         </div>

@@ -1,4 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
+import clsx from 'clsx';
 import { M3eCard } from '@m3e/react/card';
 import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
 import '@m3e/icons/outlined/mic';
@@ -39,7 +40,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   const cardVars = thumbnail ? '' : '[--m3e-card-padding:0px]';
 
   return (
-    <M3eCard className={['h-full', cardVars].join(' ')}>
+    <M3eCard className={clsx('h-full', cardVars)}>
       <div slot='header' className='relative p-0'>
         <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
         {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
@@ -47,7 +48,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
       </div>
 
       {!thumbnail && (
-        <div slot='content' className={['flex flex-col gap-2 p-4'].join(' ')}>
+        <div slot='content' className='flex flex-col gap-2 p-4'>
           <Link
             to='/work/$id'
             params={{ id: work.id }}

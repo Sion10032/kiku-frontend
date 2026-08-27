@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
+import clsx from 'clsx';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/play_arrow';
 import { usePlayerStore } from '../../stores/playerStore';
@@ -89,12 +90,12 @@ export default function LyricsPanel() {
               key={`${line.start}-${index}`}
               ref={active ? activeRef : undefined}
               onClick={(e) => handleLineClick(e, index, line.start)}
-              className={[
+              className={clsx(
                 'flex items-center justify-center gap-1 cursor-pointer text-center leading-relaxed transition-all',
                 active || pending
                   ? 'text-xl font-medium text-(--md-sys-color-primary)'
                   : 'text-base text-(--md-sys-color-on-surface-variant) hover:text-(--md-sys-color-on-surface)',
-              ].join(' ')}
+              )}
             >
               {pending && (
                 <span className='mr-1.5 shrink-0 text-xs tabular-nums opacity-70'>

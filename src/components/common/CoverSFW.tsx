@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import clsx from 'clsx';
 import { Link } from '@tanstack/react-router';
 import { mediaUrl } from '../../api/client';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -47,25 +48,23 @@ export default function CoverSFW({
       // 默认收缩到内容宽度，封面/占位会缩成小块，需显式占满。
       // 非 thumbnail：顶部圆角对齐卡片圆角（corner-medium 12px）并裁剪
       // NSFW 模糊时 filter 的边缘溢出
-      className={['relative block w-full', 'overflow-hidden rounded-t-xl'].join(
-        ' ',
-      )}
+      className={clsx('relative block w-full', 'overflow-hidden rounded-t-xl')}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
       {failed ? (
-        <div className={['bg-black/10', frameClass].join(' ')} />
+        <div className={clsx('bg-black/10', frameClass)} />
       ) : (
         <img
           src={src}
           alt={workId}
           loading='lazy'
           onError={() => setFailed(true)}
-          className={[
+          className={clsx(
             'w-full bg-black/5 object-cover transition-[filter] duration-200',
             frameClass,
-            shouldBlur ? 'blur-[10px]' : '',
-          ].join(' ')}
+            shouldBlur && 'blur-[10px]',
+          )}
         />
       )}
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import clsx from 'clsx';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -183,7 +184,7 @@ function VolumeControl({ className = '' }: { className?: string }) {
   }
 
   return (
-    <div className={`group/vol relative ${className}`}>
+    <div className={clsx('group/vol relative', className)}>
       <M3eIconButton
         aria-label={muted ? '取消静音' : '静音'}
         onClick={(e) => {

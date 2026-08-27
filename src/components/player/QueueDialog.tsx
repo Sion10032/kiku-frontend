@@ -18,6 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/drag_indicator';
+import clsx from 'clsx';
 import { usePlayerStore, type Track } from '../../stores/playerStore';
 
 /**
@@ -118,12 +119,12 @@ function QueueRow({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       onClick={onPlay}
-      className={[
+      className={clsx(
         'flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2',
         active
           ? 'bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container)'
           : 'hover:bg-(--md-sys-color-surface-container-high)',
-      ].join(' ')}
+      )}
       {...attributes}
       {...listeners}
     >

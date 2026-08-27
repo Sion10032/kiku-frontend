@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import clsx from 'clsx';
 import { Outlet } from '@tanstack/react-router';
 import { M3eAppBar } from '@m3e/react/app-bar';
 import { M3eIcon } from '@m3e/react/icon';
@@ -75,11 +76,11 @@ export default function MainLayout() {
   return (
     <>
       <div
-        className={[
+        className={clsx(
           'grid h-dvh grid-rows-[auto_1fr_auto] overflow-hidden transition-[grid-template-columns] duration-200',
           `[grid-template-areas:'drawer_appbar''drawer_content''drawer_player']`,
           drawerHidden ? 'grid-cols-[0px_1fr]' : 'grid-cols-[240px_1fr]',
-        ].join(' ')}
+        )}
       >
         <div className='[grid-area:drawer] min-h-0 overflow-hidden'>
           <NavDrawer />
@@ -122,19 +123,19 @@ export default function MainLayout() {
         <>
           <div
             aria-hidden='true'
-            className={[
+            className={clsx(
               'fixed inset-0 z-60 bg-black/40 transition-opacity duration-200',
               overlayOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
-            ].join(' ')}
+            )}
             onClick={() => setOverlayOpen(false)}
           />
           <div
-            className={[
+            className={clsx(
               'fixed inset-y-0 left-0 z-70 shadow-2xl transition-transform duration-200',
               overlayOpen
                 ? 'translate-x-0'
                 : 'pointer-events-none -translate-x-full',
-            ].join(' ')}
+            )}
             onClickCapture={() => setOverlayOpen(false)}
           >
             <NavDrawer />
