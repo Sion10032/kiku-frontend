@@ -13,8 +13,8 @@ export function useDeleteProgressMutation() {
   return useMutation({
     mutationFn: (workId: string) => api.deleteWorkProgress(workId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ 'works' ] });
-      queryClient.invalidateQueries({ queryKey: [ 'work' ] });
+      queryClient.invalidateQueries({ queryKey: ['works'] });
+      queryClient.invalidateQueries({ queryKey: ['work'] });
     },
   });
 }

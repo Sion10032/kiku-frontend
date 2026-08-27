@@ -59,7 +59,9 @@ export function getWorksList(params: WorksParams): Promise<WorksPage> {
       searchParams: worksSearchParams(rest),
     });
   }
-  return apiFetch<WorksPage>('works', { searchParams: worksSearchParams(rest) });
+  return apiFetch<WorksPage>('works', {
+    searchParams: worksSearchParams(rest),
+  });
 }
 
 /** 作品详情：GET /api/work/:id（id 为完整 RJ code） */

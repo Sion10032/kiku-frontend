@@ -4,7 +4,8 @@
  * @param seconds 秒数(负数/非有限值按 0 处理)
  */
 export function formatDuration(seconds: number): string {
-  const total = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+  const total =
+    Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
@@ -23,6 +24,9 @@ export function formatDuration(seconds: number): string {
  */
 export function formatRemaining(currentTime: number, duration: number): string {
   if (!Number.isFinite(duration) || duration <= 0) return '0:00';
-  const rest = Math.max(0, duration - (Number.isFinite(currentTime) ? currentTime : 0));
+  const rest = Math.max(
+    0,
+    duration - (Number.isFinite(currentTime) ? currentTime : 0),
+  );
   return `-${formatDuration(rest)}`;
 }

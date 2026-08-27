@@ -10,7 +10,9 @@ export type M3eStyleOptions = {
   style?: CssInput;
 };
 
-export function useM3eStyle<T extends M3eStyleElement = M3eStyleElement>({ style }: M3eStyleOptions) {
+export function useM3eStyle<T extends M3eStyleElement = M3eStyleElement>({
+  style,
+}: M3eStyleOptions) {
   const ref = useRef<T | null>(null);
 
   useEffect(() => {

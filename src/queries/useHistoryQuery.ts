@@ -3,8 +3,8 @@ import { getHistory } from '../api/progress';
 import { useUserStore } from '../stores/userStore';
 
 /** query key：page/pageSize 显式全键，hash 稳定（对齐 useWorksQuery 风格）。 */
-export function historyQueryKey(params: { page: number; pageSize: number; }) {
-  return [ 'history', params ] as const;
+export function historyQueryKey(params: { page: number; pageSize: number }) {
+  return ['history', params] as const;
 }
 
 /**
@@ -14,7 +14,7 @@ export function historyQueryKey(params: { page: number; pageSize: number; }) {
  * 未登录不发请求（enabled）。
  */
 export function useRecentHistory() {
-  const authed = useUserStore(s => s.auth);
+  const authed = useUserStore((s) => s.auth);
   return useQuery({
     queryKey: historyQueryKey({ page: 1, pageSize: 10 }),
     queryFn: () => getHistory({ page: 1, pageSize: 10 }),
@@ -25,7 +25,7 @@ export function useRecentHistory() {
 
 /** 收听历史页分页查询（keepPreviousData 防翻页闪 loading）。 */
 export function useHistoryPage(page: number) {
-  const authed = useUserStore(s => s.auth);
+  const authed = useUserStore((s) => s.auth);
   return useQuery({
     queryKey: historyQueryKey({ page, pageSize: 20 }),
     queryFn: () => getHistory({ page, pageSize: 20 }),

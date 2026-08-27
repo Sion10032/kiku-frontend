@@ -19,11 +19,11 @@ import { ApiError } from '../api/client';
  */
 export default function Register() {
   const navigate = useNavigate();
-  const setUser = useUserStore(s => s.setUser);
-  const setAuth = useUserStore(s => s.setAuth);
-  const [ name, setName ] = useState('');
-  const [ password, setPassword ] = useState('');
-  const [ loading, setLoading ] = useState(false);
+  const setUser = useUserStore((s) => s.setUser);
+  const setAuth = useUserStore((s) => s.setAuth);
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -36,8 +36,7 @@ export default function Register() {
       setAuth(true);
       M3eSnackbar.open('注册成功');
       navigate({ to: '/works' });
-    }
-    catch (err) {
+    } catch (err) {
       const msg =
         err instanceof ApiError
           ? err.status === 409
@@ -45,8 +44,7 @@ export default function Register() {
             : err.message
           : '注册失败，请检查网络';
       M3eSnackbar.open(msg);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   }
@@ -55,7 +53,8 @@ export default function Register() {
     <div className='flex min-h-dvh items-center justify-center p-4'>
       <form
         onSubmit={onSubmit}
-        className='flex w-full max-w-sm flex-col gap-5 rounded-3xl p-8 shadow-lg'>
+        className='flex w-full max-w-sm flex-col gap-5 rounded-3xl p-8 shadow-lg'
+      >
         <div className='mb-2 flex flex-col items-center gap-2'>
           <M3eIcon name='library_music' className='text-4xl' />
           <h1 className='m-0 text-2xl font-medium'>注册 Kiku</h1>
@@ -71,10 +70,11 @@ export default function Register() {
             type='text'
             autoComplete='username'
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             required
             minLength={4}
-            className='w-full border-none bg-transparent py-2 text-base outline-none' />
+            className='w-full border-none bg-transparent py-2 text-base outline-none'
+          />
         </M3eFormField>
 
         <M3eFormField variant='outlined' className='w-full'>
@@ -87,23 +87,26 @@ export default function Register() {
             type='password'
             autoComplete='new-password'
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             required
             minLength={5}
-            className='w-full border-none bg-transparent py-2 text-base outline-none' />
+            className='w-full border-none bg-transparent py-2 text-base outline-none'
+          />
         </M3eFormField>
 
         <M3eButton
           type='submit'
           variant='filled'
           className='mt-2 w-full'
-          disabled={loading}>
+          disabled={loading}
+        >
           {loading ? '注册中…' : '注册'}
         </M3eButton>
 
         <Link
           to='/login'
-          className='text-center text-sm text-(--md-sys-color-primary) no-underline'>
+          className='text-center text-sm text-(--md-sys-color-primary) no-underline'
+        >
           已有账号？返回登录
         </Link>
       </form>

@@ -17,22 +17,27 @@ export interface DecodedText {
 export function decodeTextData(buf: ArrayBuffer): DecodedText {
   const bytes = new Uint8Array(buf);
 
-  if (startsWith(bytes, [ 0xEF, 0xBB, 0xBF ])) {
+  if (startsWith(bytes, [0xef, 0xbb, 0xbf])) {
     return { text: decode('utf-8', bytes.subarray(3)), encoding: 'utf-8' };
   }
-  if (startsWith(bytes, [ 0xFF, 0xFE ])) {
-    return { text: decode('utf-16le', bytes.subarray(2)), encoding: 'utf-16le' };
+  if (startsWith(bytes, [0xff, 0xfe])) {
+    return {
+      text: decode('utf-16le', bytes.subarray(2)),
+      encoding: 'utf-16le',
+    };
   }
-  if (startsWith(bytes, [ 0xFE, 0xFF ])) {
-    return { text: decode('utf-16be', bytes.subarray(2)), encoding: 'utf-16be' };
+  if (startsWith(bytes, [0xfe, 0xff])) {
+    return {
+      text: decode('utf-16be', bytes.subarray(2)),
+      encoding: 'utf-16be',
+    };
   }
 
   try {
     // 严格模式：非法 UTF-8 序列抛错，防止 Shift-JIS 被误当 UTF-8
     const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
     return { text, encoding: 'utf-8' };
-  }
-  catch {
+  } catch {
     return { text: decode('shift-jis', bytes), encoding: 'shift-jis' };
   }
 }

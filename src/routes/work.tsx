@@ -10,7 +10,7 @@ import Work from '../pages/Work';
  */
 function normalizeRJId(raw: string): string {
   const match = raw.match(/^([Rr][Jj])?(\d{4,8})$/);
-  if (!match || !match[2]) {
+  if (!match?.[2]) {
     throw new Error(`Invalid work id: ${raw}`);
   }
   return `RJ${match[2].padStart(8, '0')}`;
@@ -26,7 +26,7 @@ export const workRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/work/$id',
   params: {
-    parse: raw => ({ id: normalizeRJId(raw.id) }),
+    parse: (raw) => ({ id: normalizeRJId(raw.id) }),
     stringify: ({ id }) => ({ id: String(id) }),
   },
   component: Work,

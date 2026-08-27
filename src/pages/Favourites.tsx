@@ -21,7 +21,7 @@ const PROGRESS_ORDER: Progress[] = [
 ];
 
 /** 顶部 Tab 定义（值 + 标签；跳转目标按 value 分派，见 goTab）。 */
-const ROUTE_TABS: { value: FavouritesRoute; label: string; }[] = [
+const ROUTE_TABS: { value: FavouritesRoute; label: string }[] = [
   { value: 'review', label: '我的评价' },
   { value: 'progress', label: '我的进度' },
   { value: 'folder', label: '分类整理' },
@@ -45,7 +45,7 @@ interface FavouritesProps {
  */
 export default function Favourites({ route, status }: FavouritesProps) {
   const navigate = useNavigate();
-  const name = useUserStore(s => s.name);
+  const name = useUserStore((s) => s.name);
   const activeStatus: Progress = status ?? 'marked';
 
   // 顶部 Tab 跳转（progress 默认落到 marked 子视图）
@@ -61,17 +61,14 @@ export default function Favourites({ route, status }: FavouritesProps) {
 
   const reviewsQuery = useReviewsByUser(name || undefined);
   // useMemo 稳定引用：?? 每次渲染生成新数组，会让下游 useMemo 依赖失效
-  const reviews = useMemo(
-    () => reviewsQuery.data ?? [],
-    [ reviewsQuery.data ],
-  );
+  const reviews = useMemo(() => reviewsQuery.data ?? [], [reviewsQuery.data]);
 
-  const workIds = useMemo(() => reviews.map(r => r.workId), [ reviews ]);
+  const workIds = useMemo(() => reviews.map((r) => r.workId), [reviews]);
   const { works, isPending: worksPending } = useWorkMap(workIds);
 
   // review + work join：work 加载成功后成行，按标记时间（updatedAt）倒序
   const rows = useMemo(() => {
-    const list: { review: Review; work: Work; }[] = [];
+    const list: { review: Review; work: Work }[] = [];
     for (const review of reviews) {
       const work = works.get(review.workId);
       if (work) list.push({ review, work });
@@ -80,11 +77,11 @@ export default function Favourites({ route, status }: FavouritesProps) {
       (b.review.updatedAt ?? '').localeCompare(a.review.updatedAt ?? ''),
     );
     return list;
-  }, [ reviews, works ]);
+  }, [reviews, works]);
 
   const visible =
     route === 'progress'
-      ? rows.filter(r => r.review.progress === activeStatus)
+      ? rows.filter((r) => r.review.progress === activeStatus)
       : rows;
 
   const loading = reviewsQuery.isPending || worksPending;
@@ -103,11 +100,12 @@ export default function Favourites({ route, status }: FavouritesProps) {
 
       {/* 顶部 Tab：我的评价 / 我的进度 / 分类整理 */}
       <M3eTabs stretch className='mb-4'>
-        {ROUTE_TABS.map(tab => (
+        {ROUTE_TABS.map((tab) => (
           <M3eTab
             key={tab.value}
             selected={route === tab.value}
-            onClick={() => goTab(tab.value)}>
+            onClick={() => goTab(tab.value)}
+          >
             {tab.label}
           </M3eTab>
         ))}
@@ -116,7 +114,7 @@ export default function Favourites({ route, status }: FavouritesProps) {
       {/* 进度子视图：5 值状态筛选 */}
       {route === 'progress' && (
         <M3eTabs className='mb-4'>
-          {PROGRESS_ORDER.map(value => (
+          {PROGRESS_ORDER.map((value) => (
             <M3eTab
               key={value}
               selected={activeStatus === value}
@@ -124,7 +122,9 @@ export default function Favourites({ route, status }: FavouritesProps) {
                 navigate({
                   to: '/favourites/progress/$status',
                   params: { status: value },
-                })}>
+                })
+              }
+            >
               {PROGRESS_LABELS[value]}
             </M3eTab>
           ))}
@@ -145,9 +145,7 @@ export default function Favourites({ route, status }: FavouritesProps) {
 
       {/* 加载失败 */}
       {route !== 'folder' && !loading && isError && (
-        <div className='py-16 text-center opacity-60'>
-          加载失败，请稍后重试
-        </div>
+        <div className='py-16 text-center opacity-60'>加载失败，请稍后重试</div>
       )}
 
       {/* 列表 */}
@@ -158,7 +156,8 @@ export default function Favourites({ route, status }: FavouritesProps) {
               key={work.id}
               work={work}
               review={review}
-              mode={route} />
+              mode={route}
+            />
           ))}
         </M3eList>
       )}

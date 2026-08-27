@@ -15,14 +15,14 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 export default function GlobalSearchBar() {
   const navigate = useNavigate();
   const urlKeyword = useRouterState({
-    select: s =>
+    select: (s) =>
       s.location.pathname === '/works'
-        ? (s.location.search as { keyword?: string; }).keyword
+        ? (s.location.search as { keyword?: string }).keyword
         : undefined,
   });
 
   // 搜索输入（URL keyword 为初始值，防抖 300ms 后写回 URL）
-  const [ keywordInput, setKeywordInput ] = useState(() => urlKeyword ?? '');
+  const [keywordInput, setKeywordInput] = useState(() => urlKeyword ?? '');
   const debouncedKeyword = useDebouncedValue(keywordInput);
 
   // 输入 → /works URL（空值移除 keyword 参数）
@@ -30,15 +30,15 @@ export default function GlobalSearchBar() {
     if (debouncedKeyword !== (urlKeyword ?? '')) {
       navigate({
         to: '/works',
-        search: prev => ({ ...prev, keyword: debouncedKeyword || undefined }),
+        search: (prev) => ({ ...prev, keyword: debouncedKeyword || undefined }),
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ debouncedKeyword ]);
+  }, [debouncedKeyword]);
 
   // URL → 输入（浏览器后退/前进时保持同步；渲染期调整 state，
   // 仅 urlKeyword 变化的渲染中执行，替代 effect 中 setState）
-  const [ prevUrlKeyword, setPrevUrlKeyword ] = useState(urlKeyword);
+  const [prevUrlKeyword, setPrevUrlKeyword] = useState(urlKeyword);
   if (urlKeyword !== prevUrlKeyword) {
     setPrevUrlKeyword(urlKeyword);
     if ((urlKeyword ?? '') !== debouncedKeyword) {
@@ -50,14 +50,16 @@ export default function GlobalSearchBar() {
     <M3eSearchBar
       clearable
       className='w-full'
-      onClear={() => setKeywordInput('')}>
+      onClear={() => setKeywordInput('')}
+    >
       <M3eIcon slot='leading' name='search' />
       <input
         slot='input'
         type='text'
         placeholder='搜索作品/社团/标签/声优，或输入 RJ 号…'
         value={keywordInput}
-        onInput={e => setKeywordInput((e.target as HTMLInputElement).value)} />
+        onInput={(e) => setKeywordInput((e.target as HTMLInputElement).value)}
+      />
     </M3eSearchBar>
   );
 }

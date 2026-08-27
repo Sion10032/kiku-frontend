@@ -7,12 +7,12 @@ import { useEffect, useState } from 'react';
  * 连续输入时每次变更都会重置计时器。
  */
 export function useDebouncedValue<T>(value: T, delay = 300): T {
-  const [ debounced, setDebounced ] = useState(value);
+  const [debounced, setDebounced] = useState(value);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(value), delay);
     return () => clearTimeout(timer);
-  }, [ value, delay ]);
+  }, [value, delay]);
 
   return debounced;
 }

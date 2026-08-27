@@ -9,9 +9,13 @@ const DOT_CLASS =
   'absolute right-2 top-2 z-10 size-3.5 rounded-full border-2 border-(--md-sys-color-outline-variant)/50';
 
 export function UnreadDot() {
-  return <span title='未读' className={`${DOT_CLASS} bg-(--md-sys-color-error)`} />;
+  return (
+    <span title='未读' className={`${DOT_CLASS} bg-(--md-sys-color-error)`} />
+  );
 }
 
 export function ReadDot() {
-  return <span title='已读' className={`${DOT_CLASS} bg-(--md-sys-color-primary)`} />;
+  return (
+    <span title='已读' className={`${DOT_CLASS} bg-(--md-sys-color-primary)`} />
+  );
 }

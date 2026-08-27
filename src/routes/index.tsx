@@ -33,8 +33,8 @@ const listRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/list/$type',
   params: {
-    parse: raw => ({
-      type: z.enum([ 'circles', 'tags', 'vas' ]).parse(raw.type),
+    parse: (raw) => ({
+      type: z.enum(['circles', 'tags', 'vas']).parse(raw.type),
     }),
     stringify: ({ type }) => ({ type }),
   },
@@ -73,9 +73,9 @@ const favouritesProgressRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/favourites/progress/$status',
   params: {
-    parse: raw => ({
+    parse: (raw) => ({
       status: z
-        .enum([ 'marked', 'listening', 'listened', 'replay', 'postponed' ])
+        .enum(['marked', 'listening', 'listened', 'replay', 'postponed'])
         .parse(raw.status),
     }),
     stringify: ({ status }) => ({ status }),

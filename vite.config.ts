@@ -6,10 +6,7 @@ import { fileURLToPath, URL } from 'node:url';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -24,6 +21,6 @@ export default defineConfig({
   },
   test: {
     environment: 'node', // pure-function tests; add jsdom here later for component tests
-    setupFiles: [ 'src/test/setup.ts' ],
+    setupFiles: ['src/test/setup.ts'],
   },
 });

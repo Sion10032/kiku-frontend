@@ -25,7 +25,7 @@ export default function CoverThumbnail({
   workId,
   size = 'md',
 }: CoverThumbnailProps) {
-  const [ failed, setFailed ] = useState(false);
+  const [failed, setFailed] = useState(false);
   const src = mediaUrl(`/api/cover/${workId}/file?type=sam`);
   const sizeClass = SIZE_MAP[size];
 
@@ -33,19 +33,19 @@ export default function CoverThumbnail({
     <Link
       to='/work/$id'
       params={{ id: workId }}
-      className={`relative block shrink-0 overflow-hidden rounded-lg ${sizeClass}`}>
-      {failed
-        ? (
-          <div className='h-full w-full bg-black/10' />
-        )
-        : (
-          <img
-            src={src}
-            alt={workId}
-            loading='lazy'
-            onError={() => setFailed(true)}
-            className='h-full w-full bg-black/5 object-cover' />
-        )}
+      className={`relative block shrink-0 overflow-hidden rounded-lg ${sizeClass}`}
+    >
+      {failed ? (
+        <div className='h-full w-full bg-black/10' />
+      ) : (
+        <img
+          src={src}
+          alt={workId}
+          loading='lazy'
+          onError={() => setFailed(true)}
+          className='h-full w-full bg-black/5 object-cover'
+        />
+      )}
       {/* <span className="absolute left-0 top-0 m-0.5 rounded-sm bg-black/70 px-1 py-px text-[10px] leading-tight text-white">
         {workId}
       </span> */}

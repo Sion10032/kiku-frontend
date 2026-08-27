@@ -13,18 +13,18 @@ import type { RootFolder } from '../../types';
  * - RootFolder = { name: string; path: string }。
  */
 export default function Folders() {
-  const [ folders, setFolders ] = useState<RootFolder[]>([]);
-  const [ loading, setLoading ] = useState(true);
-  const [ saving, setSaving ] = useState(false);
+  const [folders, setFolders] = useState<RootFolder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // 新增表单
-  const [ newName, setNewName ] = useState('');
-  const [ newPath, setNewPath ] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newPath, setNewPath] = useState('');
 
   // 编辑中的索引（-1 表示不在编辑）
-  const [ editIndex, setEditIndex ] = useState(-1);
-  const [ editName, setEditName ] = useState('');
-  const [ editPath, setEditPath ] = useState('');
+  const [editIndex, setEditIndex] = useState(-1);
+  const [editName, setEditName] = useState('');
+  const [editPath, setEditPath] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -32,13 +32,9 @@ export default function Folders() {
       try {
         const config = await getAdminConfig();
         if (!cancelled) setFolders(config.rootFolders ?? []);
-      }
-      catch (err) {
-        M3eSnackbar.open(
-          err instanceof Error ? err.message : '加载配置失败',
-        );
-      }
-      finally {
+      } catch (err) {
+        M3eSnackbar.open(err instanceof Error ? err.message : '加载配置失败');
+      } finally {
         if (!cancelled) setLoading(false);
       }
     })();
@@ -53,11 +49,9 @@ export default function Folders() {
       const updated = await updateAdminConfig({ rootFolders: next });
       setFolders(updated.rootFolders ?? next);
       M3eSnackbar.open('保存成功');
-    }
-    catch (err) {
+    } catch (err) {
       M3eSnackbar.open(err instanceof Error ? err.message : '保存失败');
-    }
-    finally {
+    } finally {
       setSaving(false);
     }
   }
@@ -69,11 +63,11 @@ export default function Folders() {
       M3eSnackbar.open('名称和路径不能为空');
       return;
     }
-    if (folders.some(f => f.path === path)) {
+    if (folders.some((f) => f.path === path)) {
       M3eSnackbar.open('该路径已存在');
       return;
     }
-    const next = [ ...folders, { name, path } ];
+    const next = [...folders, { name, path }];
     setNewName('');
     setNewPath('');
     saveFolders(next);
@@ -83,8 +77,7 @@ export default function Folders() {
     const next = folders.filter((_, i) => i !== index);
     if (editIndex === index) {
       setEditIndex(-1);
-    }
-    else if (editIndex > index) {
+    } else if (editIndex > index) {
       setEditIndex(editIndex - 1);
     }
     saveFolders(next);
@@ -103,9 +96,7 @@ export default function Folders() {
       M3eSnackbar.open('名称和路径不能为空');
       return;
     }
-    const next = folders.map((f, i) =>
-      i === editIndex ? { name, path } : f,
-    );
+    const next = folders.map((f, i) => (i === editIndex ? { name, path } : f));
     setEditIndex(-1);
     saveFolders(next);
   }
@@ -129,71 +120,76 @@ export default function Folders() {
             {folders.map((folder, index) => (
               <div
                 key={`${folder.path}-${index}`}
-                className='flex flex-col gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] p-3'>
-                {editIndex === index
-                  ? (
-                    <>
-                      <M3eFormField variant='outlined' hideSubscript='always'>
-                        <label slot='label' htmlFor={`edit-name-${index}`}>
-                          名称
-                        </label>
-                        <input
-                          id={`edit-name-${index}`}
-                          value={editName}
-                          onChange={e => setEditName(e.target.value)}
-                          className='w-full border-none bg-transparent py-2 text-sm outline-none' />
-                      </M3eFormField>
-                      <M3eFormField variant='outlined' hideSubscript='always'>
-                        <label slot='label' htmlFor={`edit-path-${index}`}>
-                          路径
-                        </label>
-                        <input
-                          id={`edit-path-${index}`}
-                          value={editPath}
-                          onChange={e => setEditPath(e.target.value)}
-                          className='w-full border-none bg-transparent py-2 text-sm outline-none' />
-                      </M3eFormField>
-                      <div className='flex gap-2'>
-                        <M3eButton
-                          variant='text'
-                          onClick={() => setEditIndex(-1)}>
-                          取消
-                        </M3eButton>
-                        <M3eButton
-                          variant='filled'
-                          disabled={saving}
-                          onClick={handleEditSave}>
-                          保存
-                        </M3eButton>
+                className='flex flex-col gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] p-3'
+              >
+                {editIndex === index ? (
+                  <>
+                    <M3eFormField variant='outlined' hideSubscript='always'>
+                      <label slot='label' htmlFor={`edit-name-${index}`}>
+                        名称
+                      </label>
+                      <input
+                        id={`edit-name-${index}`}
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className='w-full border-none bg-transparent py-2 text-sm outline-none'
+                      />
+                    </M3eFormField>
+                    <M3eFormField variant='outlined' hideSubscript='always'>
+                      <label slot='label' htmlFor={`edit-path-${index}`}>
+                        路径
+                      </label>
+                      <input
+                        id={`edit-path-${index}`}
+                        value={editPath}
+                        onChange={(e) => setEditPath(e.target.value)}
+                        className='w-full border-none bg-transparent py-2 text-sm outline-none'
+                      />
+                    </M3eFormField>
+                    <div className='flex gap-2'>
+                      <M3eButton
+                        variant='text'
+                        onClick={() => setEditIndex(-1)}
+                      >
+                        取消
+                      </M3eButton>
+                      <M3eButton
+                        variant='filled'
+                        disabled={saving}
+                        onClick={handleEditSave}
+                      >
+                        保存
+                      </M3eButton>
+                    </div>
+                  </>
+                ) : (
+                  <div className='flex items-center justify-between gap-2'>
+                    <div className='min-w-0 flex-1'>
+                      <div className='truncate text-sm font-medium'>
+                        {folder.name}
                       </div>
-                    </>
-                  )
-                  : (
-                    <div className='flex items-center justify-between gap-2'>
-                      <div className='min-w-0 flex-1'>
-                        <div className='truncate text-sm font-medium'>
-                          {folder.name}
-                        </div>
-                        <div className='truncate text-xs opacity-50'>
-                          {folder.path}
-                        </div>
-                      </div>
-                      <div className='flex shrink-0 gap-1'>
-                        <M3eButton
-                          variant='text'
-                          onClick={() => startEdit(index)}>
-                          编辑
-                        </M3eButton>
-                        <M3eButton
-                          variant='text'
-                          className='text-[var(--md-sys-color-error)]'
-                          disabled={saving}
-                          onClick={() => handleDelete(index)}>
-                          删除
-                        </M3eButton>
+                      <div className='truncate text-xs opacity-50'>
+                        {folder.path}
                       </div>
                     </div>
-                  )}
+                    <div className='flex shrink-0 gap-1'>
+                      <M3eButton
+                        variant='text'
+                        onClick={() => startEdit(index)}
+                      >
+                        编辑
+                      </M3eButton>
+                      <M3eButton
+                        variant='text'
+                        className='text-[var(--md-sys-color-error)]'
+                        disabled={saving}
+                        onClick={() => handleDelete(index)}
+                      >
+                        删除
+                      </M3eButton>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -214,9 +210,10 @@ export default function Folders() {
               <input
                 id='new-folder-name'
                 value={newName}
-                onChange={e => setNewName(e.target.value)}
+                onChange={(e) => setNewName(e.target.value)}
                 placeholder='如：主音声库'
-                className='w-full border-none bg-transparent py-2 text-sm outline-none' />
+                className='w-full border-none bg-transparent py-2 text-sm outline-none'
+              />
             </M3eFormField>
             <M3eFormField variant='outlined' hideSubscript='always'>
               <label slot='label' htmlFor='new-folder-path'>
@@ -225,14 +222,12 @@ export default function Folders() {
               <input
                 id='new-folder-path'
                 value={newPath}
-                onChange={e => setNewPath(e.target.value)}
+                onChange={(e) => setNewPath(e.target.value)}
                 placeholder='/path/to/library'
-                className='w-full border-none bg-transparent py-2 text-sm outline-none' />
+                className='w-full border-none bg-transparent py-2 text-sm outline-none'
+              />
             </M3eFormField>
-            <M3eButton
-              variant='filled'
-              disabled={saving}
-              onClick={handleAdd}>
+            <M3eButton variant='filled' disabled={saving} onClick={handleAdd}>
               添加
             </M3eButton>
           </div>

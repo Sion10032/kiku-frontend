@@ -13,7 +13,7 @@ export default function MarqueeText({
   className?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [ overflow, setOverflow ] = useState(false);
+  const [overflow, setOverflow] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -24,7 +24,7 @@ export default function MarqueeText({
     const ro = new ResizeObserver(check);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [ text ]);
+  }, [text]);
 
   return (
     <span ref={ref} className={`block truncate ${className}`}>
@@ -32,7 +32,8 @@ export default function MarqueeText({
       <span
         className={`inline-block whitespace-nowrap ${
           overflow ? 'group-hover:animate-marquee' : 'truncate'
-        }`}>
+        }`}
+      >
         {text}
         {overflow && <span className='pl-8'>{text}</span>}
       </span>

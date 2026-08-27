@@ -26,13 +26,12 @@ export function loadSortOption(): SortOption {
   try {
     const raw = localStorage.getItem(SORT_KEY);
     if (!raw) return DEFAULT_SORT;
-    const parsed = JSON.parse(raw) as { order?: string; sort?: string; };
+    const parsed = JSON.parse(raw) as { order?: string; sort?: string };
     const found = SORT_OPTIONS.find(
-      o => o.order === parsed.order && o.sort === parsed.sort,
+      (o) => o.order === parsed.order && o.sort === parsed.sort,
     );
     return found ?? DEFAULT_SORT;
-  }
-  catch {
+  } catch {
     return DEFAULT_SORT;
   }
 }
@@ -40,8 +39,7 @@ export function loadSortOption(): SortOption {
 export function saveSortOption(opt: SortOption): void {
   try {
     localStorage.setItem(SORT_KEY, JSON.stringify(opt));
-  }
-  catch {
+  } catch {
     /* localStorage 不可用时静默 */
   }
 }

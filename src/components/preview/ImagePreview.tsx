@@ -23,17 +23,22 @@ const SCALE_STEP = 1.25;
  * 壳以 file.hash 为 key 重挂组件，翻页时状态天然重置。
  */
 export function ImagePreview({ file }: PreviewerProps) {
-  const [ scale, setScale ] = useState(1);
-  const [ rotation, setRotation ] = useState(0);
-  const [ offset, setOffset ] = useState({ x: 0, y: 0 });
-  const [ status, setStatus ] = useState<'loading' | 'error' | 'done'>('loading');
+  const [scale, setScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [status, setStatus] = useState<'loading' | 'error' | 'done'>('loading');
   // 重试计数：拼进 img src 绕过失败缓存
-  const [ attempt, setAttempt ] = useState(0);
+  const [attempt, setAttempt] = useState(0);
   // 拖拽中是否禁用过渡（transition 渲染依赖，用 state 而非 ref）
-  const [ dragging, setDragging ] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   // 拖拽基准点（pointermove 高频，ref 避免渲染依赖）
-  const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number; } | null>(null);
+  const dragRef = useRef<{
+    startX: number;
+    startY: number;
+    baseX: number;
+    baseY: number;
+  } | null>(null);
 
   const url = streamUrl(file.workId, file.hash);
 
@@ -44,7 +49,7 @@ export function ImagePreview({ file }: PreviewerProps) {
   }
 
   function zoomBy(factor: number) {
-    setScale(s => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s * factor)));
+    setScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s * factor)));
   }
 
   // 滚轮缩放需 preventDefault（non-passive），React onWheel 不保证，手动挂载
@@ -97,7 +102,8 @@ export function ImagePreview({ file }: PreviewerProps) {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          onDoubleClick={() => (scale === 1 ? zoomBy(2) : reset())}>
+          onDoubleClick={() => (scale === 1 ? zoomBy(2) : reset())}
+        >
           {status === 'loading' && (
             <div className='absolute inset-0 flex items-center justify-center'>
               <M3eCircularProgressIndicator />
@@ -111,8 +117,9 @@ export function ImagePreview({ file }: PreviewerProps) {
                 onClick={() => {
                   reset();
                   setStatus('loading');
-                  setAttempt(a => a + 1);
-                }}>
+                  setAttempt((a) => a + 1);
+                }}
+              >
                 <M3eIcon name='refresh' />
               </M3eIconButton>
             </div>
@@ -133,7 +140,8 @@ export function ImagePreview({ file }: PreviewerProps) {
               transition: dragging ? 'none' : 'transform 0.15s ease-out',
             }}
             onLoad={() => setStatus('done')}
-            onError={() => setStatus('error')} />
+            onError={() => setStatus('error')}
+          />
         </div>
       </M3eCard>
 
@@ -150,7 +158,8 @@ export function ImagePreview({ file }: PreviewerProps) {
         </M3eIconButton>
         <M3eIconButton
           aria-label='顺时针旋转 90°'
-          onClick={() => setRotation(r => r + 90)}>
+          onClick={() => setRotation((r) => r + 90)}
+        >
           <M3eIcon name='rotate_right' />
         </M3eIconButton>
         <M3eIconButton aria-label='重置视图' onClick={reset}>

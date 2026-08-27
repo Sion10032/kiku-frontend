@@ -16,9 +16,9 @@ import { M3eCard } from '@m3e/react/card';
 const MAX_CHARS = 200_000;
 
 type LoadState =
-  | { status: 'loading'; }
-  | { status: 'error'; message: string; }
-  | { status: 'done'; result: DecodedText; };
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'done'; result: DecodedText };
 
 /**
  * 文本预览器。
@@ -28,12 +28,12 @@ type LoadState =
  * - 超过 MAX_CHARS 字符截断渲染并提示下载查看全文
  */
 export function TextPreview({ file }: PreviewerProps) {
-  const fontSize = useSettingsStore(s => s.preview.textFontSize);
-  const wordWrap = useSettingsStore(s => s.preview.textWordWrap);
-  const setPreviewSettings = useSettingsStore(s => s.setPreview);
-  const [ state, setState ] = useState<LoadState>({ status: 'loading' });
+  const fontSize = useSettingsStore((s) => s.preview.textFontSize);
+  const wordWrap = useSettingsStore((s) => s.preview.textWordWrap);
+  const setPreviewSettings = useSettingsStore((s) => s.setPreview);
+  const [state, setState] = useState<LoadState>({ status: 'loading' });
   // 重试计数：递增触发 effect 重新 fetch
-  const [ attempt, setAttempt ] = useState(0);
+  const [attempt, setAttempt] = useState(0);
 
   // 注：加载态复位不在此 effect 内同步 setState（react-hooks/set-state-in-effect
   // 禁止）；首次挂载初始态即为 loading，文件切换由壳层 key={file.hash} 重挂载
@@ -45,7 +45,7 @@ export function TextPreview({ file }: PreviewerProps) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.arrayBuffer();
       })
-      .then(buf => setState({ status: 'done', result: decodeTextData(buf) }))
+      .then((buf) => setState({ status: 'done', result: decodeTextData(buf) }))
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === 'AbortError') return;
         setState({
@@ -54,7 +54,7 @@ export function TextPreview({ file }: PreviewerProps) {
         });
       });
     return () => controller.abort();
-  }, [ file.workId, file.hash, attempt ]);
+  }, [file.workId, file.hash, attempt]);
 
   return (
     <div className='flex h-full min-h-0 flex-col'>
@@ -71,8 +71,9 @@ export function TextPreview({ file }: PreviewerProps) {
               aria-label='重试'
               onClick={() => {
                 setState({ status: 'loading' });
-                setAttempt(a => a + 1);
-              }}>
+                setAttempt((a) => a + 1);
+              }}
+            >
               <M3eIcon name='refresh' />
             </M3eIconButton>
           </div>
@@ -85,11 +86,13 @@ export function TextPreview({ file }: PreviewerProps) {
               lineHeight: 1.7,
               whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
               wordBreak: wordWrap ? 'break-word' : 'normal',
-            }}>
+            }}
+          >
             {state.result.text.slice(0, MAX_CHARS)}
             {state.result.text.length > MAX_CHARS && (
               <span className='mt-4 block text-xs opacity-60'>
-                （文件过大，仅显示前 {MAX_CHARS.toLocaleString()} 字符，完整内容请下载查看）
+                （文件过大，仅显示前 {MAX_CHARS.toLocaleString()}{' '}
+                字符，完整内容请下载查看）
               </span>
             )}
           </div>
@@ -102,7 +105,9 @@ export function TextPreview({ file }: PreviewerProps) {
           aria-label='减小字号'
           disabled={fontSize <= 12}
           onClick={() =>
-            setPreviewSettings({ textFontSize: Math.max(12, fontSize - 2) })}>
+            setPreviewSettings({ textFontSize: Math.max(12, fontSize - 2) })
+          }
+        >
           <M3eIcon name='text_decrease' />
         </M3eIconButton>
         <span className='w-10 text-center text-xs tabular-nums opacity-60'>
@@ -112,16 +117,21 @@ export function TextPreview({ file }: PreviewerProps) {
           aria-label='增大字号'
           disabled={fontSize >= 32}
           onClick={() =>
-            setPreviewSettings({ textFontSize: Math.min(32, fontSize + 2) })}>
+            setPreviewSettings({ textFontSize: Math.min(32, fontSize + 2) })
+          }
+        >
           <M3eIcon name='text_increase' />
         </M3eIconButton>
         <M3eIconButton
           aria-label={wordWrap ? '关闭自动换行' : '开启自动换行'}
-          onClick={() => setPreviewSettings({ textWordWrap: !wordWrap })}>
+          onClick={() => setPreviewSettings({ textWordWrap: !wordWrap })}
+        >
           <M3eIcon name='wrap_text' />
         </M3eIconButton>
         {state.status === 'done' && (
-          <span className='ms-2 text-xs opacity-60'>{state.result.encoding}</span>
+          <span className='ms-2 text-xs opacity-60'>
+            {state.result.encoding}
+          </span>
         )}
       </div>
     </div>

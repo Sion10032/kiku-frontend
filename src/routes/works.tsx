@@ -17,15 +17,8 @@ export const worksRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/works',
   validateSearch: z.object({
-    order: z
-      .enum([
-        'release',
-        'id',
-        'random',
-        'betterRandom',
-      ])
-      .optional(),
-    sort: z.enum([ 'desc', 'asc' ]).optional(),
+    order: z.enum(['release', 'id', 'random', 'betterRandom']).optional(),
+    sort: z.enum(['desc', 'asc']).optional(),
     page: z.number().int().min(1).optional(),
     seed: z.number().optional(),
     circleId: z.number().optional(),

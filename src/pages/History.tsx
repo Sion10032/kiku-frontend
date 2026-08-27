@@ -18,7 +18,7 @@ export default function History() {
   const search = historyRoute.useSearch();
   const navigate = historyRoute.useNavigate();
   const page = search.page ?? 1;
-  const authed = useUserStore(s => s.auth);
+  const authed = useUserStore((s) => s.auth);
 
   const { data, isLoading } = useHistoryPage(page);
   const works = data?.works ?? [];
@@ -37,20 +37,24 @@ export default function History() {
 
   // title 同步页码；卸载恢复 Kiku
   useEffect(() => {
-    document.title = pagination && page > 1
-      ? `收听历史 · 第 ${page}/${totalPages} 页 · Kiku`
-      : '收听历史 · Kiku';
+    document.title =
+      pagination && page > 1
+        ? `收听历史 · 第 ${page}/${totalPages} 页 · Kiku`
+        : '收听历史 · Kiku';
     return () => {
       document.title = 'Kiku';
     };
-  }, [ page, pagination, totalPages ]);
+  }, [page, pagination, totalPages]);
 
   // 未登录提示
   if (!authed) {
     return (
       <div className='mx-auto max-w-[1680px] py-16 text-center'>
         <p className='text-base opacity-60'>登录后可查看收听历史</p>
-        <Link to='/login' className='mt-4 inline-block text-m3-primary no-underline'>
+        <Link
+          to='/login'
+          className='mt-4 inline-block text-m3-primary no-underline'
+        >
           前往登录
         </Link>
       </div>
@@ -80,7 +84,7 @@ export default function History() {
 
       {/* 网格 */}
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
-        {works.map(work => (
+        {works.map((work) => (
           <WorkCard key={work.id} work={work} />
         ))}
       </div>
@@ -97,7 +101,8 @@ export default function History() {
             length={totalCount}
             pageSize={pagination.pageSize}
             pageIndex={page - 1}
-            onPage={onPageChange} />
+            onPage={onPageChange}
+          />
         </div>
       )}
     </div>

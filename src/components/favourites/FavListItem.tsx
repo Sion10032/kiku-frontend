@@ -42,7 +42,7 @@ export default function FavListItem({ work, review, mode }: FavListItemProps) {
         <div className='mt-1 flex flex-wrap items-center gap-x-2 text-sm opacity-70'>
           <span>{work.circle.name}</span>
           {work.release && <span>{work.release}</span>}
-          {work.vas.map(va => (
+          {work.vas.map((va) => (
             <span key={va.id} className='text-[var(--md-sys-color-primary)]'>
               {va.name}
             </span>
@@ -52,12 +52,13 @@ export default function FavListItem({ work, review, mode }: FavListItemProps) {
         {/* 评价星（已评分为 1-5 时显示） */}
         {rating > 0 && (
           <div className='mt-1 flex items-center text-[var(--md-sys-color-primary)]'>
-            {[ 1, 2, 3, 4, 5 ].map(n => (
+            {[1, 2, 3, 4, 5].map((n) => (
               <M3eIcon
                 key={n}
                 name='star'
                 filled={n <= rating}
-                className={n <= rating ? '' : 'opacity-25'} />
+                className={n <= rating ? '' : 'opacity-25'}
+              />
             ))}
             <span className='ms-1 text-sm opacity-70'>{rating}/5</span>
           </div>

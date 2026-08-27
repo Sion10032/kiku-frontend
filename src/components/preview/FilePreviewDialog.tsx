@@ -74,7 +74,8 @@ export function FilePreviewDialog({
   });
 
   function openInNewTab() {
-    if (file) window.open(streamUrl(file.workId, file.hash), '_blank', 'noopener');
+    if (file)
+      window.open(streamUrl(file.workId, file.hash), '_blank', 'noopener');
   }
 
   function download() {
@@ -90,7 +91,13 @@ export function FilePreviewDialog({
 
   return (
     <div style={WRAPPER_STYLE}>
-      <M3eDialog ref={dialogRef} open={open} onClosed={onClose} dismissible closeLabel='关闭'>
+      <M3eDialog
+        ref={dialogRef}
+        open={open}
+        onClosed={onClose}
+        dismissible
+        closeLabel='关闭'
+      >
         <span slot='header' className='flex min-w-0 flex-1 items-center gap-1'>
           <span className='truncate'>{file?.title}</span>
           {hasGallery && (

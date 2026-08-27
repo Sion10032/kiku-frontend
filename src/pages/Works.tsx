@@ -44,19 +44,18 @@ export default function Works() {
   const navigate = worksRoute.useNavigate();
 
   // 翻页方式（设置项）：paginate 分页 / infinite 无限滚动
-  const paginationMode = useSettingsStore(s => s.worksPaginationMode);
+  const paginationMode = useSettingsStore((s) => s.worksPaginationMode);
   const isPaginated = paginationMode === 'paginate';
   // 分页控件显示位置（设置项）：top 顶部 / bottom 底部 / both 两处
-  const paginatorPosition = useSettingsStore(s => s.worksPaginatorPosition);
-  const worksHistoryStrip = useSettingsStore(s => s.worksHistoryStrip);
+  const paginatorPosition = useSettingsStore((s) => s.worksPaginatorPosition);
+  const worksHistoryStrip = useSettingsStore((s) => s.worksHistoryStrip);
   const page = search.page ?? 1;
 
   // 视图模式（state 驱动，初始读 localStorage）
-  const [ viewMode, setViewMode ] = useState<'grid' | 'list'>(() => {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     try {
       return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid';
-    }
-    catch {
+    } catch {
       return 'grid';
     }
   });
@@ -66,12 +65,12 @@ export default function Works() {
     if (search.order && search.sort) {
       return (
         SORT_OPTIONS.find(
-          o => o.order === search.order && o.sort === search.sort,
+          (o) => o.order === search.order && o.sort === search.sort,
         ) ?? DEFAULT_SORT
       );
     }
     return loadSortOption();
-  }, [ search.order, search.sort ]);
+  }, [search.order, search.sort]);
 
   // 随机排序时生成一次 seed（切到 random 时刷新）
   const seed = search.seed ?? 7;
@@ -82,8 +81,9 @@ export default function Works() {
     || search.vaId != null
     || !!search.keyword;
 
-  const authed = useUserStore(s => s.auth);
-  const showHistoryStrip = worksHistoryStrip && authed && !isFiltered && (page === 1 || !isPaginated);
+  const authed = useUserStore((s) => s.auth);
+  const showHistoryStrip =
+    worksHistoryStrip && authed && !isFiltered && (page === 1 || !isPaginated);
 
   // 筛选与排序参数：统一分页端点（后端按筛选自动路由子端点）
   const filterParams = {
@@ -95,19 +95,29 @@ export default function Works() {
   const sortParams = {
     order: sortOption.order,
     sort: sortOption.sort,
-    seed: (sortOption.order === 'random' || sortOption.order === 'betterRandom') ? seed : undefined,
+    seed:
+      sortOption.order === 'random' || sortOption.order === 'betterRandom'
+        ? seed
+        : undefined,
   };
 
   // 查询：分页模式按页拉取（keepPreviousData 防翻页闪 loading），无限模式滚动追加
-  const paged = useWorksPage({ ...filterParams, ...sortParams, page }, isPaginated);
-  const infinite = useWorksInfinite({ ...filterParams, ...sortParams }, !isPaginated);
+  const paged = useWorksPage(
+    { ...filterParams, ...sortParams, page },
+    isPaginated,
+  );
+  const infinite = useWorksInfinite(
+    { ...filterParams, ...sortParams },
+    !isPaginated,
+  );
 
   // 统一拍平为 Work[]
   const works: Work[] = useMemo(
-    () => isPaginated
-      ? paged.data?.works ?? []
-      : infinite.data?.pages.flatMap(p => p.works) ?? [],
-    [ isPaginated, paged.data, infinite.data ],
+    () =>
+      isPaginated
+        ? (paged.data?.works ?? [])
+        : (infinite.data?.pages.flatMap((p) => p.works) ?? []),
+    [isPaginated, paged.data, infinite.data],
   );
 
   const pagination = isPaginated
@@ -118,19 +128,19 @@ export default function Works() {
 
   // 筛选条件名称（title 显示用）；keyword 直接可用，其余按需查询
   const circle = useQuery({
-    queryKey: [ 'circle', search.circleId ],
+    queryKey: ['circle', search.circleId],
     queryFn: () => getCircle(search.circleId!),
     enabled: search.circleId != null,
     staleTime: 5 * 60_000,
   });
   const tag = useQuery({
-    queryKey: [ 'tag', search.tagId ],
+    queryKey: ['tag', search.tagId],
     queryFn: () => getTag(search.tagId!),
     enabled: search.tagId != null,
     staleTime: 5 * 60_000,
   });
   const va = useQuery({
-    queryKey: [ 'va', search.vaId ],
+    queryKey: ['va', search.vaId],
     queryFn: () => getVa(search.vaId!),
     enabled: search.vaId != null,
     staleTime: 5 * 60_000,
@@ -156,42 +166,46 @@ export default function Works() {
   function onPageChange(index: number) {
     const next = index + 1; // 页码从 0 起，转 1 起写 URL
     navigate({
-      search: prev => ({ ...prev, page: next === 1 ? undefined : next }),
+      search: (prev) => ({ ...prev, page: next === 1 ? undefined : next }),
     });
   }
 
   // 排序变更：写 URL（search params，重置页码）+ 持久化
   function onSortChange(e: Event) {
     const value = (e.target as M3eSelectElement).value as string;
-    const opt = SORT_OPTIONS.find(o => `${o.order}:${o.sort}` === value);
+    const opt = SORT_OPTIONS.find((o) => `${o.order}:${o.sort}` === value);
     if (!opt) return;
     saveSortOption(opt);
     navigate({
-      search: prev => ({ ...prev, order: opt.order, sort: opt.sort, page: undefined }),
+      search: (prev) => ({
+        ...prev,
+        order: opt.order,
+        sort: opt.sort,
+        page: undefined,
+      }),
     });
   }
 
   // 分页控件（仅分页模式）：提取为局部元素，按设置在网格前/后渲染，两处共用同一 props
-  const paginator = isPaginated && !loading && pagination && pagination.totalCount > 0
-    ? (
+  const paginator =
+    isPaginated && !loading && pagination && pagination.totalCount > 0 ? (
       <div className='mt-6 flex items-center justify-center gap-2'>
         <Paginator
           length={pagination.totalCount}
           pageSize={pagination.pageSize}
           pageIndex={page - 1}
           disabled={paged.isFetching}
-          onPage={onPageChange} />
+          onPage={onPageChange}
+        />
       </div>
-    )
-    : null;
+    ) : null;
 
   function toggleView() {
     setViewMode((prev) => {
       const next = prev === 'grid' ? 'list' : 'grid';
       try {
         localStorage.setItem(VIEW_KEY, next);
-      }
-      catch {
+      } catch {
         /* noop */
       }
       return next;
@@ -200,12 +214,15 @@ export default function Works() {
 
   // 切到随机排序时若未设 seed，生成一个
   useEffect(() => {
-    if ((sortOption.order === 'random' || sortOption.order === 'betterRandom') && search.seed == null) {
+    if (
+      (sortOption.order === 'random' || sortOption.order === 'betterRandom')
+      && search.seed == null
+    ) {
       navigate({
-        search: prev => ({ ...prev, seed: Math.floor(Math.random() * 100) }),
+        search: (prev) => ({ ...prev, seed: Math.floor(Math.random() * 100) }),
       });
     }
-  }, [ sortOption.order ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sortOption.order]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // title 同步筛选名与页码（分页模式）；卸载/切模式时恢复默认
   useEffect(() => {
@@ -213,13 +230,14 @@ export default function Works() {
     const totalPages = pagination
       ? Math.max(1, Math.ceil(pagination.totalCount / pagination.pageSize))
       : 1;
-    document.title = isPaginated && pagination && page > 1
-      ? `${base} · 第 ${page}/${totalPages} 页 · Kiku`
-      : `${base} · Kiku`;
+    document.title =
+      isPaginated && pagination && page > 1
+        ? `${base} · 第 ${page}/${totalPages} 页 · Kiku`
+        : `${base} · Kiku`;
     return () => {
       document.title = 'Kiku';
     };
-  }, [ isPaginated, page, filterName, pagination ]);
+  }, [isPaginated, page, filterName, pagination]);
 
   return (
     <div className='mx-auto max-w-[1680px]'>
@@ -241,7 +259,8 @@ export default function Works() {
             <M3eFormField
               variant='outlined'
               hideSubscript='always'
-              className='min-w-48 [--m3e-form-field-width:12rem] density-3'>
+              className='min-w-48 [--m3e-form-field-width:12rem] density-3'
+            >
               <M3eSelect onChange={onSortChange}>
                 {SORT_OPTIONS.map((o) => {
                   const v = `${o.order}:${o.sort}`;
@@ -249,7 +268,8 @@ export default function Works() {
                     <M3eOption
                       key={v}
                       value={v}
-                      selected={v === `${sortOption.order}:${sortOption.sort}`}>
+                      selected={v === `${sortOption.order}:${sortOption.sort}`}
+                    >
                       {o.label}
                     </M3eOption>
                   );
@@ -281,7 +301,8 @@ export default function Works() {
       )}
 
       {/* 分页控件（分页模式）：top/both 时在作品网格前渲染 */}
-      {(paginatorPosition === 'top' || paginatorPosition === 'both') && paginator}
+      {(paginatorPosition === 'top' || paginatorPosition === 'both')
+        && paginator}
 
       {/* 加载中 */}
       {loading && (
@@ -293,7 +314,7 @@ export default function Works() {
       {/* 列表视图 */}
       {!loading && viewMode === 'list' && (
         <M3eList>
-          {works.map(work => (
+          {works.map((work) => (
             <WorkListItem key={work.id} work={work} />
           ))}
         </M3eList>
@@ -302,7 +323,7 @@ export default function Works() {
       {/* 网格视图 */}
       {!loading && viewMode === 'grid' && (
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
-          {works.map(work => (
+          {works.map((work) => (
             <WorkCard key={work.id} work={work} />
           ))}
         </div>
@@ -318,17 +339,21 @@ export default function Works() {
       )}
 
       {/* 分页控件（分页模式）：bottom/both 时在空状态之后渲染 */}
-      {(paginatorPosition === 'bottom' || paginatorPosition === 'both') && paginator}
+      {(paginatorPosition === 'bottom' || paginatorPosition === 'both')
+        && paginator}
 
       {/* 无限滚动哨兵（无限模式） */}
       {!isPaginated && !loading && works.length > 0 && (
         <div ref={sentinelRef} className='h-1 w-full' />
       )}
-      {!isPaginated && !loading && works.length > 0 && infinite.isFetchingNextPage && (
-        <div className='flex justify-center py-8'>
-          <M3eCircularProgressIndicator />
-        </div>
-      )}
+      {!isPaginated
+        && !loading
+        && works.length > 0
+        && infinite.isFetchingNextPage && (
+          <div className='flex justify-center py-8'>
+            <M3eCircularProgressIndicator />
+          </div>
+        )}
     </div>
   );
 }

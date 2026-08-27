@@ -24,10 +24,16 @@ import { usePlayerStore, type Track } from '../../stores/playerStore';
  * 播放列表对话框：列出队列、当前曲目高亮、点击切曲、拖拽排序。
  * 从 AudioPlayer 抽出，供全屏播放器与 PlayerBar 复用。
  */
-export default function QueueDialog({ open, onClose }: { open: boolean; onClose: () => void; }) {
-  const queue = usePlayerStore(s => s.queue);
-  const queueIndex = usePlayerStore(s => s.queueIndex);
-  const setQueue = usePlayerStore(s => s.setQueue);
+export default function QueueDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const queue = usePlayerStore((s) => s.queue);
+  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const setQueue = usePlayerStore((s) => s.setQueue);
 
   const sensors = useSensors(
     // 5px 拖动阈值，避免点击切曲被误判为拖拽
@@ -68,17 +74,20 @@ export default function QueueDialog({ open, onClose }: { open: boolean; onClose:
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}>
+          onDragEnd={handleDragEnd}
+        >
           <SortableContext
             items={queue.map((_, i) => i)}
-            strategy={verticalListSortingStrategy}>
+            strategy={verticalListSortingStrategy}
+          >
             {queue.map((track, index) => (
               <QueueRow
                 key={`${track.hash}-${index}`}
                 track={track}
                 index={index}
                 active={index === queueIndex}
-                onPlay={() => setQueue(queue, index)} />
+                onPlay={() => setQueue(queue, index)}
+              />
             ))}
           </SortableContext>
         </DndContext>
@@ -116,15 +125,14 @@ function QueueRow({
           : 'hover:bg-(--md-sys-color-surface-container-high)',
       ].join(' ')}
       {...attributes}
-      {...listeners}>
+      {...listeners}
+    >
       <M3eIcon name='drag_indicator' className='shrink-0 opacity-40' />
       <div className='min-w-0 flex-1'>
         <div className='truncate text-sm'>{track.title}</div>
         <div className='truncate text-xs opacity-60'>{track.workTitle}</div>
       </div>
-      {active && (
-        <span className='shrink-0 text-xs font-medium'>正在播放</span>
-      )}
+      {active && <span className='shrink-0 text-xs font-medium'>正在播放</span>}
     </div>
   );
 }

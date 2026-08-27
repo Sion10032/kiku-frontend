@@ -41,35 +41,35 @@ import { formatDuration, formatRemaining } from '../../utils/format';
  * - 播放列表对话框（dnd-kit 拖拽排序）、睡眠定时器
  */
 export default function AudioPlayer() {
-  const hide = usePlayerStore(s => s.hide);
-  const queue = usePlayerStore(s => s.queue);
-  const queueIndex = usePlayerStore(s => s.queueIndex);
-  const playing = usePlayerStore(s => s.playing);
-  const currentTime = usePlayerStore(s => s.currentTime);
-  const duration = usePlayerStore(s => s.duration);
-  const playMode = usePlayerStore(s => s.playMode);
-  const volume = usePlayerStore(s => s.volume);
-  const muted = usePlayerStore(s => s.muted);
-  const rewindSeekTime = usePlayerStore(s => s.rewindSeekTime);
-  const forwardSeekTime = usePlayerStore(s => s.forwardSeekTime);
-  const togglePlaying = usePlayerStore(s => s.togglePlaying);
-  const previousTrack = usePlayerStore(s => s.previousTrack);
-  const nextTrack = usePlayerStore(s => s.nextTrack);
-  const changePlayMode = usePlayerStore(s => s.changePlayMode);
-  const setVolume = usePlayerStore(s => s.setVolume);
-  const toggleMuted = usePlayerStore(s => s.toggleMuted);
-  const triggerRewind = usePlayerStore(s => s.triggerRewind);
-  const triggerForward = usePlayerStore(s => s.triggerForward);
-  const toggleHide = usePlayerStore(s => s.toggleHide);
-  const lyricLines = usePlayerStore(s => s.lyricLines);
-  const timeDisplayMode = useSettingsStore(s => s.timeDisplayMode);
+  const hide = usePlayerStore((s) => s.hide);
+  const queue = usePlayerStore((s) => s.queue);
+  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const playing = usePlayerStore((s) => s.playing);
+  const currentTime = usePlayerStore((s) => s.currentTime);
+  const duration = usePlayerStore((s) => s.duration);
+  const playMode = usePlayerStore((s) => s.playMode);
+  const volume = usePlayerStore((s) => s.volume);
+  const muted = usePlayerStore((s) => s.muted);
+  const rewindSeekTime = usePlayerStore((s) => s.rewindSeekTime);
+  const forwardSeekTime = usePlayerStore((s) => s.forwardSeekTime);
+  const togglePlaying = usePlayerStore((s) => s.togglePlaying);
+  const previousTrack = usePlayerStore((s) => s.previousTrack);
+  const nextTrack = usePlayerStore((s) => s.nextTrack);
+  const changePlayMode = usePlayerStore((s) => s.changePlayMode);
+  const setVolume = usePlayerStore((s) => s.setVolume);
+  const toggleMuted = usePlayerStore((s) => s.toggleMuted);
+  const triggerRewind = usePlayerStore((s) => s.triggerRewind);
+  const triggerForward = usePlayerStore((s) => s.triggerForward);
+  const toggleHide = usePlayerStore((s) => s.toggleHide);
+  const lyricLines = usePlayerStore((s) => s.lyricLines);
+  const timeDisplayMode = useSettingsStore((s) => s.timeDisplayMode);
 
-  const [ queueOpen, setQueueOpen ] = useState(false);
-  const [ sleepOpen, setSleepOpen ] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [sleepOpen, setSleepOpen] = useState(false);
   /** 窄屏歌词视图（宽屏双栏常显，状态无效）；切曲自动回封面视图 */
-  const [ showLyrics, setShowLyrics ] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
   // 切曲时重置窄屏歌词视图（渲染期调整 state，替代 effect 中 setState）
-  const [ prevQueueIndex, setPrevQueueIndex ] = useState(queueIndex);
+  const [prevQueueIndex, setPrevQueueIndex] = useState(queueIndex);
   if (queueIndex !== prevQueueIndex) {
     setPrevQueueIndex(queueIndex);
     setShowLyrics(false);
@@ -114,11 +114,11 @@ export default function AudioPlayer() {
           onKeyDown={
             hasLyrics
               ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setShowLyrics(true);
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowLyrics(true);
+                  }
                 }
-              }
               : undefined
           }
           className={[
@@ -127,19 +127,19 @@ export default function AudioPlayer() {
             showLyrics
               ? 'max-lg:pointer-events-none max-lg:opacity-0'
               : 'max-lg:opacity-100',
-          ].join(' ')}>
-          {track.workId
-            ? (
-              <img
-                src={mediaUrl(`/api/cover/${track.workId}/file`)}
-                alt={track.workTitle}
-                className='max-h-[38vh] w-auto max-w-[min(80vw,420px)] rounded-2xl object-contain lg:max-h-[60vh]' />
-            )
-            : (
-              <div className='flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)'>
-                <M3eIcon name='music_note' />
-              </div>
-            )}
+          ].join(' ')}
+        >
+          {track.workId ? (
+            <img
+              src={mediaUrl(`/api/cover/${track.workId}/file`)}
+              alt={track.workTitle}
+              className='max-h-[38vh] w-auto max-w-[min(80vw,420px)] rounded-2xl object-contain lg:max-h-[60vh]'
+            />
+          ) : (
+            <div className='flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)'>
+              <M3eIcon name='music_note' />
+            </div>
+          )}
           <div className='max-w-full text-center'>
             <h2 className='truncate text-xl font-medium'>{track.title}</h2>
             <p className='mt-1 text-sm opacity-70'>{track.workTitle}</p>
@@ -157,7 +157,8 @@ export default function AudioPlayer() {
               ? 'max-lg:opacity-100'
               : 'max-lg:pointer-events-none max-lg:opacity-0',
             hasLyrics ? 'lg:flex' : 'lg:hidden',
-          ].join(' ')}>
+          ].join(' ')}
+        >
           <LyricsPanel />
         </div>
       </div>
@@ -174,7 +175,8 @@ export default function AudioPlayer() {
             max={Math.max(1, Math.floor(duration))}
             step={1}
             onInput={handleSeek}
-            className='min-w-0 flex-1'>
+            className='min-w-0 flex-1'
+          >
             <M3eSliderThumb value={Math.floor(currentTime)} />
           </M3eSlider>
           <span className='shrink-0 text-xs tabular-nums opacity-70'>
@@ -191,7 +193,8 @@ export default function AudioPlayer() {
           <M3eIconButton
             className='[&>m3e-icon]:scale-2/3'
             aria-label={`快退 ${rewindSeekTime} 秒`}
-            onClick={triggerRewind}>
+            onClick={triggerRewind}
+          >
             <M3eIcon name='fast_rewind' />
           </M3eIconButton>
           <M3eIconButton aria-label='上一首' onClick={previousTrack}>
@@ -201,7 +204,8 @@ export default function AudioPlayer() {
             variant='filled'
             aria-label={playing ? '暂停' : '播放'}
             onClick={togglePlaying}
-            size='medium'>
+            size='medium'
+          >
             <M3eIcon name={playing ? 'pause' : 'play_arrow'} />
           </M3eIconButton>
           <M3eIconButton aria-label='下一首' onClick={nextTrack}>
@@ -210,7 +214,8 @@ export default function AudioPlayer() {
           <M3eIconButton
             className='[&>m3e-icon]:scale-2/3'
             aria-label={`快进 ${forwardSeekTime} 秒`}
-            onClick={triggerForward}>
+            onClick={triggerForward}
+          >
             <M3eIcon name='fast_forward' />
           </M3eIconButton>
         </div>
@@ -219,17 +224,20 @@ export default function AudioPlayer() {
         <div className='flex items-center gap-4'>
           <M3eIconButton
             aria-label={`播放模式：${PLAY_MODE_LABEL[playMode]}`}
-            onClick={changePlayMode}>
+            onClick={changePlayMode}
+          >
             <M3eIcon name={PLAY_MODE_ICON[playMode]} />
           </M3eIconButton>
           <M3eIconButton
             aria-label='播放列表'
-            onClick={() => setQueueOpen(true)}>
+            onClick={() => setQueueOpen(true)}
+          >
             <M3eIcon name='queue_music' />
           </M3eIconButton>
           <M3eIconButton
             aria-label='睡眠定时器'
-            onClick={() => setSleepOpen(true)}>
+            onClick={() => setSleepOpen(true)}
+          >
             <M3eIcon name='bedtime' />
           </M3eIconButton>
         </div>
@@ -238,16 +246,19 @@ export default function AudioPlayer() {
         <div className='flex w-full max-w-sm items-center gap-3'>
           <M3eIconButton
             aria-label={muted ? '取消静音' : '静音'}
-            onClick={toggleMuted}>
+            onClick={toggleMuted}
+          >
             <M3eIcon
-              name={muted || volume === 0 ? 'volume_off' : 'volume_up'} />
+              name={muted || volume === 0 ? 'volume_off' : 'volume_up'}
+            />
           </M3eIconButton>
           <M3eSlider
             min={0}
             max={100}
             step={1}
             onInput={handleVolume}
-            className='min-w-0 flex-1'>
+            className='min-w-0 flex-1'
+          >
             <M3eSliderThumb value={Math.round(volume * 100)} />
           </M3eSlider>
         </div>

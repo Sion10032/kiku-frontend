@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { M3eListOption, M3eSelectionList, type M3eListOptionElement } from '@m3e/react/list';
+import {
+  M3eListOption,
+  M3eSelectionList,
+  type M3eListOptionElement,
+} from '@m3e/react/list';
 import { M3eMenu, M3eMenuItem, type M3eMenuElement } from '@m3e/react/menu';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
@@ -48,24 +52,28 @@ interface MenuState {
  *
  * 播放器（Howler）在步骤 8 实现；此处仅负责写入 playerStore 队列。
  */
-export default function WorkTree({ work, tree, loading = false }: WorkTreeProps) {
+export default function WorkTree({
+  work,
+  tree,
+  loading = false,
+}: WorkTreeProps) {
   // 面包屑路径（文件夹标题数组）
-  const [ path, setPath ] = useState<string[]>([]);
-  const [ menu, setMenu ] = useState<MenuState | null>(null);
+  const [path, setPath] = useState<string[]>([]);
+  const [menu, setMenu] = useState<MenuState | null>(null);
   const menuRef = useRef<M3eMenuElement>(null);
   // 文件列表容器：目录切换时用 min-height 防止瞬时高度塌缩导致滚动位置丢失
   const listRef = useRef<HTMLDivElement>(null);
-  const [ listMinHeight, setListMinHeight ] = useState<number | undefined>();
+  const [listMinHeight, setListMinHeight] = useState<number | undefined>();
 
-  const queue = usePlayerStore(s => s.queue);
-  const queueIndex = usePlayerStore(s => s.queueIndex);
-  const setQueue = usePlayerStore(s => s.setQueue);
-  const addToQueue = usePlayerStore(s => s.addToQueue);
-  const playNext = usePlayerStore(s => s.playNext);
+  const queue = usePlayerStore((s) => s.queue);
+  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const setQueue = usePlayerStore((s) => s.setQueue);
+  const addToQueue = usePlayerStore((s) => s.addToQueue);
+  const playNext = usePlayerStore((s) => s.playNext);
 
   // 单目录作品自动进入根目录（对齐原 kikoeru-quasar 行为；
   // 渲染期调整 state，替代 effect 中 setState）
-  const [ prevTree, setPrevTree ] = useState(tree);
+  const [prevTree, setPrevTree] = useState(tree);
   if (tree !== prevTree) {
     setPrevTree(tree);
     const initial: string[] = [];
@@ -82,36 +90,39 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
     let nodes = tree;
     for (const name of path) {
       const folder = nodes.find(
-        (n): n is Extract<TrackNode, { type: 'folder'; }> =>
+        (n): n is Extract<TrackNode, { type: 'folder' }> =>
           n.type === 'folder' && n.title === name,
       );
       if (!folder) return tree;
       nodes = folder.children;
     }
     return nodes;
-  }, [ tree, path ]);
+  }, [tree, path]);
 
   // 当前目录的音频队列（点击播放 / 下一首 / 添加到队列共用）
   const queueTracks = useMemo(
     () =>
       fatherFolder
         .filter((n): n is TrackLeaf => n.type !== 'folder')
-        .filter(n => n.type === 'audio')
-        .map(n => toTrack(work, n)),
-    [ fatherFolder, work ],
+        .filter((n) => n.type === 'audio')
+        .map((n) => toTrack(work, n)),
+    [fatherFolder, work],
   );
 
   // 预览状态：打开目录的可预览文件快照 + 当前下标
-  const [ preview, setPreview ] = useState<{ files: PreviewFile[]; index: number; } | null>(null);
+  const [preview, setPreview] = useState<{
+    files: PreviewFile[];
+    index: number;
+  } | null>(null);
 
   // 当前目录可预览文件（画廊范围）
   const previewFiles = useMemo(
     () =>
       fatherFolder
         .filter((n): n is TrackLeaf => n.type !== 'folder')
-        .map(n => toPreviewFile(work.id, n))
+        .map((n) => toPreviewFile(work.id, n))
         .filter(isPreviewable),
-    [ fatherFolder, work.id ],
+    [fatherFolder, work.id],
   );
 
   // 当前正在播放的曲目（需属于本作品，避免跨作品同名高亮）
@@ -128,12 +139,12 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
     setPath(next);
   }
 
-  function enterFolder(folder: Extract<TrackNode, { type: 'folder'; }>) {
-    navigate([ ...path, folder.title ]);
+  function enterFolder(folder: Extract<TrackNode, { type: 'folder' }>) {
+    navigate([...path, folder.title]);
   }
 
   function playLeaf(leaf: TrackLeaf) {
-    const index = queueTracks.findIndex(t => t.hash === leaf.hash);
+    const index = queueTracks.findIndex((t) => t.hash === leaf.hash);
     setQueue(queueTracks, index === -1 ? 0 : index);
   }
 
@@ -152,7 +163,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   }
 
   function openPreview(leaf: TrackLeaf) {
-    const index = previewFiles.findIndex(f => f.hash === leaf.hash);
+    const index = previewFiles.findIndex((f) => f.hash === leaf.hash);
     if (index >= 0) setPreview({ files: previewFiles, index });
   }
 
@@ -173,7 +184,7 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   // 每次 openMenu 都产生新的 menu 对象，确保重复点击同一行的 ⋮ 也会重新 show
   useEffect(() => {
     if (menu) void menuRef.current?.show(menu.anchor);
-  }, [ menu ]);
+  }, [menu]);
 
   function isCurrent(leaf: TrackLeaf): boolean {
     return currentTrack?.hash === leaf.hash;
@@ -182,11 +193,11 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
   // 新目录条目渲染完成后解除高度锁定（等所有 list-option 渲染完）
   useEffect(() => {
     if (listMinHeight === undefined || !listRef.current) return;
-    const opts = [ ...listRef.current.querySelectorAll('m3e-list-option') ];
-    void Promise.all(opts.map(o => o.updateComplete)).then(() =>
+    const opts = [...listRef.current.querySelectorAll('m3e-list-option')];
+    void Promise.all(opts.map((o) => o.updateComplete)).then(() =>
       setListMinHeight(undefined),
     );
-  }, [ listMinHeight, fatherFolder ]);
+  }, [listMinHeight, fatherFolder]);
 
   // 当前 ⋮ 菜单目标是否可预览（决定「预览」菜单项显隐）
   const menuPreviewable =
@@ -196,20 +207,22 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
     <div className='flex flex-col gap-3'>
       {/* 面包屑 */}
       <M3eBreadcrumb>
-        <M3eBreadcrumbItem onClick={() => navigate([])}>
-          ROOT
-        </M3eBreadcrumbItem>
+        <M3eBreadcrumbItem onClick={() => navigate([])}>ROOT</M3eBreadcrumbItem>
         {path.map((name, i) => (
           <M3eBreadcrumbItem
             key={`${name}-${i}`}
-            onClick={() => navigate(path.slice(0, i + 1))}>
+            onClick={() => navigate(path.slice(0, i + 1))}
+          >
             {name}
           </M3eBreadcrumbItem>
         ))}
       </M3eBreadcrumb>
 
       {/* 文件列表（min-height 锁定防止目录切换时滚动位置丢失） */}
-      <div ref={listRef} style={listMinHeight ? { minHeight: listMinHeight } : undefined}>
+      <div
+        ref={listRef}
+        style={listMinHeight ? { minHeight: listMinHeight } : undefined}
+      >
         {loading && (
           <div className='flex justify-center py-12'>
             <M3eCircularProgressIndicator />
@@ -224,23 +237,25 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
 
         {!loading && fatherFolder.length > 0 && (
           <M3eSelectionList variant='segmented' hide-selection-indicator>
-            {path.length > 0 && <ParentListItem onBack={() => navigate(path.slice(0, -1))} />}
-            {fatherFolder.map(node =>
-              node.type === 'folder'
-                ? (
-                  <TrackFolderListItem
-                    key={node.title}
-                    node={node}
-                    onEnter={() => enterFolder(node)} />
-                )
-                : (
-                  <TrackLeafListItem
-                    key={node.hash}
-                    node={node}
-                    current={isCurrent(node)}
-                    onLeafClick={handleLeafClick}
-                    onOpenMenu={openMenu} />
-                ),
+            {path.length > 0 && (
+              <ParentListItem onBack={() => navigate(path.slice(0, -1))} />
+            )}
+            {fatherFolder.map((node) =>
+              node.type === 'folder' ? (
+                <TrackFolderListItem
+                  key={node.title}
+                  node={node}
+                  onEnter={() => enterFolder(node)}
+                />
+              ) : (
+                <TrackLeafListItem
+                  key={node.hash}
+                  node={node}
+                  current={isCurrent(node)}
+                  onLeafClick={handleLeafClick}
+                  onOpenMenu={openMenu}
+                />
+              ),
             )}
           </M3eSelectionList>
         )}
@@ -295,14 +310,15 @@ export default function WorkTree({ work, tree, loading = false }: WorkTreeProps)
         open={preview !== null}
         files={preview?.files ?? []}
         index={preview?.index ?? 0}
-        onIndexChange={i => setPreview(p => (p ? { ...p, index: i } : p))}
-        onClose={() => setPreview(null)} />
+        onIndexChange={(i) => setPreview((p) => (p ? { ...p, index: i } : p))}
+        onClose={() => setPreview(null)}
+      />
     </div>
   );
 }
 
 /** 返回上一层目录的行（子目录顶部显示 ".."）。 */
-function ParentListItem({ onBack }: { onBack: () => void; }) {
+function ParentListItem({ onBack }: { onBack: () => void }) {
   const ref = useM3eStyle<M3eListOptionElement>({
     style: {
       '.content': {
@@ -314,8 +330,9 @@ function ParentListItem({ onBack }: { onBack: () => void; }) {
   return (
     <M3eListOption
       ref={ref}
-      onBeforeInput={e => e.preventDefault()}
-      onClick={onBack}>
+      onBeforeInput={(e) => e.preventDefault()}
+      onClick={onBack}
+    >
       <span slot='leading' className='me-3'>
         <M3eIcon name='arrow_back' />
       </span>
@@ -325,7 +342,13 @@ function ParentListItem({ onBack }: { onBack: () => void; }) {
 }
 
 /** 文件夹行：folder 图标 + 标题 + 子项数。 */
-function TrackFolderListItem({ node, onEnter }: { node: TrackFolder; onEnter: () => void; }) {
+function TrackFolderListItem({
+  node,
+  onEnter,
+}: {
+  node: TrackFolder;
+  onEnter: () => void;
+}) {
   const ref = useM3eStyle<M3eListOptionElement>({
     style: {
       '.content': {
@@ -337,15 +360,14 @@ function TrackFolderListItem({ node, onEnter }: { node: TrackFolder; onEnter: ()
   return (
     <M3eListOption
       ref={ref}
-      onBeforeInput={e => e.preventDefault()}
-      onClick={onEnter}>
+      onBeforeInput={(e) => e.preventDefault()}
+      onClick={onEnter}
+    >
       <span slot='leading' className='me-3'>
         <M3eIcon name='folder' />
       </span>
       <span className='min-w-0 flex-1 truncate'>{node.title}</span>
-      <span
-        slot='supporting-text'
-        className='truncate text-xs opacity-60'>
+      <span slot='supporting-text' className='truncate text-xs opacity-60'>
         {node.children.length} 个项目
       </span>
     </M3eListOption>
@@ -378,9 +400,10 @@ function TrackLeafListItem({
   return (
     <M3eListOption
       ref={ref}
-      onBeforeInput={e => e.preventDefault()}
+      onBeforeInput={(e) => e.preventDefault()}
       onClick={() => onLeafClick(node)}
-      selected={node.type === 'audio' && current}>
+      selected={node.type === 'audio' && current}
+    >
       <span slot='leading' className='me-3'>
         <M3eIcon name={leafIcon(node.type)} />
       </span>
@@ -391,7 +414,8 @@ function TrackLeafListItem({
           onClick={(e) => {
             e.stopPropagation();
             onOpenMenu(node, e.currentTarget as HTMLElement);
-          }}>
+          }}
+        >
           <M3eIcon name='more_vert' />
         </M3eIconButton>
       </span>

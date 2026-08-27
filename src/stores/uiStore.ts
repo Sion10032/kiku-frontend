@@ -10,9 +10,9 @@ interface UiState {
 /** UI 偏好（localStorage 持久化，与业务 store 分离）。 */
 export const useUiStore = create<UiState>()(
   persist(
-    set => ({
+    (set) => ({
       navHidden: false,
-      toggleNavHidden: () => set(s => ({ navHidden: !s.navHidden })),
+      toggleNavHidden: () => set((s) => ({ navHidden: !s.navHidden })),
     }),
     { name: 'kiku-ui' },
   ),

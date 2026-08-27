@@ -40,8 +40,7 @@ export function useSSE(
         let data: unknown = ev.data;
         try {
           data = JSON.parse(ev.data);
-        }
-        catch {
+        } catch {
           /* 非 JSON 原样返回 */
         }
         cbRef.current(ev.event, data);
@@ -54,5 +53,5 @@ export function useSSE(
 
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ url, ...(deps ?? []) ]);
+  }, [url, ...(deps ?? [])]);
 }

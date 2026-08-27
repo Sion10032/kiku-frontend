@@ -32,7 +32,7 @@ export default function HistoryStrip() {
       </div>
 
       <div className='flex gap-4 overflow-x-auto pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden'>
-        {works.map(work => (
+        {works.map((work) => (
           <HistoryCard key={work.id} work={work} />
         ))}
       </div>
@@ -41,7 +41,7 @@ export default function HistoryStrip() {
 }
 
 /** 条带内轻量卡片：固定宽度封面 + 两行截断标题。 */
-function HistoryCard({ work }: { work: Work; }) {
+function HistoryCard({ work }: { work: Work }) {
   return (
     <M3eCard className='w-48 shrink-0 [--m3e-card-padding:0px]'>
       <div slot='header' className='relative p-0'>
@@ -51,7 +51,8 @@ function HistoryCard({ work }: { work: Work; }) {
         <Link
           to='/work/$id'
           params={{ id: work.id }}
-          className='line-clamp-2 text-sm no-underline'>
+          className='line-clamp-2 text-sm no-underline'
+        >
           {work.title}
         </Link>
       </div>

@@ -30,7 +30,11 @@ interface PaginatorProps {
 }
 
 /** 范围文本，语义照抄 m3e-paginator 默认 formatter：「0 of N」/「start - end of N」 */
-function rangeLabel(length: number, pageSize: number, pageIndex: number): string {
+function rangeLabel(
+  length: number,
+  pageSize: number,
+  pageIndex: number,
+): string {
   const len = Math.max(length, 0);
   if (len === 0 || pageSize <= 0) return `0 of ${len}`;
 
@@ -53,33 +57,39 @@ export default function Paginator({
 
   return (
     <>
-      <span className='mx-2 text-sm opacity-70'>{rangeLabel(length, pageSize, pageIndex)}</span>
+      <span className='mx-2 text-sm opacity-70'>
+        {rangeLabel(length, pageSize, pageIndex)}
+      </span>
       <M3eIconButton
         aria-label='第一页'
         title='第一页'
         disabled={disabled || !hasPrevious}
-        onClick={() => onPage(0)}>
+        onClick={() => onPage(0)}
+      >
         <M3eIcon name='first_page' />
       </M3eIconButton>
       <M3eIconButton
         aria-label='上一页'
         title='上一页'
         disabled={disabled || !hasPrevious}
-        onClick={() => onPage(pageIndex - 1)}>
+        onClick={() => onPage(pageIndex - 1)}
+      >
         <M3eIcon name='chevron_left' />
       </M3eIconButton>
       <M3eIconButton
         aria-label='下一页'
         title='下一页'
         disabled={disabled || !hasNext}
-        onClick={() => onPage(pageIndex + 1)}>
+        onClick={() => onPage(pageIndex + 1)}
+      >
         <M3eIcon name='chevron_right' />
       </M3eIconButton>
       <M3eIconButton
         aria-label='最后一页'
         title='最后一页'
         disabled={disabled || !hasNext}
-        onClick={() => onPage(pageCount - 1)}>
+        onClick={() => onPage(pageCount - 1)}
+      >
         <M3eIcon name='last_page' />
       </M3eIconButton>
     </>

@@ -9,21 +9,21 @@ import { getCircles, getTags, getVas } from '../api/works';
  */
 export function useCirclesQuery() {
   return useQuery({
-    queryKey: [ 'circles' ],
+    queryKey: ['circles'],
     queryFn: getCircles,
   });
 }
 
 export function useTagsQuery() {
   return useQuery({
-    queryKey: [ 'tags' ],
+    queryKey: ['tags'],
     queryFn: getTags,
   });
 }
 
 export function useVasQuery() {
   return useQuery({
-    queryKey: [ 'vas' ],
+    queryKey: ['vas'],
     queryFn: getVas,
   });
 }

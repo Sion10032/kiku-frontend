@@ -25,16 +25,16 @@ const EDGE_FADE =
  *   lines>1 维持 line-clamp 截断不滚动
  */
 export default function LyricsBar() {
-  const currentLyric = usePlayerStore(s => s.currentLyric);
-  const hide = usePlayerStore(s => s.hide);
-  const playing = usePlayerStore(s => s.playing);
-  const activeLyricIndex = usePlayerStore(s => s.activeLyricIndex);
-  const lyricLines = usePlayerStore(s => s.lyricLines);
+  const currentLyric = usePlayerStore((s) => s.currentLyric);
+  const hide = usePlayerStore((s) => s.hide);
+  const playing = usePlayerStore((s) => s.playing);
+  const activeLyricIndex = usePlayerStore((s) => s.activeLyricIndex);
+  const lyricLines = usePlayerStore((s) => s.lyricLines);
   const { enabled, fontSize, lines, opacity } = useSettingsStore(
-    s => s.floatingLyrics,
+    (s) => s.floatingLyrics,
   );
   const outerRef = useRef<HTMLDivElement>(null);
-  const [ scrollDist, setScrollDist ] = useState(0);
+  const [scrollDist, setScrollDist] = useState(0);
 
   // 溢出量实测：换行/字号/行数变化后（key 重挂载后）重测，
   // 字体加载与窗口缩放经 ResizeObserver 复测（同 MarqueeText）
@@ -47,7 +47,7 @@ export default function LyricsBar() {
     const ro = new ResizeObserver(check);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [ currentLyric, fontSize, lines ]);
+  }, [currentLyric, fontSize, lines]);
 
   if (!enabled || !hide || currentLyric === '') return null;
 
@@ -77,37 +77,42 @@ export default function LyricsBar() {
       }}
       className={`absolute inset-x-0 bottom-full mx-auto mb-2 w-max max-w-[min(90vw,560px)] rounded-full py-1.5 shadow-lg animate-[fade-in_0.3s_ease-out] ${
         scrolling ? 'flex px-3' : 'overflow-hidden px-4 text-center'
-      }`}>
-      {lines === 1
-        ? (
-          /* 裁切/渐隐都在这层视口（无 padding），胶囊 px-3 保持实底；
+      }`}
+    >
+      {lines === 1 ? (
+        /* 裁切/渐隐都在这层视口（无 padding），胶囊 px-3 保持实底；
              overflow 按 padding box 裁切，溢出内容会画进 padding，
              放同一层时 padding 挡不住碰边 */
-          <div
-            ref={outerRef}
-            className={scrolling ? 'min-w-0 overflow-hidden' : 'min-w-0'}
+        <div
+          ref={outerRef}
+          className={scrolling ? 'min-w-0 overflow-hidden' : 'min-w-0'}
+          style={
+            scrolling
+              ? { maskImage: EDGE_FADE, WebkitMaskImage: EDGE_FADE }
+              : undefined
+          }
+        >
+          <span
+            className='block w-max mx-auto whitespace-nowrap'
             style={
-              scrolling ? { maskImage: EDGE_FADE, WebkitMaskImage: EDGE_FADE } : undefined
-            }>
-            <span
-              className='block w-max mx-auto whitespace-nowrap'
-              style={
-                scrolling
-                  ? ({
+              scrolling
+                ? ({
                     '--lyrics-scroll-dist': `${scrollDist}px`,
-                    'animationName': 'lyrics-scroll',
-                    'animationDuration': `${duration}s`,
-                    'animationTimingFunction': 'linear',
-                    'animationFillMode': 'forwards',
-                    'animationPlayState': playing ? 'running' : 'paused',
+                    animationName: 'lyrics-scroll',
+                    animationDuration: `${duration}s`,
+                    animationTimingFunction: 'linear',
+                    animationFillMode: 'forwards',
+                    animationPlayState: playing ? 'running' : 'paused',
                   } as CSSProperties)
-                  : undefined
-              }>
-              {currentLyric}
-            </span>
-          </div>
-        )
-        : currentLyric}
+                : undefined
+            }
+          >
+            {currentLyric}
+          </span>
+        </div>
+      ) : (
+        currentLyric
+      )}
     </div>
   );
 }

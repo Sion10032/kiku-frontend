@@ -37,5 +37,11 @@ export function toPreviewFile(workId: string, leaf: TrackLeaf): PreviewFile {
   const name = leaf.hash.split('/').pop() ?? leaf.hash;
   const dot = name.lastIndexOf('.');
   const ext = dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
-  return { workId, hash: leaf.hash, title: leaf.title, ext, leafType: leaf.type };
+  return {
+    workId,
+    hash: leaf.hash,
+    title: leaf.title,
+    ext,
+    leafType: leaf.type,
+  };
 }

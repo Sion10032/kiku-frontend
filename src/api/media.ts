@@ -31,8 +31,5 @@ export function checkLrc(
 
 /** 编码 media index 中的路径分隔符，保持后端可解析。 */
 function encodeMediaIndex(mediaIndex: string): string {
-  return mediaIndex
-    .split('/')
-    .map(encodeURIComponent)
-    .join('/');
+  return mediaIndex.split('/').map(encodeURIComponent).join('/');
 }

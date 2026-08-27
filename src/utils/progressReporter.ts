@@ -51,11 +51,7 @@ let listenersInstalled = false;
 function isAuthed(): boolean {
   // 登录态双重校验：store 标记（restoreSession/login 置位）+ 实际持有 token；
   // 任一缺失即未登录，不发请求（未登录浏览、会话恢复中、已登出）
-  return (
-    !disabled
-    && useUserStore.getState().auth
-    && !!getToken()
-  );
+  return !disabled && useUserStore.getState().auth && !!getToken();
 }
 
 async function send(keepalive = false): Promise<void> {
@@ -75,8 +71,7 @@ async function send(keepalive = false): Promise<void> {
       },
       { keepalive },
     );
-  }
-  catch (err) {
+  } catch (err) {
     // 拦截后不再重发：404 作品不在库（前端缓存页面播放已重建库）；
     // 401 用户不存在（幽灵 token，全局 beforeError 已清 token 跳登录）
     if (err instanceof ApiError) {
@@ -144,7 +139,12 @@ export function flushProgress(): void {
 /** 音轨自然结束：上报 position=duration 并立即发送（计入已听轨数）。 */
 export function reportTrackEnd(track: ProgressTrack, duration: number): void {
   installListeners();
-  if (!isAuthed() || deadWorks.has(track.workId) || suppressedWorkId === track.workId) return;
+  if (
+    !isAuthed()
+    || deadWorks.has(track.workId)
+    || suppressedWorkId === track.workId
+  )
+    return;
   pending = {
     workId: track.workId,
     hash: track.hash,

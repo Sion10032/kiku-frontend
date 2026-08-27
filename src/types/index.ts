@@ -58,11 +58,7 @@ export interface Pagination {
 // ---------- 作品列表 / 筛选 ----------
 
 /** /works 排序字段（对齐后端 schema） */
-export type WorksOrder =
-  | 'release'
-  | 'id'
-  | 'random'
-  | 'betterRandom';
+export type WorksOrder = 'release' | 'id' | 'random' | 'betterRandom';
 
 export type WorksSort = 'desc' | 'asc';
 
@@ -225,7 +221,7 @@ export interface UpdatePasswordInput {
 }
 
 export interface DeleteUsersInput {
-  users: { name: string; }[];
+  users: { name: string }[];
 }
 
 // ---------- 配置 ----------

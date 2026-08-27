@@ -7,8 +7,8 @@ import { useSettingsStore } from './stores/settingsStore';
 export default function ThemeRoot() {
   // 运行时种子色（themeStore）与用户偏好（settingsStore）职责分离：
   // seed 由封面取色写入，colorMode 由设置页切换（auto 跟随系统）。
-  const seed = useThemeStore(s => s.seed);
-  const colorMode = useSettingsStore(s => s.colorMode);
+  const seed = useThemeStore((s) => s.seed);
+  const colorMode = useSettingsStore((s) => s.colorMode);
   // m3e-theme 只有作为 <body> 的直接子元素，才会把动态色彩变量注入
   // document 级样式表（html { --md-sys-color-* } ...），并为 body 应用
   // 主题背景/前景/滚动条颜色、接管 html 的 color-scheme（ThemeElement.ts

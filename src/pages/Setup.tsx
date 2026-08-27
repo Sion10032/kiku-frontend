@@ -34,14 +34,14 @@ import type { InstanceMode } from '../types';
  */
 export default function Setup() {
   const navigate = useNavigate();
-  const setUser = useUserStore(s => s.setUser);
-  const setAuth = useUserStore(s => s.setAuth);
+  const setUser = useUserStore((s) => s.setUser);
+  const setAuth = useUserStore((s) => s.setAuth);
 
-  const [ name, setName ] = useState('');
-  const [ password, setPassword ] = useState('');
-  const [ instanceMode, setInstanceMode ] = useState<InstanceMode>('private');
-  const [ allowRegistration, setAllowRegistration ] = useState(false);
-  const [ loading, setLoading ] = useState(false);
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [instanceMode, setInstanceMode] = useState<InstanceMode>('private');
+  const [allowRegistration, setAllowRegistration] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function onSubmit() {
     if (loading) return;
@@ -60,13 +60,11 @@ export default function Setup() {
       await refreshSharedConfig();
       M3eSnackbar.open('初始化完成');
       navigate({ to: '/works' });
-    }
-    catch (err) {
+    } catch (err) {
       const msg =
         err instanceof ApiError ? err.message : '初始化失败，请检查网络';
       M3eSnackbar.open(msg);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   }
@@ -98,10 +96,11 @@ export default function Setup() {
                   type='text'
                   autoComplete='username'
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value)}
                   required
                   minLength={4}
-                  className='w-full border-none bg-transparent py-2 text-base outline-none' />
+                  className='w-full border-none bg-transparent py-2 text-base outline-none'
+                />
               </M3eFormField>
               <M3eFormField variant='outlined' className='w-full'>
                 <label slot='label' htmlFor='setup-password'>
@@ -113,10 +112,11 @@ export default function Setup() {
                   type='password'
                   autoComplete='new-password'
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={5}
-                  className='w-full border-none bg-transparent py-2 text-base outline-none' />
+                  className='w-full border-none bg-transparent py-2 text-base outline-none'
+                />
               </M3eFormField>
             </form>
             <div slot='actions'>
@@ -135,14 +135,16 @@ export default function Setup() {
                 <M3eRadio
                   name='instance-mode'
                   checked={instanceMode === 'private'}
-                  onChange={() => setInstanceMode('private')} />
+                  onChange={() => setInstanceMode('private')}
+                />
                 <span className='text-sm'>私有（需要登录）</span>
               </label>
               <label className='flex cursor-pointer items-center gap-3'>
                 <M3eRadio
                   name='instance-mode'
                   checked={instanceMode === 'public'}
-                  onChange={() => setInstanceMode('public')} />
+                  onChange={() => setInstanceMode('public')}
+                />
                 <span className='text-sm'>公开（匿名只读浏览）</span>
               </label>
             </form>
@@ -158,23 +160,22 @@ export default function Setup() {
 
           <M3eStepPanel id='setup-step-register'>
             <p className='m-0 text-sm opacity-70'>
-              是否允许用户自行注册（注册用户默认 user
-              权限，可随时在后台修改）。
+              是否允许用户自行注册（注册用户默认 user 权限，可随时在后台修改）。
             </p>
             <label className='mt-4 flex items-center justify-between gap-3'>
               <span className='text-sm'>允许注册</span>
               <M3eSwitch
                 checked={allowRegistration}
-                onInput={e =>
-                  setAllowRegistration((e.target as HTMLInputElement).checked)} />
+                onInput={(e) =>
+                  setAllowRegistration((e.target as HTMLInputElement).checked)
+                }
+              />
             </label>
             <div slot='actions'>
               <M3eButton>
                 <M3eStepperPrevious>上一步</M3eStepperPrevious>
               </M3eButton>
-              <M3eButton
-                disabled={loading}
-                onClick={onSubmit}>
+              <M3eButton disabled={loading} onClick={onSubmit}>
                 {loading ? '初始化中…' : '完成初始化'}
               </M3eButton>
             </div>

@@ -25,7 +25,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 export const rootRoute = createRootRoute({
   beforeLoad: async ({ location }) => {
     await restoreSession();
-    await Promise.all([ ensureSetupStatus(), ensureSharedConfig() ]);
+    await Promise.all([ensureSetupStatus(), ensureSharedConfig()]);
     if (location.pathname !== '/setup' && getSetupNeeded()) {
       throw redirect({ to: '/setup' });
     }

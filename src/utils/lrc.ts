@@ -41,7 +41,7 @@ function parseLrc(text: string): LyricLine[] {
     const lyricText = line.slice(field.length).trim();
     if (!lyricText) continue;
 
-    for (const [ , mm, ss, ms ] of field.matchAll(lrcTimeExp)) {
+    for (const [, mm, ss, ms] of field.matchAll(lrcTimeExp)) {
       lines.push({
         start:
           Number(mm) * 60
@@ -64,7 +64,7 @@ function parseLrc(text: string): LyricLine[] {
 function parseVttTime(stamp: string): number | null {
   const match = /^(?:(\d+):)?(\d{1,2}):(\d{1,2})[.,](\d{1,3})$/.exec(stamp);
   if (!match) return null;
-  const [ , h, m, s, ms ] = match;
+  const [, h, m, s, ms] = match;
   return (
     (h ? Number(h) * 3600 : 0)
     + Number(m) * 60
@@ -85,11 +85,11 @@ function parseVtt(text: string): LyricLine[] {
   const blocks = text.replace(/\r\n?/g, '\n').split(/\n{2,}/);
 
   for (const block of blocks) {
-    const rows = block.split('\n').filter(row => row.trim() !== '');
-    const cueIndex = rows.findIndex(row => row.includes('-->'));
+    const rows = block.split('\n').filter((row) => row.trim() !== '');
+    const cueIndex = rows.findIndex((row) => row.includes('-->'));
     if (cueIndex === -1) continue;
 
-    const [ rawStart, rawEnd ] = rows[cueIndex].split('-->');
+    const [rawStart, rawEnd] = rows[cueIndex].split('-->');
     if (rawEnd == null) continue;
     const start = parseVttTime(rawStart.trim());
     const end = parseVttTime(rawEnd.trim().split(/\s+/)[0]);

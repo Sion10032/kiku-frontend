@@ -9,9 +9,9 @@ if (typeof globalThis.localStorage === 'undefined') {
       return mem.size;
     },
     clear: () => mem.clear(),
-    getItem: key => (mem.has(key) ? mem.get(key)! : null),
-    key: index => Array.from(mem.keys())[index] ?? null,
-    removeItem: key => void mem.delete(key),
+    getItem: (key) => (mem.has(key) ? mem.get(key)! : null),
+    key: (index) => Array.from(mem.keys())[index] ?? null,
+    removeItem: (key) => void mem.delete(key),
     setItem: (key, value) => void mem.set(key, String(value)),
   };
 }

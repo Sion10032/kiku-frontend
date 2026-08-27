@@ -46,7 +46,8 @@ export default function Work() {
         <WorkTree
           work={work}
           tree={tracksQuery.data ?? []}
-          loading={tracksQuery.isLoading} />
+          loading={tracksQuery.isLoading}
+        />
       </div>
     </div>
   );

@@ -10,13 +10,11 @@
  *
  * 实现后删除对应导入并替换为真实组件。
  */
-export default function Placeholder({ title }: { title: string; }) {
+export default function Placeholder({ title }: { title: string }) {
   return (
     <section>
       <h1>{title}</h1>
-      <p>
-        该页面尚未实现，将在后续步骤完成。
-      </p>
+      <p>该页面尚未实现，将在后续步骤完成。</p>
     </section>
   );
 }

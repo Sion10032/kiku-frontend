@@ -17,13 +17,13 @@ interface SleepModeProps {
  * - 使用 playerStore.setSleepTimer / clearSleepMode。
  */
 export default function SleepMode({ open, onClose }: SleepModeProps) {
-  const sleepTime = usePlayerStore(s => s.sleepTime);
-  const sleepMode = usePlayerStore(s => s.sleepMode);
-  const setSleepTimer = usePlayerStore(s => s.setSleepTimer);
-  const clearSleepMode = usePlayerStore(s => s.clearSleepMode);
+  const sleepTime = usePlayerStore((s) => s.sleepTime);
+  const sleepMode = usePlayerStore((s) => s.sleepMode);
+  const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
+  const clearSleepMode = usePlayerStore((s) => s.clearSleepMode);
 
   // 初始化时间：已有定时 → 用已有值；否则用当前时间
-  const [ time, setTime ] = useState(() => {
+  const [time, setTime] = useState(() => {
     if (sleepMode && sleepTime) return sleepTime;
     const now = new Date();
     return (
@@ -56,8 +56,9 @@ export default function SleepMode({ open, onClose }: SleepModeProps) {
             id='sleep-time'
             type='time'
             value={time}
-            onChange={e => setTime(e.target.value)}
-            className='w-full border-none bg-transparent py-2 text-sm outline-none' />
+            onChange={(e) => setTime(e.target.value)}
+            className='w-full border-none bg-transparent py-2 text-sm outline-none'
+          />
         </M3eFormField>
 
         {sleepMode && sleepTime && (
@@ -69,10 +70,7 @@ export default function SleepMode({ open, onClose }: SleepModeProps) {
 
       <div slot='actions' className='flex items-center justify-between'>
         <div>
-          <M3eButton
-            variant='text'
-            disabled={!sleepMode}
-            onClick={handleClear}>
+          <M3eButton variant='text' disabled={!sleepMode} onClick={handleClear}>
             取消定时
           </M3eButton>
         </div>

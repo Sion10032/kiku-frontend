@@ -25,7 +25,7 @@ interface WorkDetailsProps {
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
   // 写评价对话框开关
-  const [ reviewOpen, setReviewOpen ] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
   // 设置中关闭动态取色时跳过提取并恢复默认色。
@@ -44,7 +44,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
     return () => {
       cancelled = true;
     };
-  }, [ work.id ]);
+  }, [work.id]);
 
   // 评分分布展示 JSX 暂被注释（原实现可从 git 历史/注释块恢复），
   // 对应 useMemo 因 noUnusedLocals 报错已移除。
@@ -64,7 +64,8 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           <Link
             to='/works'
             search={{ circleId: work.circle.id }}
-            className='truncate text-sm no-underline opacity-70'>
+            className='truncate text-sm no-underline opacity-70'
+          >
             {work.circle.name}
           </Link>
 
@@ -72,14 +73,10 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-sm'>
             {work.rate_average_2dp != null && (
               <span className='font-medium text-(--md-sys-color-primary)'>
-                ★
-                {' '}
-                {work.rate_average_2dp.toFixed(1)}
+                ★ {work.rate_average_2dp.toFixed(1)}
                 <span className='font-normal opacity-60'>
                   {' '}
-                  (
-                  {work.rate_count ?? 0}
-                  )
+                  ({work.rate_count ?? 0})
                 </span>
               </span>
             )}
@@ -93,7 +90,8 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
               href={dlsiteUrl(work.id)}
               target='_blank'
               rel='noreferrer noopener'
-              className='inline-flex items-center gap-0.5 no-underline text-(--md-sys-color-primary)'>
+              className='inline-flex items-center gap-0.5 no-underline text-(--md-sys-color-primary)'
+            >
               DLsite
               <M3eIcon name='open_in_new' />
             </a>
@@ -146,7 +144,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {/* 标签 */}
           {work.tags.length > 0 && (
             <div className='flex flex-wrap gap-1'>
-              {work.tags.map(tag => (
+              {work.tags.map((tag) => (
                 <Link key={tag.id} to='/works' search={{ tagId: tag.id }}>
                   <M3eChip>{tag.name}</M3eChip>
                 </Link>
@@ -157,7 +155,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {/* 声优 */}
           {work.vas.length > 0 && (
             <div className='flex flex-wrap gap-1'>
-              {work.vas.map(va => (
+              {work.vas.map((va) => (
                 <Link key={va.id} to='/works' search={{ vaId: va.id }}>
                   <M3eChip className='text-(--md-sys-color-primary)'>
                     {va.name}
@@ -179,13 +177,14 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
       </M3eCard>
 
       {/**
-     * WriteReview 必须渲染在 M3eCard 外部——M3eCard 有 shadow DOM，
-     * <dialog> showModal() 在 shadow DOM 内会导致焦点陷阱冲突，页面卡死。
-     */}
+       * WriteReview 必须渲染在 M3eCard 外部——M3eCard 有 shadow DOM，
+       * <dialog> showModal() 在 shadow DOM 内会导致焦点陷阱冲突，页面卡死。
+       */}
       <WriteReview
         work={work}
         open={reviewOpen}
-        onClose={() => setReviewOpen(false)} />
+        onClose={() => setReviewOpen(false)}
+      />
     </Fragment>
   );
 }

@@ -20,8 +20,8 @@ export function getMe(): Promise<MeResponse> {
 }
 
 /** Setup 状态：GET /api/auth/setup */
-export function getSetupStatus(): Promise<{ needed: boolean; }> {
-  return apiFetch<{ needed: boolean; }>('auth/setup');
+export function getSetupStatus(): Promise<{ needed: boolean }> {
+  return apiFetch<{ needed: boolean }>('auth/setup');
 }
 
 /** Setup 输入：管理员账号 + 实例配置 */

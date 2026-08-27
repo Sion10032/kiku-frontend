@@ -23,8 +23,7 @@ export function restoreSession(): Promise<void> {
       const me = await getMe();
       useUserStore.getState().setUser(me.name, me.group);
       useUserStore.getState().setAuth(true);
-    }
-    catch {
+    } catch {
       // token 无效，清理
       clearToken();
     }
@@ -42,12 +41,12 @@ function resetSession(): void {
  * 认证 hook：提供登录、登出与当前用户状态。
  */
 export function useAuth() {
-  const auth = useUserStore(s => s.auth);
-  const name = useUserStore(s => s.name);
-  const group = useUserStore(s => s.group);
-  const setUser = useUserStore(s => s.setUser);
-  const setAuth = useUserStore(s => s.setAuth);
-  const logoutStore = useUserStore(s => s.logout);
+  const auth = useUserStore((s) => s.auth);
+  const name = useUserStore((s) => s.name);
+  const group = useUserStore((s) => s.group);
+  const setUser = useUserStore((s) => s.setUser);
+  const setAuth = useUserStore((s) => s.setAuth);
+  const logoutStore = useUserStore((s) => s.logout);
 
   const login = useCallback(
     async (input: LoginInput): Promise<void> => {
@@ -58,14 +57,14 @@ export function useAuth() {
       // 已恢复过会话，标记完成避免重复请求
       sessionPromise = Promise.resolve();
     },
-    [ setUser, setAuth ],
+    [setUser, setAuth],
   );
 
   const logout = useCallback(() => {
     clearToken();
     logoutStore();
     resetSession();
-  }, [ logoutStore ]);
+  }, [logoutStore]);
 
   /** 是否管理员（后端 group 值为 'administrator'）。 */
   const isAdmin = group === 'administrator';

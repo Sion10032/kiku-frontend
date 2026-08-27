@@ -14,6 +14,12 @@ interface WorkCardProps {
   thumbnail?: boolean;
 }
 
+const vaChipSetStyles = {
+  '--m3e-elevated-chip-container-color': 'var(--md-sys-color-primary)',
+  '--m3e-chip-label-text-color': 'var(--md-sys-color-on-primary)',
+  '--m3e-chip-icon-color': 'var(--md-sys-color-on-primary)',
+} as React.CSSProperties;
+
 /**
  * 作品卡片（网格视图）。
  *
@@ -23,7 +29,7 @@ interface WorkCardProps {
 export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   const navigate = useNavigate();
   // 未读角标仅登录用户显示（未登录时 userProgress 恒 null，无法区分）
-  const authed = useUserStore(s => s.auth);
+  const authed = useUserStore((s) => s.auth);
 
   // m3e-card 的 slot 边距全部来自 --m3e-card-padding（默认 16px）：
   // 非媒体 header（header slot 直接子节点非 img/video）会被 shadow DOM
@@ -33,7 +39,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   const cardVars = thumbnail ? '' : '[--m3e-card-padding:0px]';
 
   return (
-    <M3eCard className={[ 'h-full', cardVars ].join(' ')}>
+    <M3eCard className={['h-full', cardVars].join(' ')}>
       <div slot='header' className='relative p-0'>
         <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
         {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
@@ -41,18 +47,20 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
       </div>
 
       {!thumbnail && (
-        <div slot='content' className={[ 'flex flex-col gap-2 p-4' ].join(' ')}>
+        <div slot='content' className={['flex flex-col gap-2 p-4'].join(' ')}>
           <Link
             to='/work/$id'
             params={{ id: work.id }}
-            className='line-clamp-2 text-lg font-normal no-underline'>
+            className='line-clamp-2 text-lg font-normal no-underline'
+          >
             {work.title}
           </Link>
 
           <Link
             to='/works'
             search={{ circleId: work.circle.id }}
-            className='truncate text-sm no-underline opacity-70'>
+            className='truncate text-sm no-underline opacity-70'
+          >
             {work.circle.name}
           </Link>
 
@@ -60,14 +68,10 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
             {/* 平均评分 */}
             {work.rate_average_2dp != null && (
               <span className='font-medium text-(--m3e-error)'>
-                ★
-                {' '}
-                {work.rate_average_2dp.toFixed(1)}
+                ★ {work.rate_average_2dp.toFixed(1)}
                 <span className='font-normal opacity-60'>
                   {' '}
-                  (
-                  {work.rate_count ?? 0}
-                  )
+                  ({work.rate_count ?? 0})
                 </span>
               </span>
             )}
@@ -80,7 +84,8 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
               href={dlsiteUrl(work.id)}
               target='_blank'
               rel='noreferrer noopener'
-              className='no-underline'>
+              className='no-underline'
+            >
               DLsite
             </a>
           </div>
@@ -105,7 +110,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
             <div className='flex flex-col items-start gap-2'>
               {work.tags.length > 0 && (
                 <M3eChipSet className='density-1'>
-                  {work.tags.slice(0, 6).map(tag => (
+                  {work.tags.slice(0, 6).map((tag) => (
                     <M3eAssistChip
                       key={tag.id}
                       variant='elevated'
@@ -115,22 +120,18 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
                           to: '/works',
                           search: { tagId: tag.id },
                         });
-                      }}>
+                      }}
+                    >
                       {tag.name}
                     </M3eAssistChip>
                   ))}
                 </M3eChipSet>
               )}
               {work.vas.length > 0 && (
-                <M3eChipSet
-                  className='density-1'
-                  style={{
-                    '--m3e-elevated-chip-container-color': 'var(--md-sys-color-primary)',
-                    '--m3e-chip-label-text-color': 'var(--md-sys-color-on-primary)',
-                    '--m3e-chip-icon-color': 'var(--md-sys-color-on-primary)',
-                  } as React.CSSProperties}>
-                  {work.vas.slice(0, 6).map(va => (
+                <M3eChipSet className='density-1' style={vaChipSetStyles}>
+                  {work.vas.slice(0, 6).map((va) => (
                     <M3eAssistChip
+                      key={va.id}
                       variant='elevated'
                       onClick={(e) => {
                         e.preventDefault();
@@ -138,7 +139,8 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
                           to: '/works',
                           search: { vaId: va.id },
                         });
-                      }}>
+                      }}
+                    >
                       <M3eIcon slot='icon' name='mic'></M3eIcon>
                       {va.name}
                     </M3eAssistChip>
