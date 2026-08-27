@@ -3,6 +3,7 @@ import { M3eButton } from '@m3e/react/button';
 import { M3eCard } from '@m3e/react/card';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSnackbar } from '@m3e/react/snackbar';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { getAdminConfig, updateAdminConfig } from '../../api/config';
 import type { RootFolder } from '../../types';
 
@@ -25,6 +26,9 @@ export default function Folders() {
   const [editIndex, setEditIndex] = useState(-1);
   const [editName, setEditName] = useState('');
   const [editPath, setEditPath] = useState('');
+
+  // 待删除的文件夹索引（非 null 时显示确认对话框）
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,12 +78,15 @@ export default function Folders() {
   }
 
   function handleDelete(index: number) {
-    const next = folders.filter((_, i) => i !== index);
-    if (editIndex === index) {
-      setEditIndex(-1);
-    } else if (editIndex > index) {
-      setEditIndex(editIndex - 1);
-    }
+    setPendingDelete(index);
+  }
+
+  function confirmDelete() {
+    if (pendingDelete === null) return;
+    const next = folders.filter((_, i) => i !== pendingDelete);
+    if (editIndex === pendingDelete) setEditIndex(-1);
+    else if (editIndex > pendingDelete) setEditIndex(editIndex - 1);
+    setPendingDelete(null);
     saveFolders(next);
   }
 
@@ -233,6 +240,20 @@ export default function Folders() {
           </div>
         </div>
       </M3eCard>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title='删除根文件夹'
+        message={
+          pendingDelete !== null
+            ? `确定删除「${folders[pendingDelete]?.name}」吗？已入库的作品记录不受影响。`
+            : ''
+        }
+        confirmLabel='删除'
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

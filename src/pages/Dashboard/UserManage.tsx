@@ -5,6 +5,7 @@ import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
 import { M3eOption } from '@m3e/react/option';
 import { M3eSnackbar } from '@m3e/react/snackbar';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import {
   getUsers,
   createUser,
@@ -34,6 +35,9 @@ export default function UserManage() {
   // 改密
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [newPwd, setNewPwd] = useState('');
+
+  // 待删除的用户名（非 null 时显示确认对话框）
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   async function refresh() {
     try {
@@ -105,7 +109,14 @@ export default function UserManage() {
     }
   }
 
-  async function handleDelete(name: string) {
+  function handleDelete(name: string) {
+    setPendingDelete(name);
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const name = pendingDelete;
+    setPendingDelete(null);
     setSaving(true);
     try {
       await deleteUsers({ users: [{ name }] });
@@ -276,6 +287,20 @@ export default function UserManage() {
           </div>
         </div>
       </M3eCard>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title='删除用户'
+        message={
+          pendingDelete !== null
+            ? `确定删除用户「${pendingDelete}」吗？该操作不可恢复。`
+            : ''
+        }
+        confirmLabel='删除'
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }
