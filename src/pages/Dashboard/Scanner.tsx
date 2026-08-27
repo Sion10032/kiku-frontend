@@ -48,6 +48,22 @@ export default function Scanner() {
     stateRef.current = state;
   });
 
+  const logRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+
+  // mainLogs 变化时，若用户仍贴底则滚动到底
+  useEffect(() => {
+    const el = logRef.current;
+    if (el && stickToBottomRef.current) el.scrollTop = el.scrollHeight;
+  }, [mainLogs]);
+
+  function handleLogScroll() {
+    const el = logRef.current;
+    if (!el) return;
+    stickToBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  }
+
   const handleEvent = useCallback((event: string, data: unknown) => {
     const d = data as Record<string, unknown>;
 
@@ -220,6 +236,8 @@ export default function Scanner() {
           <div slot='content'>
             {/* 主日志 */}
             <div
+              ref={logRef}
+              onScroll={handleLogScroll}
               className='max-h-64 overflow-y-auto rounded-md p-3 font-mono text-xs'
               style={{
                 background: 'var(--md-sys-color-surface-container-highest)',
