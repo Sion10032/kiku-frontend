@@ -187,17 +187,18 @@ export default function Folders() {
               </div>
             ))}
           </div>
-        </div>
-      </M3eCard>
 
-      {/* 新增文件夹 */}
-      <M3eCard>
-        <div slot='header'>
-          <span className='text-sm font-medium'>添加根文件夹</span>
-        </div>
-        <div slot='content'>
-          <div className='flex flex-col gap-3'>
-            <M3eFormField variant='outlined' hideSubscript='always'>
+          {/* 新增文件夹（内联表单） */}
+          <div
+            role='group'
+            aria-label='添加根文件夹'
+            className='mt-3 flex flex-wrap items-end gap-3 border-t border-[var(--md-sys-color-outline-variant)] pt-3'
+          >
+            <M3eFormField
+              variant='outlined'
+              hideSubscript='always'
+              className='min-w-40 flex-1 [--m3e-form-field-width:100%]'
+            >
               <label slot='label' htmlFor='new-folder-name'>
                 名称
               </label>
@@ -209,7 +210,11 @@ export default function Folders() {
                 className='w-full border-none bg-transparent py-2 text-sm outline-none'
               />
             </M3eFormField>
-            <M3eFormField variant='outlined' hideSubscript='always'>
+            <M3eFormField
+              variant='outlined'
+              hideSubscript='always'
+              className='min-w-56 flex-[2] [--m3e-form-field-width:100%]'
+            >
               <label slot='label' htmlFor='new-folder-path'>
                 路径
               </label>
