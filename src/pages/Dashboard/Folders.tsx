@@ -6,6 +6,7 @@ import { M3eSnackbar } from '@m3e/react/snackbar';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { getAdminConfig, updateAdminConfig } from '../../api/config';
 import type { RootFolder } from '../../types';
+import { showApiError } from '../../utils/apiError';
 
 /**
  * 文件夹管理页面。
@@ -37,7 +38,7 @@ export default function Folders() {
         const config = await getAdminConfig();
         if (!cancelled) setFolders(config.rootFolders ?? []);
       } catch (err) {
-        M3eSnackbar.open(err instanceof Error ? err.message : '加载配置失败');
+        showApiError(err, '加载配置失败');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -54,7 +55,7 @@ export default function Folders() {
       setFolders(updated.rootFolders ?? next);
       M3eSnackbar.open('保存成功');
     } catch (err) {
-      M3eSnackbar.open(err instanceof Error ? err.message : '保存失败');
+      showApiError(err, '保存失败');
     } finally {
       setSaving(false);
     }

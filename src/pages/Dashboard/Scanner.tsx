@@ -15,6 +15,7 @@ import type {
   ScanTaskPayload,
 } from '../../types';
 import { M3eSnackbar } from '@m3e/react/snackbar';
+import { showApiError } from '../../utils/apiError';
 
 type ScanState = 'idle' | 'running' | 'finished' | 'error';
 
@@ -144,13 +145,7 @@ export default function Scanner() {
       await startScan(mode);
     } catch (err) {
       setState('error');
-      M3eSnackbar.open(
-        err instanceof Error
-          ? err.message
-          : mode === 'update'
-            ? '刷新启动失败'
-            : '扫描启动失败',
-      );
+      showApiError(err, mode === 'update' ? '刷新启动失败' : '扫描启动失败');
     }
   }
 
@@ -159,7 +154,7 @@ export default function Scanner() {
       await killScan();
       M3eSnackbar.open('已发送终止信号');
     } catch (err) {
-      M3eSnackbar.open(err instanceof Error ? err.message : '终止失败');
+      showApiError(err, '终止失败');
     }
   }
 

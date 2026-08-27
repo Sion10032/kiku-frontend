@@ -8,6 +8,7 @@ import { M3eSnackbar } from '@m3e/react/snackbar';
 import { getAdminConfig, updateAdminConfig } from '../../api/config';
 import { refreshSharedConfig } from '../../api/sharedConfig';
 import type { AdminConfig } from '../../types';
+import { showApiError } from '../../utils/apiError';
 
 /**
  * 高级设置页面。
@@ -36,7 +37,7 @@ export default function Advanced() {
           setForm({ ...c });
         }
       } catch (err) {
-        M3eSnackbar.open(err instanceof Error ? err.message : '加载配置失败');
+        showApiError(err, '加载配置失败');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -72,7 +73,7 @@ export default function Advanced() {
       refreshSharedConfig().catch(() => {});
       M3eSnackbar.open('保存成功');
     } catch (err) {
-      M3eSnackbar.open(err instanceof Error ? err.message : '保存失败');
+      showApiError(err, '保存失败');
     } finally {
       setSaving(false);
     }

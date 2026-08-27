@@ -13,6 +13,7 @@ import {
   deleteUsers,
 } from '../../api/credentials';
 import type { User } from '../../types';
+import { showApiError } from '../../utils/apiError';
 
 /**
  * 用户管理页面。
@@ -44,7 +45,7 @@ export default function UserManage() {
       const list = await getUsers();
       setUsers(list);
     } catch (err) {
-      M3eSnackbar.open(err instanceof Error ? err.message : '加载用户列表失败');
+      showApiError(err, '加载用户列表失败');
     }
   }
 
@@ -83,7 +84,7 @@ export default function UserManage() {
       M3eSnackbar.open(`用户 ${name} 创建成功`);
       await refresh();
     } catch (err) {
-      M3eSnackbar.open(err instanceof Error ? err.message : '创建失败');
+      showApiError(err, '创建失败');
     } finally {
       setSaving(false);
     }
@@ -103,7 +104,7 @@ export default function UserManage() {
       setNewPwd('');
       M3eSnackbar.open(`用户 ${editingUser} 密码已更新`);
     } catch (err) {
-      M3eSnackbar.open(err instanceof Error ? err.message : '更新失败');
+      showApiError(err, '更新失败');
     } finally {
       setSaving(false);
     }
@@ -123,7 +124,7 @@ export default function UserManage() {
       M3eSnackbar.open(`用户 ${name} 已删除`);
       await refresh();
     } catch (err) {
-      M3eSnackbar.open(err instanceof Error ? err.message : '删除失败');
+      showApiError(err, '删除失败');
     } finally {
       setSaving(false);
     }
