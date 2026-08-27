@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { M3eButton } from '@m3e/react/button';
 import { M3eCard } from '@m3e/react/card';
 import { M3eFormField } from '@m3e/react/form-field';
@@ -7,12 +7,11 @@ import { M3eOption } from '@m3e/react/option';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import {
-  getUsers,
-  createUser,
-  updatePassword,
-  deleteUsers,
-} from '../../api/credentials';
-import type { User } from '../../types';
+  useUsers,
+  useCreateUser,
+  useUpdatePassword,
+  useDeleteUsers,
+} from '../../queries/useUsersQuery';
 import { showApiError } from '../../utils/apiError';
 
 /**
@@ -24,9 +23,14 @@ import { showApiError } from '../../utils/apiError';
  * - 删除用户（deleteUsers）
  */
 export default function UserManage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { data: users = [], isPending } = useUsers();
+  const createMutation = useCreateUser();
+  const pwdMutation = useUpdatePassword();
+  const deleteMutation = useDeleteUsers();
+  const saving =
+    createMutation.isPending
+    || pwdMutation.isPending
+    || deleteMutation.isPending;
 
   // 创建表单
   const [newName, setNewName] = useState('');
@@ -39,26 +43,6 @@ export default function UserManage() {
 
   // 待删除的用户名（非 null 时显示确认对话框）
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
-
-  async function refresh() {
-    try {
-      const list = await getUsers();
-      setUsers(list);
-    } catch (err) {
-      showApiError(err, '加载用户列表失败');
-    }
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      await refresh();
-      if (!cancelled) setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   async function handleCreate() {
     const name = newName.trim();
@@ -75,18 +59,14 @@ export default function UserManage() {
       M3eSnackbar.open('密码至少 5 个字符');
       return;
     }
-    setSaving(true);
     try {
-      await createUser({ name, password, group: newGroup });
+      await createMutation.mutateAsync({ name, password, group: newGroup });
       setNewName('');
       setNewPassword('');
       setNewGroup('user');
       M3eSnackbar.open(`用户 ${name} 创建成功`);
-      await refresh();
     } catch (err) {
       showApiError(err, '创建失败');
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -97,16 +77,13 @@ export default function UserManage() {
       M3eSnackbar.open('密码至少 5 个字符');
       return;
     }
-    setSaving(true);
     try {
-      await updatePassword({ name: editingUser, newPassword: pwd });
+      await pwdMutation.mutateAsync({ name: editingUser, newPassword: pwd });
       setEditingUser(null);
       setNewPwd('');
       M3eSnackbar.open(`用户 ${editingUser} 密码已更新`);
     } catch (err) {
       showApiError(err, '更新失败');
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -118,15 +95,11 @@ export default function UserManage() {
     if (!pendingDelete) return;
     const name = pendingDelete;
     setPendingDelete(null);
-    setSaving(true);
     try {
-      await deleteUsers({ users: [{ name }] });
+      await deleteMutation.mutateAsync({ users: [{ name }] });
       M3eSnackbar.open(`用户 ${name} 已删除`);
-      await refresh();
     } catch (err) {
       showApiError(err, '删除失败');
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -137,7 +110,7 @@ export default function UserManage() {
     }
   }
 
-  if (loading) {
+  if (isPending) {
     return <p className='opacity-70'>加载中…</p>;
   }
 
