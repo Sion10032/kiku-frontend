@@ -29,6 +29,7 @@ import { toTrack } from '../../utils/track';
 import { FilePreviewDialog } from '../preview/FilePreviewDialog';
 import { isPreviewable } from '../preview/registry';
 import { toPreviewFile, type PreviewFile } from '../preview/types';
+import { CssInput } from '../../utils/css';
 
 interface WorkTreeProps {
   work: Work;
@@ -317,14 +318,17 @@ export default function WorkTree({
   );
 }
 
+const contentStyle = {
+  '.content': {
+    flex: '1 !important',
+    minWidth: 0,
+  }
+} satisfies CssInput;
+
 /** 返回上一层目录的行（子目录顶部显示 ".."）。 */
 function ParentListItem({ onBack }: { onBack: () => void }) {
   const ref = useM3eStyle<M3eListOptionElement>({
-    style: {
-      '.content': {
-        flex: '1 !important',
-      },
-    },
+    style: contentStyle,
   });
 
   return (
@@ -350,11 +354,7 @@ function TrackFolderListItem({
   onEnter: () => void;
 }) {
   const ref = useM3eStyle<M3eListOptionElement>({
-    style: {
-      '.content': {
-        flex: '1 !important',
-      },
-    },
+    style: contentStyle,
   });
 
   return (
@@ -390,11 +390,7 @@ function TrackLeafListItem({
   onOpenMenu,
 }: TrackLeafListItemProps) {
   const ref = useM3eStyle<M3eListOptionElement>({
-    style: {
-      '.content': {
-        flex: '1 !important',
-      },
-    },
+    style: contentStyle,
   });
 
   return (
