@@ -53,16 +53,16 @@ export default function Advanced() {
   async function handleSave() {
     setSaving(true);
     try {
-      // 构建 patch：排除只读字段和 secret（如果为空则不发送）
+      // 只发送与服务器配置不同的字段（后端本就是 partial 语义）
       const patch: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(form)) {
-        // 跳过 secret（空值不发送）
         if (key === 'md5secret') continue;
-        patch[key] = value;
+        if (config?.[key as keyof AdminConfig] !== value) patch[key] = value;
       }
-      // secret 只在用户填写时发送
-      if (secret.trim()) {
-        patch.md5secret = secret.trim();
+      if (secret.trim()) patch.md5secret = secret.trim();
+      if (Object.keys(patch).length === 0) {
+        M3eSnackbar.open('没有需要保存的更改');
+        return;
       }
       const updated = await updateAdminConfig(patch as Partial<AdminConfig>);
       setConfig(updated);
@@ -95,10 +95,11 @@ export default function Advanced() {
         </div>
         <div slot='content'>
           <div className='flex flex-col gap-3'>
-            <FieldRow
+            <NumberFieldRow
               label='每页数量'
-              value={String(form.pageSize ?? '')}
-              onChange={(v) => updateField('pageSize', Number(v) || 20)}
+              value={Number(form.pageSize ?? 20)}
+              defaultValue={20}
+              onChange={(v) => updateField('pageSize', v)}
             />
             <TagLanguageField
               label='标签语言'
@@ -120,15 +121,17 @@ export default function Advanced() {
               value={!!form.enableGzip}
               onChange={(v) => updateField('enableGzip', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='快退秒数'
-              value={String(form.rewindSeekTime ?? 5)}
-              onChange={(v) => updateField('rewindSeekTime', Number(v) || 5)}
+              value={Number(form.rewindSeekTime ?? 5)}
+              defaultValue={5}
+              onChange={(v) => updateField('rewindSeekTime', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='快进秒数'
-              value={String(form.forwardSeekTime ?? 30)}
-              onChange={(v) => updateField('forwardSeekTime', Number(v) || 30)}
+              value={Number(form.forwardSeekTime ?? 30)}
+              defaultValue={30}
+              onChange={(v) => updateField('forwardSeekTime', v)}
             />
             <BoolField
               label='检查更新'
@@ -151,32 +154,35 @@ export default function Advanced() {
         </div>
         <div slot='content'>
           <div className='flex flex-col gap-3'>
-            <FieldRow
+            <NumberFieldRow
               label='最大递归深度'
-              value={String(form.scannerMaxRecursionDepth ?? 3)}
-              onChange={(v) =>
-                updateField('scannerMaxRecursionDepth', Number(v) || 3)
-              }
+              value={Number(form.scannerMaxRecursionDepth ?? 3)}
+              defaultValue={3}
+              onChange={(v) => updateField('scannerMaxRecursionDepth', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='重试次数'
-              value={String(form.retry ?? 3)}
-              onChange={(v) => updateField('retry', Number(v) || 3)}
+              value={Number(form.retry ?? 3)}
+              defaultValue={3}
+              onChange={(v) => updateField('retry', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='重试间隔(ms)'
-              value={String(form.retryDelay ?? 5000)}
-              onChange={(v) => updateField('retryDelay', Number(v) || 5000)}
+              value={Number(form.retryDelay ?? 5000)}
+              defaultValue={5000}
+              onChange={(v) => updateField('retryDelay', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='DLsite 超时(ms)'
-              value={String(form.dlsiteTimeout ?? 30000)}
-              onChange={(v) => updateField('dlsiteTimeout', Number(v) || 30000)}
+              value={Number(form.dlsiteTimeout ?? 30000)}
+              defaultValue={30000}
+              onChange={(v) => updateField('dlsiteTimeout', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='HVDB 超时(ms)'
-              value={String(form.hvdbTimeout ?? 30000)}
-              onChange={(v) => updateField('hvdbTimeout', Number(v) || 30000)}
+              value={Number(form.hvdbTimeout ?? 30000)}
+              defaultValue={30000}
+              onChange={(v) => updateField('hvdbTimeout', v)}
             />
           </div>
         </div>
@@ -189,25 +195,29 @@ export default function Advanced() {
         </div>
         <div slot='content'>
           <div className='flex flex-col gap-3'>
-            <FieldRow
+            <NumberFieldRow
               label='监听端口'
-              value={String(form.listenPort ?? 8888)}
-              onChange={(v) => updateField('listenPort', Number(v) || 8888)}
+              value={Number(form.listenPort ?? 8888)}
+              defaultValue={8888}
+              onChange={(v) => updateField('listenPort', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='数据库忙超时(ms)'
-              value={String(form.dbBusyTimeout ?? 5000)}
-              onChange={(v) => updateField('dbBusyTimeout', Number(v) || 5000)}
+              value={Number(form.dbBusyTimeout ?? 5000)}
+              defaultValue={5000}
+              onChange={(v) => updateField('dbBusyTimeout', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='JWT 有效期(s)'
-              value={String(form.expiresIn ?? 86400)}
-              onChange={(v) => updateField('expiresIn', Number(v) || 86400)}
+              value={Number(form.expiresIn ?? 86400)}
+              defaultValue={86400}
+              onChange={(v) => updateField('expiresIn', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='最大并行数'
-              value={String(form.maxParallelism ?? 2)}
-              onChange={(v) => updateField('maxParallelism', Number(v) || 2)}
+              value={Number(form.maxParallelism ?? 2)}
+              defaultValue={2}
+              onChange={(v) => updateField('maxParallelism', v)}
             />
             <BoolField
               label='跳过清理'
@@ -230,10 +240,11 @@ export default function Advanced() {
               value={String(form.httpProxyHost ?? '')}
               onChange={(v) => updateField('httpProxyHost', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='HTTP 代理端口'
-              value={String(form.httpProxyPort ?? 0)}
-              onChange={(v) => updateField('httpProxyPort', Number(v) || 0)}
+              value={Number(form.httpProxyPort ?? 0)}
+              defaultValue={0}
+              onChange={(v) => updateField('httpProxyPort', v)}
             />
             <BoolField
               label='禁止远程连接'
@@ -250,10 +261,11 @@ export default function Advanced() {
               value={!!form.httpsEnabled}
               onChange={(v) => updateField('httpsEnabled', v)}
             />
-            <FieldRow
+            <NumberFieldRow
               label='HTTPS 端口'
-              value={String(form.httpsPort ?? 443)}
-              onChange={(v) => updateField('httpsPort', Number(v) || 443)}
+              value={Number(form.httpsPort ?? 443)}
+              defaultValue={443}
+              onChange={(v) => updateField('httpsPort', v)}
             />
           </div>
         </div>
@@ -345,6 +357,47 @@ function FieldRow({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        className='w-full border-none bg-transparent py-2 text-sm outline-none'
+      />
+    </M3eFormField>
+  );
+}
+
+/** 数字表单行：输入期保留原始文本，失焦时解析并回写（避免 Number()||默认值 吞掉 0）。 */
+function NumberFieldRow({
+  label,
+  value,
+  defaultValue,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  defaultValue: number;
+  onChange: (v: number) => void;
+}) {
+  const id = `field-${label}`;
+  const [text, setText] = useState(String(value));
+  return (
+    <M3eFormField variant='outlined' hideSubscript='always'>
+      <label slot='label' htmlFor={id}>
+        {label}
+      </label>
+      <input
+        id={id}
+        type='number'
+        inputMode='numeric'
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => {
+          const n = Number(text);
+          if (text.trim() === '' || !Number.isFinite(n)) {
+            setText(String(value)); // 非法输入回退为当前值
+            return;
+          }
+          onChange(n);
+          setText(String(n));
+        }}
+        placeholder={String(defaultValue)}
         className='w-full border-none bg-transparent py-2 text-sm outline-none'
       />
     </M3eFormField>
