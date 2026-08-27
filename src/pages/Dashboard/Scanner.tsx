@@ -26,12 +26,12 @@ type ScanState = 'idle' | 'running' | 'finished' | 'error';
  * - 进行中/失败任务面板。
  */
 export default function Scanner() {
-  const [tasks, setTasks] = useState<ScanTaskPayload[]>([]); // 仅 pending/scanning
-  const [failedTasks, setFailedTasks] = useState<ScanTaskPayload[]>([]);
-  const [mainLogs, setMainLogs] = useState<ScanLogPayload[]>([]);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [state, setState] = useState<ScanState>('idle');
-  const [resultMessage, setResultMessage] = useState('');
+  const [ tasks, setTasks ] = useState<ScanTaskPayload[]>([]); // 仅 pending/scanning
+  const [ failedTasks, setFailedTasks ] = useState<ScanTaskPayload[]>([]);
+  const [ mainLogs, setMainLogs ] = useState<ScanLogPayload[]>([]);
+  const [ completedCount, setCompletedCount ] = useState(0);
+  const [ state, setState ] = useState<ScanState>('idle');
+  const [ resultMessage, setResultMessage ] = useState('');
   // SCAN_RESULTS 先于 SCAN_FINISHED 到达，用 ref 规避 useCallback 闭包陈旧
   const resultsRef = useRef<{
     added: number;
@@ -70,21 +70,21 @@ export default function Scanner() {
         break;
       }
       case 'SCAN_TASK': {
-        const task = (d as { task: ScanTaskPayload }).task;
+        const task = (d as { task: ScanTaskPayload; }).task;
         if (task.status === 'completed') {
           setTasks(prev => prev.filter(t => t.id !== task.id));
           setCompletedCount(c => c + 1);
         }
         else if (task.status === 'failed') {
           setTasks(prev => prev.filter(t => t.id !== task.id));
-          setFailedTasks(prev => [...prev, task]);
+          setFailedTasks(prev => [ ...prev, task ]);
         }
         else {
           // pending/scanning：按 id upsert，保持顺序
-          setTasks(prev => {
+          setTasks((prev) => {
             const i = prev.findIndex(t => t.id === task.id);
-            if (i === -1) return [...prev, task];
-            const next = [...prev];
+            if (i === -1) return [ ...prev, task ];
+            const next = [ ...prev ];
             next[i] = task;
             return next;
           });
@@ -93,13 +93,13 @@ export default function Scanner() {
         break;
       }
       case 'SCAN_LOG': {
-        const payload = d as { log: ScanLogPayload };
-        setMainLogs(prev => [...prev, payload.log]);
+        const payload = d as { log: ScanLogPayload; };
+        setMainLogs(prev => [ ...prev, payload.log ]);
         break;
       }
       case 'SCAN_RESULTS': {
         const r = d as {
-          results: { added: number; updated: number; failed: number; skipped: number };
+          results: { added: number; updated: number; failed: number; skipped: number; };
         };
         resultsRef.current = r.results;
         break;
