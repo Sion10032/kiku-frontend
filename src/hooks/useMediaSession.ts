@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { usePlayerStore } from '../stores/playerStore';
+import { usePlayerStore, selectCurrentTrack } from '../stores/playerStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { mediaUrl } from '../api/client';
 import { seekTo } from './usePlayer';
@@ -18,14 +18,11 @@ import { seekTo } from './usePlayer';
  *   避免 250ms 高频推送（Linux MPRIS 等面板高频刷新会闪断封面）
  */
 export function useMediaSession(): void {
-  const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const currentTrack = usePlayerStore(selectCurrentTrack);
   const playing = usePlayerStore((s) => s.playing);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
   const mediaNotification = useSettingsStore((s) => s.mediaNotification);
-
-  const currentTrack = queue[queueIndex];
 
   /** 最近一次 setPositionState 推送快照（供插值与推送时机判断）。 */
   const posRef = useRef({ at: 0, pos: 0, dur: 0, rate: -1, pushed: 0 });

@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Howl } from 'howler';
-import { usePlayerStore, type Track } from '../stores/playerStore';
+import {
+  usePlayerStore,
+  selectCurrentTrack,
+  type Track,
+} from '../stores/playerStore';
 import { streamUrl, checkLrc } from '../api/media';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 import {
@@ -64,7 +68,7 @@ function resolveSrc(track: Track): string | undefined {
  *
  * - store 为唯一数据源：Howl 由 playing/volume/muted 单向驱动，
  *   onplay/onpause 不回写 store（避免切曲时 unload 触发 onpause 干扰状态）
- * - 切曲（queue/queueIndex 变化 → currentTrack 引用变化）时卸载重建 Howl，
+ * - 切曲（currentTrack 引用变化）时卸载重建 Howl，
  *   并重新加载歌词（check-lrc）：轮询中行号变化才写 currentLyric
  * - onend 按 playMode 处理：repeatOne 原地重播；order 到末尾 nextTrack
  *   内部置 playing=false；shuffle 随机回当前曲目（store 无变化、不重建）
@@ -72,8 +76,7 @@ function resolveSrc(track: Track): string | undefined {
  * - StrictMode 下 effect 双执行：cleanup 卸载旧实例，保证幂等
  */
 export function usePlayer(): void {
-  const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const currentTrack = usePlayerStore(selectCurrentTrack);
   const playing = usePlayerStore((s) => s.playing);
   const volume = usePlayerStore((s) => s.volume);
   const muted = usePlayerStore((s) => s.muted);
@@ -81,8 +84,6 @@ export function usePlayer(): void {
   const forwardSeekMode = usePlayerStore((s) => s.forwardSeekMode);
   const sleepMode = usePlayerStore((s) => s.sleepMode);
   const sleepTime = usePlayerStore((s) => s.sleepTime);
-
-  const currentTrack = queue[queueIndex];
 
   // —— 曲目加载：切曲时卸载旧实例并重建 ——
 
@@ -153,7 +154,7 @@ export function usePlayer(): void {
         );
         const before = usePlayerStore.getState();
         if (before.playMode === 'repeatOne') {
-          // 单曲循环：原地重播（queueIndex 不变，不会触发重建）
+          // 单曲循环：原地重播（currentUid 不变，不会触发重建）
           sound.seek(0);
           sound.play();
           before.setCurrentTime(0);
@@ -162,7 +163,7 @@ export function usePlayer(): void {
         before.nextTrack();
         const after = usePlayerStore.getState();
         // shuffle 随机到当前曲目：store 无变化、Howl 已结束 → 原地重播
-        if (after.playing && after.queueIndex === before.queueIndex) {
+        if (after.playing && after.currentUid === before.currentUid) {
           sound.seek(0);
           sound.play();
           after.setCurrentTime(0);
@@ -212,8 +213,7 @@ export function usePlayer(): void {
         usePlayerStore.getState().setCurrentTime(t);
         syncLyric(t);
         // 动态进度上报（内部 10s 节流；仅登录且带 workId 的音轨生效）
-        const track =
-          usePlayerStore.getState().queue[usePlayerStore.getState().queueIndex];
+        const track = selectCurrentTrack(usePlayerStore.getState());
         if (track?.workId) {
           const dur = sound.duration();
           trackPlayback(
