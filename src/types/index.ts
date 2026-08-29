@@ -68,19 +68,8 @@ export interface WorksParams {
   sort?: WorksSort;
   /** random/betterRandom 排序的随机种子 */
   seed?: number;
-  circleId?: number;
-  tagId?: number;
-  /** 声优 id（后端为 string） */
-  vaId?: string;
-  keyword?: string;
-}
-
-/** 作品列表筛选条件（circle/tag/va/keyword，互斥使用）。 */
-export interface WorksFilter {
-  circleId?: number;
-  tagId?: number;
-  vaId?: string;
-  keyword?: string;
+  /** LQL 查询文本（tag:标签1 -tag:标签2 circle:"xx" va:x 裸词） */
+  q?: string;
 }
 
 /** /works 列表响应（含分页） */
