@@ -56,19 +56,30 @@ export default function QueueDialog({
       return;
     }
     const nextQueue = arrayMove(queue, oldIndex, newIndex);
-    // 修正当前播放索引：被拖的是当前曲 → 跟随；跨过当前曲 → 相应 ±1
+    // 修正当前播放索引：被拖的是当前曲 → 跟随；从当前曲一侧拖到另一侧
+    // （落点含当前曲原槽位）→ 当前曲整体移位 ±1。等号必须取到：恰好落在
+    // 当前曲槽位（newIndex === queueIndex）时当前曲同样移位，漏掉会导致
+    // queueIndex 指向被拖的曲、切曲重播
     let nextIndex = queueIndex;
     if (oldIndex === queueIndex) nextIndex = newIndex;
-    else if (oldIndex < queueIndex && newIndex > queueIndex)
+    else if (oldIndex < queueIndex && newIndex >= queueIndex)
       nextIndex = queueIndex - 1;
-    else if (oldIndex > queueIndex && newIndex < queueIndex)
+    else if (oldIndex > queueIndex && newIndex <= queueIndex)
       nextIndex = queueIndex + 1;
     // store 无队列重排 action，整表写回（不改 store 文件）
     usePlayerStore.setState({ queue: nextQueue, queueIndex: nextIndex });
   }
 
   return (
-    <M3eDialog open={open} onClosed={onClose} dismissible closeLabel='关闭'>
+    // m3e-dialog 的 max-width 默认 560px，覆盖了浏览器对原生 <dialog> 的
+    // 视口保护，窄屏会横向溢出；clamp 到视口内（下划线 = 空格）
+    <M3eDialog
+      open={open}
+      onClosed={onClose}
+      dismissible
+      closeLabel='关闭'
+      className='[--m3e-dialog-max-width:min(560px,calc(100vw-2rem))] [--m3e-dialog-min-width:min(280px,calc(100vw-2rem))]'
+    >
       <span slot='header'>播放列表（{queue.length}）</span>
 
       <div className='max-h-[60vh] overflow-y-auto'>
@@ -133,7 +144,6 @@ function QueueRow({
         <div className='truncate text-sm'>{track.title}</div>
         <div className='truncate text-xs opacity-60'>{track.workTitle}</div>
       </div>
-      {active && <span className='shrink-0 text-xs font-medium'>正在播放</span>}
     </div>
   );
 }
