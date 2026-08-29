@@ -14,6 +14,7 @@ import {
   useTagsQuery,
   useVasQuery,
 } from '../queries/useListQuery';
+import { fieldQuery } from '../utils/query';
 
 export type ListType = 'circles' | 'tags' | 'vas';
 
@@ -30,7 +31,7 @@ const LEADING_ICONS: Record<ListType, string> = {
 };
 
 /** 列表项跳转 /works 携带的筛选 search 参数（对齐 worksRoute 的 validateSearch）。 */
-type EntitySearch = { circleId: number } | { tagId: number } | { vaId: string };
+type EntitySearch = { q: string };
 
 interface Entry {
   key: string;
@@ -43,7 +44,7 @@ interface Entry {
  *
  * - 按路由 type 选择查询（getCircles / getTags / getVas，均返回裸数组）
  * - m3e SearchBar 输入即筛（客户端按名称过滤）
- * - 点击项跳转 /works 并携带筛选参数：circleId / tagId / vaId（va.id 为 string 原样透传）
+ * - 点击项跳转 /works 并携带筛选参数：q = fieldQuery(field, name) 生成的 LQL 查询文本
  *
  * 注意：M3eListItem 的 named slot（leading/trailing）只对直接子元素生效，
  * 因此导航用 onClick + useNavigate 而非把 slot 元素包进 <Link>。
@@ -67,7 +68,7 @@ export default function List({ type }: { type: ListType }) {
         .map((c) => ({
           key: String(c.id),
           name: c.name,
-          search: { circleId: c.id },
+          search: { q: fieldQuery('circle', c.name) },
         }));
     }
     if (type === 'tags') {
@@ -76,7 +77,7 @@ export default function List({ type }: { type: ListType }) {
         .map((t) => ({
           key: String(t.id),
           name: t.name,
-          search: { tagId: t.id },
+          search: { q: fieldQuery('tag', t.name) },
         }));
     }
     return (vas.data ?? [])
@@ -84,7 +85,7 @@ export default function List({ type }: { type: ListType }) {
       .map((v) => ({
         key: v.id,
         name: v.name,
-        search: { vaId: v.id },
+        search: { q: fieldQuery('va', v.name) },
       }));
   }, [type, circles.data, tags.data, vas.data, keyword]);
 

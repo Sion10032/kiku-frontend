@@ -12,6 +12,7 @@ import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { getSeedColorForWork } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
+import { fieldQuery } from '../../utils/query';
 import WriteReview from './WriteReview';
 
 interface WorkDetailsProps {
@@ -63,7 +64,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {/* 社团 */}
           <Link
             to='/works'
-            search={{ circleId: work.circle.id }}
+            search={{ q: fieldQuery('circle', work.circle.name) }}
             className='truncate text-sm no-underline opacity-70'
           >
             {work.circle.name}
@@ -145,7 +146,11 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {work.tags.length > 0 && (
             <div className='flex flex-wrap gap-1'>
               {work.tags.map((tag) => (
-                <Link key={tag.id} to='/works' search={{ tagId: tag.id }}>
+                <Link
+                  key={tag.id}
+                  to='/works'
+                  search={{ q: fieldQuery('tag', tag.name) }}
+                >
                   <M3eChip>{tag.name}</M3eChip>
                 </Link>
               ))}
@@ -156,7 +161,11 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {work.vas.length > 0 && (
             <div className='flex flex-wrap gap-1'>
               {work.vas.map((va) => (
-                <Link key={va.id} to='/works' search={{ vaId: va.id }}>
+                <Link
+                  key={va.id}
+                  to='/works'
+                  search={{ q: fieldQuery('va', va.name) }}
+                >
                   <M3eChip className='text-(--md-sys-color-primary)'>
                     {va.name}
                   </M3eChip>

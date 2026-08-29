@@ -8,6 +8,7 @@ import CoverSFW from '../common/CoverSFW';
 import { M3eIcon } from '@m3e/react/icon';
 import { UnreadDot, ReadDot } from '../common/WorkProgress';
 import { useUserStore } from '../../stores/userStore';
+import { fieldQuery } from '../../utils/query';
 
 interface WorkCardProps {
   work: Work;
@@ -59,7 +60,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
 
           <Link
             to='/works'
-            search={{ circleId: work.circle.id }}
+            search={{ q: fieldQuery('circle', work.circle.name) }}
             className='truncate text-sm no-underline opacity-70'
           >
             {work.circle.name}
@@ -119,7 +120,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
                         e.preventDefault();
                         navigate({
                           to: '/works',
-                          search: { tagId: tag.id },
+                          search: { q: fieldQuery('tag', tag.name) },
                         });
                       }}
                     >
@@ -138,7 +139,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
                         e.preventDefault();
                         navigate({
                           to: '/works',
-                          search: { vaId: va.id },
+                          search: { q: fieldQuery('va', va.name) },
                         });
                       }}
                     >

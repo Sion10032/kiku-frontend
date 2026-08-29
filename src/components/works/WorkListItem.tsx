@@ -5,6 +5,7 @@ import CoverThumbnail from '../common/CoverThumbnail';
 import { useM3eListActionStyle } from '../../hooks/useM3eListActionStyle';
 import { UnreadDot, ReadDot } from '../common/WorkProgress';
 import { useUserStore } from '../../stores/userStore';
+import { fieldQuery } from '../../utils/query';
 
 interface WorkListItemProps {
   work: Work;
@@ -55,7 +56,7 @@ export default function WorkListItem({
         <div className='mt-1 flex flex-wrap items-center gap-x-2 text-sm'>
           <Link
             to='/works'
-            search={{ circleId: work.circle.id }}
+            search={{ q: fieldQuery('circle', work.circle.name) }}
             className='no-underline opacity-70'
           >
             {work.circle.name}
@@ -64,7 +65,7 @@ export default function WorkListItem({
             <Link
               key={va.id}
               to='/works'
-              search={{ vaId: va.id }}
+              search={{ q: fieldQuery('va', va.name) }}
               className='no-underline'
               style={{ color: 'var(--m3e-primary)' }}
             >
@@ -79,7 +80,7 @@ export default function WorkListItem({
               <Link
                 key={tag.id}
                 to='/works'
-                search={{ tagId: tag.id }}
+                search={{ q: fieldQuery('tag', tag.name) }}
                 className='no-underline'
               >
                 {tag.name}
