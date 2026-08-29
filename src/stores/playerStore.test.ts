@@ -80,6 +80,23 @@ describe('removeFromQueue', () => {
     expect(usePlayerStore.getState().currentUid).toBeNull();
     expect(selectCurrentTrack(usePlayerStore.getState())).toBeUndefined();
   });
+
+  it('删除当前曲 → playing 置 false（避免 MediaSession 残留「正在播放」）', () => {
+    usePlayerStore.getState().setQueue([t('a'), t('b')], 0);
+    usePlayerStore.getState().removeFromQueue(0);
+    const s = usePlayerStore.getState();
+    expect(s.currentUid).toBeNull();
+    expect(s.playing).toBe(false);
+  });
+
+  it('删除当前曲后（uid 悬空）order 模式 nextTrack 从第 0 首开始', () => {
+    usePlayerStore.getState().setQueue([t('a'), t('b')], 0);
+    usePlayerStore.getState().removeFromQueue(0);
+    usePlayerStore.getState().nextTrack();
+    const s = usePlayerStore.getState();
+    expect(s.currentUid).toBe(s.queue[0].uid);
+    expect(s.playing).toBe(true);
+  });
 });
 
 describe('nextTrack / previousTrack', () => {

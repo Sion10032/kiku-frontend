@@ -200,10 +200,13 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         set((s) => {
           const removed = s.queue[index];
           if (!removed) return {};
+          const isCurrent = removed.uid === s.currentUid;
           return {
             queue: s.queue.filter((_, i) => i !== index),
             // 删除当前音轨 → currentUid 置空（usePlayer 卸载 Howl 停止播放）
-            currentUid: removed.uid === s.currentUid ? null : s.currentUid,
+            currentUid: isCurrent ? null : s.currentUid,
+            // 同步停止播放，避免 MediaSession 在无声时残留「正在播放」
+            ...(isCurrent ? { playing: false } : {}),
           };
         }),
 
