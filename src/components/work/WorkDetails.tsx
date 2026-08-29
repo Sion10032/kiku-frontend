@@ -1,17 +1,19 @@
 import { Fragment, useEffect, useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { M3eCard } from '@m3e/react/card';
-import { M3eChip } from '@m3e/react/chips';
+import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
 import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/star';
 import '@m3e/icons/outlined/chat';
 import '@m3e/icons/outlined/open_in_new';
+import '@m3e/icons/outlined/mic';
 import type { Work } from '../../types';
 import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { getSeedColorForWork } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
+import { vaChipSetStyles } from '../common/chipStyles';
 import { fieldQuery } from '../../utils/query';
 import WriteReview from './WriteReview';
 
@@ -27,6 +29,8 @@ interface WorkDetailsProps {
 export default function WorkDetails({ work }: WorkDetailsProps) {
   // 写评价对话框开关
   const [reviewOpen, setReviewOpen] = useState(false);
+  // chip 点击跳转筛选（与 WorkCard 行为一致）
+  const navigate = useNavigate();
 
   // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
   // 设置中关闭动态取色时跳过提取并恢复默认色。
@@ -142,36 +146,45 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             )}
           </div>
 
-          {/* 标签 */}
+          {/* 标签（ChipSet 样式与 WorkCard 一致） */}
           {work.tags.length > 0 && (
-            <div className='flex flex-wrap gap-1'>
+            <M3eChipSet className='density-1'>
               {work.tags.map((tag) => (
-                <Link
+                <M3eAssistChip
                   key={tag.id}
-                  to='/works'
-                  search={{ q: fieldQuery('tag', tag.name) }}
+                  variant='elevated'
+                  onClick={() =>
+                    navigate({
+                      to: '/works',
+                      search: { q: fieldQuery('tag', tag.name) },
+                    })
+                  }
                 >
-                  <M3eChip>{tag.name}</M3eChip>
-                </Link>
+                  {tag.name}
+                </M3eAssistChip>
               ))}
-            </div>
+            </M3eChipSet>
           )}
 
-          {/* 声优 */}
+          {/* 声优（主色容器 + mic 图标，与 WorkCard 一致） */}
           {work.vas.length > 0 && (
-            <div className='flex flex-wrap gap-1'>
+            <M3eChipSet className='density-1' style={vaChipSetStyles}>
               {work.vas.map((va) => (
-                <Link
+                <M3eAssistChip
                   key={va.id}
-                  to='/works'
-                  search={{ q: fieldQuery('va', va.name) }}
+                  variant='elevated'
+                  onClick={() =>
+                    navigate({
+                      to: '/works',
+                      search: { q: fieldQuery('va', va.name) },
+                    })
+                  }
                 >
-                  <M3eChip className='text-(--md-sys-color-primary)'>
-                    {va.name}
-                  </M3eChip>
-                </Link>
+                  <M3eIcon slot='icon' name='mic' />
+                  {va.name}
+                </M3eAssistChip>
               ))}
-            </div>
+            </M3eChipSet>
           )}
 
           {/* 我的评价入口（打开 WriteReview 对话框） */}

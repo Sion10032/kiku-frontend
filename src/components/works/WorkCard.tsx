@@ -5,6 +5,7 @@ import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
 import '@m3e/icons/outlined/mic';
 import type { Work } from '../../types';
 import CoverSFW from '../common/CoverSFW';
+import { vaChipSetStyles } from '../common/chipStyles';
 import { M3eIcon } from '@m3e/react/icon';
 import { UnreadDot, ReadDot } from '../common/WorkProgress';
 import { useUserStore } from '../../stores/userStore';
@@ -15,12 +16,6 @@ interface WorkCardProps {
   /** 缩略图模式（隐藏文字详情，仅封面 + 标题） */
   thumbnail?: boolean;
 }
-
-const vaChipSetStyles = {
-  '--m3e-elevated-chip-container-color': 'var(--md-sys-color-primary)',
-  '--m3e-chip-label-text-color': 'var(--md-sys-color-on-primary)',
-  '--m3e-chip-icon-color': 'var(--md-sys-color-on-primary)',
-} as React.CSSProperties;
 
 /**
  * 作品卡片（网格视图）。
