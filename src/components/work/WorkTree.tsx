@@ -29,7 +29,7 @@ import { toTrack } from '../../utils/track';
 import { FilePreviewDialog } from '../preview/FilePreviewDialog';
 import { isPreviewable } from '../preview/registry';
 import { toPreviewFile, type PreviewFile } from '../preview/types';
-import { CssInput } from '../../utils/css';
+import type { CssInput } from '../../utils/css';
 
 interface WorkTreeProps {
   work: Work;
@@ -322,7 +322,7 @@ const contentStyle = {
   '.content': {
     flex: '1 !important',
     minWidth: 0,
-  }
+  },
 } satisfies CssInput;
 
 /** 返回上一层目录的行（子目录顶部显示 ".."）。 */
