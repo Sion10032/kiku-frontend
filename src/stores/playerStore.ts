@@ -191,7 +191,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
           const entry = { ...track, uid: nextUid() };
           return {
             queue: [...s.queue, entry],
-            // 空队列首次入队成为当前曲目（对齐旧 queueIndex=0 语义）
+            // 空队列首次入队成为当前曲目（对齐旧版「首曲即当前曲」的语义）
             currentUid: s.currentUid ?? entry.uid,
           };
         }),

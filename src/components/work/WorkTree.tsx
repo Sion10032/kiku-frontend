@@ -20,7 +20,7 @@ import '@m3e/icons/outlined/queue_music';
 import '@m3e/icons/outlined/open_in_new';
 import '@m3e/icons/outlined/arrow_back';
 import '@m3e/icons/outlined/visibility';
-import { usePlayerStore } from '../../stores/playerStore';
+import { selectCurrentTrack, usePlayerStore } from '../../stores/playerStore';
 import { downloadUrl, streamUrl } from '../../api/media';
 import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../../types';
 import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
@@ -66,8 +66,7 @@ export default function WorkTree({
   const listRef = useRef<HTMLDivElement>(null);
   const [listMinHeight, setListMinHeight] = useState<number | undefined>();
 
-  const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const storeCurrentTrack = usePlayerStore(selectCurrentTrack);
   const setQueue = usePlayerStore((s) => s.setQueue);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
@@ -128,7 +127,7 @@ export default function WorkTree({
 
   // 当前正在播放的曲目（需属于本作品，避免跨作品同名高亮）
   const currentTrack =
-    queue[queueIndex]?.workId === work.id ? queue[queueIndex] : undefined;
+    storeCurrentTrack?.workId === work.id ? storeCurrentTrack : undefined;
 
   /**
    * 目录切换：先锁定列表当前高度（新 m3e-list-option 的 shadow DOM 异步渲染，
