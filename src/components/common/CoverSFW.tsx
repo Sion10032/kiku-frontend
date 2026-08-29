@@ -48,7 +48,7 @@ export default function CoverSFW({
       // 默认收缩到内容宽度，封面/占位会缩成小块，需显式占满。
       // 非 thumbnail：顶部圆角对齐卡片圆角（corner-medium 12px）并裁剪
       // NSFW 模糊时 filter 的边缘溢出
-      className={clsx('relative block w-full', 'overflow-hidden rounded-t-xl')}
+      className={clsx('relative block w-full', 'overflow-hidden rounded-(--md-sys-shape-corner-medium)')}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
@@ -61,7 +61,8 @@ export default function CoverSFW({
           loading='lazy'
           onError={() => setFailed(true)}
           className={clsx(
-            'w-full bg-black/5 object-cover transition-[filter] duration-200',
+            // block：无 preflight 时 img 仍是 inline，基线下方 descender 空隙会撑高 <a>
+            'block w-full bg-black/5 object-cover transition-[filter] duration-200',
             frameClass,
             shouldBlur && 'blur-[10px]',
           )}

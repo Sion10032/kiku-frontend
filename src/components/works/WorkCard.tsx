@@ -112,7 +112,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
             <div className='flex flex-col items-start gap-2'>
               {work.tags.length > 0 && (
                 <M3eChipSet className='density-1'>
-                  {work.tags.slice(0, 6).map((tag) => (
+                  {work.tags.map((tag) => (
                     <M3eAssistChip
                       key={tag.id}
                       variant='elevated'
@@ -131,7 +131,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
               )}
               {work.vas.length > 0 && (
                 <M3eChipSet className='density-1' style={vaChipSetStyles}>
-                  {work.vas.slice(0, 6).map((va) => (
+                  {work.vas.map((va) => (
                     <M3eAssistChip
                       key={va.id}
                       variant='elevated'

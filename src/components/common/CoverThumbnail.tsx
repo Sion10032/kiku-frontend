@@ -47,7 +47,7 @@ export default function CoverThumbnail({
           alt={workId}
           loading='lazy'
           onError={() => setFailed(true)}
-          className='h-full w-full bg-black/5 object-cover'
+          className='block h-full w-full bg-black/5 object-cover'
         />
       )}
       {/* <span className="absolute left-0 top-0 m-0.5 rounded-sm bg-black/70 px-1 py-px text-[10px] leading-tight text-white">
