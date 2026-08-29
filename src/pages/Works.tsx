@@ -79,7 +79,7 @@ export default function Works() {
   const showHistoryStrip =
     worksHistoryStrip && authed && !isFiltered && (page === 1 || !isPaginated);
 
-  // 筛选与排序参数：统一分页端点（后端按筛选自动路由子端点）
+  // 筛选与排序参数：统一走 /works?q= 端点
   const filterParams = { q: search.q };
   const sortParams = {
     order: sortOption.order,
