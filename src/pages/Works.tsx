@@ -9,10 +9,8 @@ import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { M3eList } from '@m3e/react/list';
 import '@m3e/icons/outlined/apps';
 import '@m3e/icons/outlined/view_list';
-import { useQuery } from '@tanstack/react-query';
 import { worksRoute } from '../routes/works';
 import { useWorksPage, useWorksInfinite } from '../queries/useWorksQuery';
-import { getCircle, getTag, getVa } from '../api/works';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUserStore } from '../stores/userStore';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
@@ -33,10 +31,10 @@ const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'
 /**
  * 作品库页面。
  *
- * - URL search params（类型安全）：order/sort/page/seed + circleId/tagId/vaId/keyword
+ * - URL search params（类型安全）：order/sort/page/seed + q（LQL 查询文本）
  * - 筛选与无筛选统一分页端点；翻页方式（分页/无限滚动）由设置控制
  * - 分页模式下 title 同步筛选名与页码
- * - 搜索输入在顶栏（GlobalSearchBar），写 URL keyword；搜索场景不提供排序入口（后端已支持 order/sort，仅 random 退化），搜索时隐藏排序控件
+ * - 搜索输入在顶栏（GlobalSearchBar），写 URL q（支持 tag:xxx、circle:xxx 等语法）
  * - 网格 / 列表切换，排序与视图模式持久化到 localStorage
  */
 export default function Works() {
@@ -75,23 +73,14 @@ export default function Works() {
   // 随机排序时生成一次 seed（切到 random 时刷新）
   const seed = search.seed ?? 7;
 
-  const isFiltered =
-    search.circleId != null
-    || search.tagId != null
-    || search.vaId != null
-    || !!search.keyword;
+  const isFiltered = !!search.q;
 
   const authed = useUserStore((s) => s.auth);
   const showHistoryStrip =
     worksHistoryStrip && authed && !isFiltered && (page === 1 || !isPaginated);
 
   // 筛选与排序参数：统一分页端点（后端按筛选自动路由子端点）
-  const filterParams = {
-    circleId: search.circleId,
-    tagId: search.tagId,
-    vaId: search.vaId,
-    keyword: search.keyword,
-  };
+  const filterParams = { q: search.q };
   const sortParams = {
     order: sortOption.order,
     sort: sortOption.sort,
@@ -126,34 +115,8 @@ export default function Works() {
   const totalCount = pagination?.totalCount;
   const loading = isPaginated ? paged.isLoading : infinite.isLoading;
 
-  // 筛选条件名称（title 显示用）；keyword 直接可用，其余按需查询
-  const circle = useQuery({
-    queryKey: ['circle', search.circleId],
-    queryFn: () => getCircle(search.circleId!),
-    enabled: search.circleId != null,
-    staleTime: 5 * 60_000,
-  });
-  const tag = useQuery({
-    queryKey: ['tag', search.tagId],
-    queryFn: () => getTag(search.tagId!),
-    enabled: search.tagId != null,
-    staleTime: 5 * 60_000,
-  });
-  const va = useQuery({
-    queryKey: ['va', search.vaId],
-    queryFn: () => getVa(search.vaId!),
-    enabled: search.vaId != null,
-    staleTime: 5 * 60_000,
-  });
-  const filterName = search.keyword
-    ? `「${search.keyword}」`
-    : search.circleId != null
-      ? circle.data?.name
-      : search.tagId != null
-        ? tag.data?.name
-        : search.vaId != null
-          ? va.data?.name
-          : undefined;
+  // 筛选条件名称（title 显示用），来自 q 查询文本
+  const filterName = search.q ? `「${search.q}」` : undefined;
 
   // 无限滚动（仅无限模式；分页模式 hasMore 恒 false）
   const sentinelRef = useInfiniteScroll({
@@ -254,29 +217,26 @@ export default function Works() {
         </h1>
 
         <div className='ms-auto flex items-center gap-2'>
-          {/* 搜索结果不支持排序，搜索时隐藏排序控件 */}
-          {!search.keyword && (
-            <M3eFormField
-              variant='outlined'
-              hideSubscript='always'
-              className='min-w-48 [--m3e-form-field-width:12rem] density-3'
-            >
-              <M3eSelect onChange={onSortChange}>
-                {SORT_OPTIONS.map((o) => {
-                  const v = `${o.order}:${o.sort}`;
-                  return (
-                    <M3eOption
-                      key={v}
-                      value={v}
-                      selected={v === `${sortOption.order}:${sortOption.sort}`}
-                    >
-                      {o.label}
-                    </M3eOption>
-                  );
-                })}
-              </M3eSelect>
-            </M3eFormField>
-          )}
+          <M3eFormField
+            variant='outlined'
+            hideSubscript='always'
+            className='min-w-48 [--m3e-form-field-width:12rem] density-3'
+          >
+            <M3eSelect onChange={onSortChange}>
+              {SORT_OPTIONS.map((o) => {
+                const v = `${o.order}:${o.sort}`;
+                return (
+                  <M3eOption
+                    key={v}
+                    value={v}
+                    selected={v === `${sortOption.order}:${sortOption.sort}`}
+                  >
+                    {o.label}
+                  </M3eOption>
+                );
+              })}
+            </M3eSelect>
+          </M3eFormField>
 
           <M3eIconButton onClick={toggleView} aria-label='切换视图'>
             <M3eIcon name={viewMode === 'grid' ? 'view_list' : 'apps'} />
@@ -287,13 +247,7 @@ export default function Works() {
       {/* 筛选状态提示 */}
       {isFiltered && (
         <div className='mb-3 flex items-center gap-2 text-sm opacity-70'>
-          <span>
-            筛选中：
-            {search.keyword && `关键词「${search.keyword}」`}
-            {search.circleId && `社团`}
-            {search.tagId && `标签`}
-            {search.vaId && `声优`}
-          </span>
+          <span className='truncate'>筛选中：{search.q}</span>
           <Link to='/works' className='no-underline'>
             清除
           </Link>
@@ -332,9 +286,7 @@ export default function Works() {
       {/* 空状态 */}
       {!loading && works.length === 0 && (
         <div className='py-16 text-center opacity-60'>
-          {search.keyword
-            ? `未找到与「${search.keyword}」相关的作品`
-            : '暂无作品'}
+          {search.q ? `未找到与「${search.q}」相关的作品` : '暂无作品'}
         </div>
       )}
 

@@ -21,7 +21,7 @@ function listKeyParts(params: ListParams & { page: number }) {
   return [base, page] as const;
 }
 
-/** 列表 query key 构造（loader 与 hooks 共用，避免漂移）。 */
+/** 列表 query key 构造（hooks 与测试共用，避免漂移）。 */
 export function worksListQueryKey(params: ListParams & { page: number }) {
   const [base, page] = listKeyParts(params);
   return ['works', base, page] as const;
