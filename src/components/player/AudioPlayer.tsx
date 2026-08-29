@@ -24,7 +24,7 @@ import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
 import QueueDialog from './QueueDialog';
 import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../../constants';
-import { usePlayerStore } from '../../stores/playerStore';
+import { usePlayerStore, selectCurrentTrack } from '../../stores/playerStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { mediaUrl } from '../../api/client';
 import { seekTo } from '../../hooks/usePlayer';
@@ -43,8 +43,8 @@ import { formatDuration, formatRemaining } from '../../utils/format';
  */
 export default function AudioPlayer() {
   const hide = usePlayerStore((s) => s.hide);
-  const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const currentUid = usePlayerStore((s) => s.currentUid);
+  const track = usePlayerStore(selectCurrentTrack);
   const playing = usePlayerStore((s) => s.playing);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
@@ -70,15 +70,14 @@ export default function AudioPlayer() {
   /** 窄屏歌词视图（宽屏双栏常显，状态无效）；切曲自动回封面视图 */
   const [showLyrics, setShowLyrics] = useState(false);
   // 切曲时重置窄屏歌词视图（渲染期调整 state，替代 effect 中 setState）
-  const [prevQueueIndex, setPrevQueueIndex] = useState(queueIndex);
-  if (queueIndex !== prevQueueIndex) {
-    setPrevQueueIndex(queueIndex);
+  const [prevUid, setPrevUid] = useState(currentUid);
+  if (currentUid !== prevUid) {
+    setPrevUid(currentUid);
     setShowLyrics(false);
   }
 
-  if (hide || queue.length === 0) return null;
+  if (hide || !track) return null;
 
-  const track = queue[queueIndex];
   const hasLyrics = lyricLines.length > 0;
 
   /** 进度条拖动：thumb 值实时写回（seekTo 内部 clamp）。 */

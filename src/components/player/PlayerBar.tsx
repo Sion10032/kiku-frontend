@@ -12,7 +12,7 @@ import '@m3e/icons/outlined/queue_music';
 import '@m3e/icons/outlined/music_note';
 import '@m3e/icons/outlined/volume_up';
 import '@m3e/icons/outlined/volume_off';
-import { usePlayerStore } from '../../stores/playerStore';
+import { usePlayerStore, selectCurrentTrack } from '../../stores/playerStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { mediaUrl } from '../../api/client';
 import { formatDuration, formatRemaining } from '../../utils/format';
@@ -41,8 +41,7 @@ function stopAnd(fn: () => void) {
  * - 内部渲染 LyricsBar（悬浮于播放条上方的浮动歌词）
  */
 export default function PlayerBar() {
-  const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const track = usePlayerStore(selectCurrentTrack);
   const playing = usePlayerStore((s) => s.playing);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
@@ -57,7 +56,6 @@ export default function PlayerBar() {
   const [queueOpen, setQueueOpen] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
 
-  const track = queue[queueIndex];
   // 切曲后重置封面失败标记（渲染期调整 state，替代 effect 中 setState）
   const coverKey = track?.workId ?? track?.hash;
   const [prevCoverKey, setPrevCoverKey] = useState(coverKey);
@@ -66,7 +64,7 @@ export default function PlayerBar() {
     setCoverFailed(false);
   }
 
-  if (queue.length === 0 || !track) return null;
+  if (!track) return null;
 
   return (
     <footer className='[grid-area:player] relative flex min-w-0 w-full flex-col border-t border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface-container)'>

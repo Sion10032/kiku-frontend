@@ -9,7 +9,6 @@ import {
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -19,7 +18,7 @@ import { M3eDialog } from '@m3e/react/dialog';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/drag_indicator';
 import clsx from 'clsx';
-import { usePlayerStore, type Track } from '../../stores/playerStore';
+import { usePlayerStore, type QueuedTrack } from '../../stores/playerStore';
 
 /**
  * 播放列表对话框：列出队列、当前曲目高亮、点击切曲、拖拽排序。
@@ -33,8 +32,9 @@ export default function QueueDialog({
   onClose: () => void;
 }) {
   const queue = usePlayerStore((s) => s.queue);
-  const queueIndex = usePlayerStore((s) => s.queueIndex);
-  const setQueue = usePlayerStore((s) => s.setQueue);
+  const currentUid = usePlayerStore((s) => s.currentUid);
+  const playFromQueue = usePlayerStore((s) => s.playFromQueue);
+  const reorderQueue = usePlayerStore((s) => s.reorderQueue);
 
   const sensors = useSensors(
     // 5px 拖动阈值，避免点击切曲被误判为拖拽
@@ -46,28 +46,10 @@ export default function QueueDialog({
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (over == null || active.id === over.id) return;
-    const oldIndex = Number(active.id);
-    const newIndex = Number(over.id);
-    if (
-      Number.isNaN(oldIndex)
-      || Number.isNaN(newIndex)
-      || oldIndex === newIndex
-    ) {
-      return;
-    }
-    const nextQueue = arrayMove(queue, oldIndex, newIndex);
-    // 修正当前播放索引：被拖的是当前曲 → 跟随；从当前曲一侧拖到另一侧
-    // （落点含当前曲原槽位）→ 当前曲整体移位 ±1。等号必须取到：恰好落在
-    // 当前曲槽位（newIndex === queueIndex）时当前曲同样移位，漏掉会导致
-    // queueIndex 指向被拖的曲、切曲重播
-    let nextIndex = queueIndex;
-    if (oldIndex === queueIndex) nextIndex = newIndex;
-    else if (oldIndex < queueIndex && newIndex >= queueIndex)
-      nextIndex = queueIndex - 1;
-    else if (oldIndex > queueIndex && newIndex <= queueIndex)
-      nextIndex = queueIndex + 1;
-    // store 无队列重排 action，整表写回（不改 store 文件）
-    usePlayerStore.setState({ queue: nextQueue, queueIndex: nextIndex });
+    const oldIndex = queue.findIndex((t) => t.uid === active.id);
+    const newIndex = queue.findIndex((t) => t.uid === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    reorderQueue(oldIndex, newIndex);
   }
 
   return (
@@ -89,16 +71,15 @@ export default function QueueDialog({
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={queue.map((_, i) => i)}
+            items={queue.map((t) => t.uid)}
             strategy={verticalListSortingStrategy}
           >
-            {queue.map((track, index) => (
+            {queue.map((track) => (
               <QueueRow
-                key={`${track.hash}-${index}`}
+                key={track.uid}
                 track={track}
-                index={index}
-                active={index === queueIndex}
-                onPlay={() => setQueue(queue, index)}
+                active={track.uid === currentUid}
+                onPlay={() => playFromQueue(track.uid)}
               />
             ))}
           </SortableContext>
@@ -113,17 +94,15 @@ export default function QueueDialog({
  */
 function QueueRow({
   track,
-  index,
   active,
   onPlay,
 }: {
-  track: Track;
-  index: number;
+  track: QueuedTrack;
   active: boolean;
   onPlay: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: index });
+    useSortable({ id: track.uid });
 
   return (
     <div
