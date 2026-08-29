@@ -6,26 +6,18 @@ import {
 import { getWorksList, getWork, getTracks } from '../api/works';
 import type { WorksParams } from '../types';
 
-/** 语义别名：WorksFilter 的字段已全部含于 WorksParams，直接复用。 */
+/** 语义别名：ListParams = WorksParams。 */
 type ListParams = WorksParams;
 
 /**
  * 排序+筛选部分作为 key 主体，page 单独维度。
  *
- * base 对象显式写全 order/sort/seed/circleId/tagId/vaId/keyword 七个键
- * （键序固定），确保 queryKey hash 两侧同构，不会因调用方构造差异而漂移。
+ * base 对象显式写全 order/sort/seed/q 四个键（键序固定），
+ * 确保 queryKey hash 两侧同构，不会因调用方构造差异而漂移。
  */
 function listKeyParts(params: ListParams & { page: number }) {
-  const { order, sort, seed, circleId, tagId, vaId, keyword, page } = params;
-  const base = {
-    order,
-    sort,
-    seed,
-    circleId,
-    tagId,
-    vaId,
-    keyword,
-  };
+  const { order, sort, seed, q, page } = params;
+  const base = { order, sort, seed, q };
   return [base, page] as const;
 }
 
