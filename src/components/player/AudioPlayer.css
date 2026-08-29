@@ -1,0 +1,8 @@
+/* 全屏播放器首次挂载自底部滑入；之后的展开/折叠走 translate-y 过渡
+   （根元素常驻，hide 仅切换位移类）。时长与缓动在组件 className 的
+   animate-[player-in_...] 任意值中指定 */
+@keyframes player-in {
+  from {
+    transform: translateY(100%);
+  }
+}

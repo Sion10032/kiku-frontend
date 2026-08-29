@@ -23,6 +23,7 @@ import '@m3e/icons/outlined/music_note';
 import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
 import QueueDialog from './QueueDialog';
+import './AudioPlayer.css';
 import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../../constants';
 import { usePlayerStore, selectCurrentTrack } from '../../stores/playerStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -40,6 +41,7 @@ import { formatDuration, formatRemaining } from '../../utils/format';
  *   （交叉淡化 300ms）；歌词行两段式点击确认 seek（见 LyricsPanel）
  * - 窄屏（<640px）覆盖 M3E 按钮 token 缩小尺寸，防止控制行溢出
  * - 播放列表对话框（dnd-kit 拖拽排序）、睡眠定时器
+ * - 首挂载自底部滑入；hide 时滑回底部但不卸载（translate 过渡 + inert）
  */
 export default function AudioPlayer() {
   const hide = usePlayerStore((s) => s.hide);
@@ -76,7 +78,7 @@ export default function AudioPlayer() {
     setShowLyrics(false);
   }
 
-  if (hide || !track) return null;
+  if (!track) return null;
 
   const hasLyrics = lyricLines.length > 0;
 
@@ -93,7 +95,17 @@ export default function AudioPlayer() {
   }
 
   return (
-    <div className='fixed inset-0 z-40 flex flex-col bg-(--md-sys-color-surface)'>
+    // 首挂载 animate-player-in 自底部滑入；hide 仅切换位移类（不卸载），
+    // 展开/折叠为 translate-y 过渡；inert 保证隐藏期不可聚焦/交互
+    <div
+      inert={hide || undefined}
+      className={clsx(
+        'fixed inset-0 z-40 flex flex-col bg-(--md-sys-color-surface)',
+        'animate-[player-in_300ms_cubic-bezier(0.2,0,0,1)]',
+        'transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none motion-reduce:animate-none',
+        hide ? 'translate-y-full' : 'translate-y-0',
+      )}
+    >
       {/* 顶栏：仅折叠（播放列表/睡眠定时移至底部辅助行） */}
       <div className='flex items-center p-4'>
         <M3eIconButton aria-label='折叠播放器' onClick={toggleHide}>
