@@ -20,6 +20,13 @@ export interface Track {
   startAt?: number;
 }
 
+/** 队列条目：Track + 入队时分配的条目唯一 id（会话内唯一，队列不持久化）。 */
+export type QueuedTrack = Track & { uid: string };
+
+/** uid 计数器：store 入队时分配，保证重复 hash 的条目也可区分。 */
+let uidSeq = 0;
+const nextUid = () => `q${++uidSeq}`;
+
 export type PlayMode = 'order' | 'allRepeat' | 'repeatOne' | 'shuffle';
 
 interface PlayerState {
@@ -30,9 +37,9 @@ interface PlayerState {
   currentTime: number;
   /** 总时长（秒） */
   duration: number;
-  queue: Track[];
-  /** 当前播放音轨在队列中的索引 */
-  queueIndex: number;
+  queue: QueuedTrack[];
+  /** 当前播放条目 uid；null 表示无当前曲目（如当前曲被移除后） */
+  currentUid: string | null;
   playMode: PlayMode;
   muted: boolean;
   /** 音量 0.0–1.0 */
@@ -67,6 +74,10 @@ interface PlayerActions {
   removeFromQueue: (index: number) => void;
   /** 在当前音轨之后插入（"下一首播放"）。 */
   playNext: (track: Track) => void;
+  /** 拖拽重排队列（不改变当前曲目身份）。 */
+  reorderQueue: (oldIndex: number, newIndex: number) => void;
+  /** 点击队列条目切曲播放。 */
+  playFromQueue: (uid: string) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (dur: number) => void;
   /** 循环切换播放模式：order → allRepeat → repeatOne → shuffle。 */
@@ -94,6 +105,15 @@ const PLAY_MODE_ORDER: PlayMode[] = [
   'shuffle',
 ];
 
+/** 当前播放条目（uid 悬空时为 undefined）。 */
+export const selectCurrentTrack = (
+  s: PlayerState & PlayerActions,
+): QueuedTrack | undefined => s.queue.find((t) => t.uid === s.currentUid);
+
+/** 当前播放条目索引（悬空为 -1）。 */
+export const selectCurrentIndex = (s: PlayerState & PlayerActions): number =>
+  s.queue.findIndex((t) => t.uid === s.currentUid);
+
 export const usePlayerStore = create<PlayerState & PlayerActions>()(
   persist(
     (set, get) => ({
@@ -102,7 +122,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       currentTime: 0,
       duration: 0,
       queue: [],
-      queueIndex: 0,
+      currentUid: null,
       playMode: 'order',
       muted: false,
       volume: 0.8,
@@ -121,12 +141,13 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       togglePlaying: () => set((s) => ({ playing: !s.playing })),
 
       nextTrack: () => {
-        const { queue, queueIndex, playMode } = get();
+        const { queue, currentUid, playMode } = get();
         if (queue.length === 0) return;
+        const index = queue.findIndex((t) => t.uid === currentUid);
         let nextIndex: number;
         switch (playMode) {
           case 'repeatOne':
-            nextIndex = queueIndex;
+            nextIndex = index;
             break;
           case 'shuffle':
             // 队列仅 1 首时不随机，避免原地循环
@@ -134,51 +155,80 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
               queue.length === 1 ? 0 : Math.floor(Math.random() * queue.length);
             break;
           case 'allRepeat':
-            nextIndex = (queueIndex + 1) % queue.length;
+            nextIndex = (index + 1) % queue.length;
             break;
-          default: // order：到末尾停止
-            if (queueIndex + 1 >= queue.length) {
+          default: // order：无当前（已被移除）从第 0 首开始；到末尾停止
+            if (index + 1 >= queue.length) {
               set({ playing: false });
               return;
             }
-            nextIndex = queueIndex + 1;
+            nextIndex = index + 1;
         }
-        set({ queueIndex: nextIndex, playing: true });
+        set({ currentUid: queue[nextIndex]?.uid ?? null, playing: true });
       },
 
       previousTrack: () => {
-        const { queue, queueIndex } = get();
+        const { queue, currentUid } = get();
         if (queue.length === 0) return;
+        const index = queue.findIndex((t) => t.uid === currentUid);
         set({
-          queueIndex: queueIndex > 0 ? queueIndex - 1 : queue.length - 1,
+          currentUid: queue[index > 0 ? index - 1 : queue.length - 1].uid,
           playing: true,
         });
       },
 
-      setQueue: (queue, index = 0) =>
-        set({ queue, queueIndex: index, playing: true }),
+      setQueue: (queue, index = 0) => {
+        const entries = queue.map((t) => ({ ...t, uid: nextUid() }));
+        set({
+          queue: entries,
+          currentUid: entries[index]?.uid ?? null,
+          playing: true,
+        });
+      },
 
-      addToQueue: (track) => set((s) => ({ queue: [...s.queue, track] })),
+      addToQueue: (track) =>
+        set((s) => {
+          const entry = { ...track, uid: nextUid() };
+          return {
+            queue: [...s.queue, entry],
+            // 空队列首次入队成为当前曲目（对齐旧 queueIndex=0 语义）
+            currentUid: s.currentUid ?? entry.uid,
+          };
+        }),
 
       removeFromQueue: (index) =>
         set((s) => {
-          const queue = s.queue.filter((_, i) => i !== index);
-          let queueIndex = s.queueIndex;
-          if (index === s.queueIndex) {
-            // 删除的是当前音轨 → 停止播放
-            queueIndex = 0;
-          } else if (index < s.queueIndex) {
-            queueIndex = s.queueIndex - 1;
-          }
-          return { queue, queueIndex };
+          const removed = s.queue[index];
+          if (!removed) return {};
+          return {
+            queue: s.queue.filter((_, i) => i !== index),
+            // 删除当前音轨 → currentUid 置空（usePlayer 卸载 Howl 停止播放）
+            currentUid: removed.uid === s.currentUid ? null : s.currentUid,
+          };
         }),
 
       playNext: (track) =>
         set((s) => {
+          const index = s.queue.findIndex((t) => t.uid === s.currentUid);
           const queue = [...s.queue];
-          queue.splice(s.queueIndex + 1, 0, track);
+          // 无当前曲目时追加到末尾
+          queue.splice(index === -1 ? queue.length : index + 1, 0, {
+            ...track,
+            uid: nextUid(),
+          });
           return { queue };
         }),
+
+      reorderQueue: (oldIndex, newIndex) =>
+        set((s) => {
+          const queue = [...s.queue];
+          const [entry] = queue.splice(oldIndex, 1);
+          if (!entry) return {};
+          queue.splice(newIndex, 0, entry);
+          return { queue };
+        }),
+
+      playFromQueue: (uid) => set({ currentUid: uid, playing: true }),
 
       setCurrentTime: (time) => set({ currentTime: time }),
       setDuration: (dur) => set({ duration: dur }),
