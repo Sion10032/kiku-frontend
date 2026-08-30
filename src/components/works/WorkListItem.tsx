@@ -6,11 +6,14 @@ import { useM3eListActionStyle } from '../../hooks/useM3eListActionStyle';
 import { UnreadDot, ReadDot } from '../common/WorkProgress';
 import { useUserStore } from '../../stores/userStore';
 import { fieldQuery } from '../../utils/query';
+import FavButton from '../favourites/FavButton';
 
 interface WorkListItemProps {
   work: Work;
   /** 是否显示标签（窄屏可隐藏） */
   showLabel?: boolean;
+  /** 当前用户是否已收藏；undefined = 不显示心形 */
+  favourited?: boolean;
 }
 
 /**
@@ -21,6 +24,7 @@ interface WorkListItemProps {
 export default function WorkListItem({
   work,
   showLabel = true,
+  favourited,
 }: WorkListItemProps) {
   const ref = useM3eListActionStyle({
     buttonStyle: {
@@ -101,6 +105,17 @@ export default function WorkListItem({
           </div>
         )}
       </div>
+
+      {/* 收藏心形（trailing 槽位；未注入状态时不渲染） */}
+      {favourited !== undefined && (
+        <span slot='trailing'>
+          <FavButton
+            targetType='work'
+            targetId={work.id}
+            favourited={favourited}
+          />
+        </span>
+      )}
     </M3eListAction>
   );
 }

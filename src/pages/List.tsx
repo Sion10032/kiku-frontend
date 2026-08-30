@@ -17,6 +17,9 @@ import {
   useVasQuery,
 } from '../queries/useListQuery';
 import { fieldQuery } from '../utils/query';
+import FavButton from '../components/favourites/FavButton';
+import { useFavouriteStatus } from '../queries/useFavouritesQuery';
+import type { FavouriteTargetType } from '../types';
 
 export type ListType = 'circles' | 'tags' | 'vas' | 'series';
 
@@ -102,6 +105,20 @@ export default function List({ type }: { type: ListType }) {
         search: { q: fieldQuery('va', v.name) },
       }));
   }, [type, circles.data, tags.data, vas.data, series.data, keyword]);
+
+  // 标签不支持收藏；其余三类批量查询收藏状态（未登录自动 disabled）
+  const favType: FavouriteTargetType | null =
+    type === 'circles'
+      ? 'circle'
+      : type === 'vas'
+        ? 'va'
+        : type === 'series'
+          ? 'series'
+          : null;
+  const favStatus = useFavouriteStatus(
+    favType ?? 'work',
+    entries.map((e) => e.key),
+  );
 
   const loading =
     type === 'circles'
@@ -191,7 +208,18 @@ export default function List({ type }: { type: ListType }) {
                 <M3eIcon name={LEADING_ICONS[type]} />
               </span>
               <span className='block truncate'>{entry.name}</span>
-              <span slot='trailing' className='flex items-center opacity-50'>
+              <span
+                slot='trailing'
+                className='flex items-center gap-1 opacity-50'
+              >
+                {favType && (
+                  <FavButton
+                    size='sm'
+                    targetType={favType}
+                    targetId={entry.key}
+                    favourited={favStatus.data?.[entry.key] === true}
+                  />
+                )}
                 <M3eIcon name='chevron_right' />
               </span>
             </M3eListAction>

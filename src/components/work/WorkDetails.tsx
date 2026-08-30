@@ -16,6 +16,8 @@ import { getSeedColorForWork } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
 import { vaChipSetStyles } from '../common/chipStyles';
 import { fieldQuery } from '../../utils/query';
+import FavButton from '../favourites/FavButton';
+import { useFavouriteStatus } from '../../queries/useFavouritesQuery';
 import WriteReview from './WriteReview';
 
 interface WorkDetailsProps {
@@ -32,6 +34,18 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   const [reviewOpen, setReviewOpen] = useState(false);
   // chip 点击跳转筛选（与 WorkCard 行为一致）
   const navigate = useNavigate();
+
+  // 收藏状态（四类目标各一次批量查询；未登录自动 disabled）
+  const workFav = useFavouriteStatus('work', [work.id]);
+  const circleFav = useFavouriteStatus('circle', [String(work.circle.id)]);
+  const seriesFav = useFavouriteStatus(
+    'series',
+    work.series ? [work.series.id] : [],
+  );
+  const vaFav = useFavouriteStatus(
+    'va',
+    work.vas.map((v) => v.id),
+  );
 
   // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
   // 设置中关闭动态取色时跳过提取并恢复默认色。
@@ -63,28 +77,53 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         </div>
 
         <div slot='content' className='flex flex-col gap-3 p-4'>
-          {/* 标题 */}
-          <h1 className='m-0 text-xl font-normal leading-snug'>{work.title}</h1>
+          {/* 标题 + 作品收藏 */}
+          <div className='flex items-start justify-between gap-2'>
+            <h1 className='m-0 min-w-0 text-xl font-normal leading-snug'>
+              {work.title}
+            </h1>
+            <FavButton
+              targetType='work'
+              targetId={work.id}
+              favourited={workFav.data?.[work.id] === true}
+            />
+          </div>
 
-          {/* 社团 */}
-          <Link
-            to='/works'
-            search={{ q: fieldQuery('circle', work.circle.name) }}
-            className='truncate text-sm no-underline opacity-70'
-          >
-            {work.circle.name}
-          </Link>
-
-          {/* 系列（单值归属信息，非 chips；样式与社团行一致，library_books 图标区分） */}
-          {work.series && (
+          {/* 社团 + 收藏 */}
+          <div className='flex items-center gap-1'>
             <Link
               to='/works'
-              search={{ q: fieldQuery('series', work.series.name) }}
-              className='inline-flex items-center gap-1 truncate text-sm no-underline opacity-70'
+              search={{ q: fieldQuery('circle', work.circle.name) }}
+              className='min-w-0 truncate text-sm no-underline opacity-70'
             >
-              <M3eIcon name='library_books' />
-              {work.series.name}
+              {work.circle.name}
             </Link>
+            <FavButton
+              size='sm'
+              targetType='circle'
+              targetId={String(work.circle.id)}
+              favourited={circleFav.data?.[String(work.circle.id)] === true}
+            />
+          </div>
+
+          {/* 系列 + 收藏（单值归属信息，非 chips；样式与社团行一致，library_books 图标区分） */}
+          {work.series && (
+            <div className='flex items-center gap-1'>
+              <Link
+                to='/works'
+                search={{ q: fieldQuery('series', work.series.name) }}
+                className='inline-flex min-w-0 items-center gap-1 truncate text-sm no-underline opacity-70'
+              >
+                <M3eIcon name='library_books' />
+                {work.series.name}
+              </Link>
+              <FavButton
+                size='sm'
+                targetType='series'
+                targetId={work.series.id}
+                favourited={seriesFav.data?.[work.series.id] === true}
+              />
+            </div>
           )}
 
           {/* 评分 / 评论 / DLsite */}
@@ -179,25 +218,33 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             </M3eChipSet>
           )}
 
-          {/* 声优（主色容器 + mic 图标，与 WorkCard 一致） */}
+          {/* 声优（chip + 独立收藏心形；WorkCard 内保持纯 chips 不受影响） */}
           {work.vas.length > 0 && (
-            <M3eChipSet className='density-1' style={vaChipSetStyles}>
+            <div className='flex flex-wrap items-center gap-x-1.5 gap-y-1'>
               {work.vas.map((va) => (
-                <M3eAssistChip
-                  key={va.id}
-                  variant='elevated'
-                  onClick={() =>
-                    navigate({
-                      to: '/works',
-                      search: { q: fieldQuery('va', va.name) },
-                    })
-                  }
-                >
-                  <M3eIcon slot='icon' name='mic' />
-                  {va.name}
-                </M3eAssistChip>
+                <span key={va.id} className='inline-flex items-center gap-0.5'>
+                  <M3eAssistChip
+                    variant='elevated'
+                    style={vaChipSetStyles}
+                    onClick={() =>
+                      navigate({
+                        to: '/works',
+                        search: { q: fieldQuery('va', va.name) },
+                      })
+                    }
+                  >
+                    <M3eIcon slot='icon' name='mic' />
+                    {va.name}
+                  </M3eAssistChip>
+                  <FavButton
+                    size='sm'
+                    targetType='va'
+                    targetId={va.id}
+                    favourited={vaFav.data?.[va.id] === true}
+                  />
+                </span>
               ))}
-            </M3eChipSet>
+            </div>
           )}
 
           {/* 我的评价入口（打开 WriteReview 对话框） */}
