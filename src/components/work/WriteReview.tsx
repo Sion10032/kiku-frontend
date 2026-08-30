@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eButton } from '@m3e/react/button';
 import { M3eFormField } from '@m3e/react/form-field';
-import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
-import { M3eOption } from '@m3e/react/option';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import { useUserStore } from '../../stores/userStore';
 import { useReviewsByUser } from '../../queries/useReviewsQuery';
@@ -12,17 +10,7 @@ import {
   useDeleteReviewMutation,
 } from '../../queries/useReviewMutation';
 import StarRating from '../common/StarRating';
-import { PROGRESS_LABELS } from '../../constants';
-import type { Progress, Work } from '../../types';
-
-/** 进度选项顺序（与 PROGRESS_LABELS 同源）。 */
-const PROGRESS_ORDER: Progress[] = [
-  'marked',
-  'listening',
-  'listened',
-  'replay',
-  'postponed',
-];
+import type { Work } from '../../types';
 
 interface WriteReviewProps {
   work: Work;
@@ -34,9 +22,9 @@ interface WriteReviewProps {
 
 /**
  * 写评价对话框（M3eDialog）：
- * 星级（StarRating）+ 短评（M3eFormField 包裹 textarea）+ 收听进度（M3eSelect）。
+ * 星级（StarRating）+ 短评（M3eFormField 包裹 textarea）。
  *
- * - 打开时用已有评价回显（rating / progress / 短评），数据来自
+ * - 打开时用已有评价回显（rating / 短评），数据来自
  *   useReviewsByUser（与收藏页共享缓存）。
  * - 提交调 PUT /api/review，删除调 DELETE /api/review；成功后
  *   invalidate works/work/reviews 并关闭对话框。
@@ -46,13 +34,12 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
   const reviewMutation = useReviewMutation();
   const deleteMutation = useDeleteReviewMutation();
 
-  // 当前用户对该作品的已有评价（回显 rating/progress/短评）
+  // 当前用户对该作品的已有评价（回显 rating/短评）
   const reviewsQuery = useReviewsByUser(name || undefined);
   const existing = reviewsQuery.data?.find((r) => r.workId === work.id);
 
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
-  const [progress, setProgress] = useState<Progress | ''>('');
 
   // 仅在「打开」的瞬间用已有评价初始化表单，避免查询完成或输入过程中被重置
   const prevOpen = useRef(false);
@@ -60,24 +47,12 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
     if (open && !prevOpen.current) {
       setRating(work.userRating ?? existing?.rating ?? 0);
       setReviewText(existing?.reviewText ?? '');
-      setProgress(existing?.progress ?? '');
     }
     prevOpen.current = open;
-  }, [
-    open,
-    work.userRating,
-    existing?.rating,
-    existing?.reviewText,
-    existing?.progress,
-  ]);
+  }, [open, work.userRating, existing?.rating, existing?.reviewText]);
 
   const loading = reviewMutation.isPending || deleteMutation.isPending;
   const hasExisting = existing != null || work.userRating != null;
-
-  function onProgressChange(e: Event) {
-    const value = (e.target as M3eSelectElement).value as string | null;
-    setProgress(value === null ? '' : (value as Progress));
-  }
 
   async function onSubmit() {
     if (loading) return;
@@ -86,7 +61,6 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
         work_id: work.id,
         rating: rating > 0 ? rating : undefined,
         review_text: reviewText.trim() ? reviewText.trim() : undefined,
-        progress: progress || undefined,
       });
       M3eSnackbar.open('评价已保存');
       onClose();
@@ -134,24 +108,6 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
             maxLength={500}
             className='w-full resize-none border-none bg-transparent py-2 text-sm outline-none'
           />
-        </M3eFormField>
-
-        {/* 收听进度 */}
-        <M3eFormField variant='outlined' hideSubscript='always'>
-          <label slot='label' htmlFor='review-progress'>
-            收听进度
-          </label>
-          <M3eSelect id='review-progress' onChange={onProgressChange}>
-            {PROGRESS_ORDER.map((value) => (
-              <M3eOption
-                key={value}
-                value={value}
-                selected={progress === value}
-              >
-                {PROGRESS_LABELS[value]}
-              </M3eOption>
-            ))}
-          </M3eSelect>
         </M3eFormField>
       </div>
 
