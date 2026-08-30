@@ -40,7 +40,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   // chip 点击跳转筛选（与 WorkCard 行为一致）
   const navigate = useNavigate();
 
-  // 作品收藏状态（驱动标题旁心形；未登录自动 disabled）
+  // 作品收藏状态（驱动操作行心形；未登录自动 disabled）
   const workFav = useFavouriteStatus('work', [work.id]);
   // 匿名零侵入：未登录不渲染收藏入口（匿名用户不应看到任何收藏 UI）
   const auth = useUserStore((s) => s.auth);
