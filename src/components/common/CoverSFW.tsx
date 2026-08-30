@@ -15,7 +15,7 @@ interface CoverSFWProps {
 }
 
 /**
- * 封面图（NSFW 模糊）。
+ * 封面图（R18 模糊）。
  *
  * - 显示 RJ 编号角标与发售日期（加载失败时同样显示）
  * - 加载失败时仅用同尺寸占位替换 img，角标/日期 overlay 不受影响
@@ -50,7 +50,7 @@ export default function CoverSFW({
       // （::slotted([slot=header]) { display: flex }），Link 作为 flex item
       // 默认收缩到内容宽度，封面/占位会缩成小块，需显式占满。
       // 非 thumbnail：顶部圆角对齐卡片圆角（corner-medium 12px）并裁剪
-      // NSFW 模糊时 filter 的边缘溢出
+      // R18 模糊时 filter 的边缘溢出
       className={clsx(
         'relative block w-full',
         'overflow-hidden rounded-t-(--md-sys-shape-corner-medium)',

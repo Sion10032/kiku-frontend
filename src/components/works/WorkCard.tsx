@@ -32,7 +32,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   // m3e-card 的 slot 边距全部来自 --m3e-card-padding（默认 16px）：
   // 非媒体 header（header slot 直接子节点非 img/video）会被 shadow DOM
   // 加上 margin-inline/block-start 导致封面占不满卡片宽度，此即本卡片的
-  // 场景（封面需要 Link 包裹跳转/NSFW 模糊/回退，无法用裸 img 入 slot）。
+  // 场景（封面需要 Link 包裹跳转/R18 模糊/回退，无法用裸 img 入 slot）。
   // 归零变量后由 content/actions 自行补边距，封面即可铺满全宽。
   const cardVars = thumbnail ? '' : '[--m3e-card-padding:0px]';
 
