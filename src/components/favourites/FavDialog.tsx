@@ -41,7 +41,13 @@ export default function FavDialog({ open, onClose, work }: FavDialogProps) {
   );
 
   return (
-    <M3eDialog open={open} onClosed={onClose} dismissible closeLabel='关闭'>
+    <M3eDialog
+      open={open}
+      onClosed={onClose}
+      dismissible
+      closeLabel='关闭'
+      className='[--m3e-dialog-max-width:min(560px,calc(100vw-2rem))] [--m3e-dialog-min-width:min(280px,calc(100vw-2rem))]'
+    >
       <span slot='header'>收藏</span>
 
       <div className='flex flex-col gap-4 py-2'>
