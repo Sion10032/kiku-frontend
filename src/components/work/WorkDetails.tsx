@@ -18,6 +18,7 @@ import { getSeedColorForWork } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
 import { vaChipSetStyles } from '../common/chipStyles';
 import { fieldQuery } from '../../utils/query';
+import { useUserStore } from '../../stores/userStore';
 import { useFavouriteStatus } from '../../queries/useFavouritesQuery';
 import FavDialog from '../favourites/FavDialog';
 import WriteReview from './WriteReview';
@@ -42,6 +43,8 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
 
   // 作品收藏状态（驱动标题旁心形；未登录自动 disabled）
   const workFav = useFavouriteStatus('work', [work.id]);
+  // 匿名零侵入：未登录不渲染收藏入口（匿名用户不应看到任何收藏 UI）
+  const auth = useUserStore((s) => s.auth);
 
   // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
   // 设置中关闭动态取色时跳过提取并恢复默认色。
@@ -78,17 +81,19 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             <h1 className='m-0 min-w-0 text-xl font-normal leading-snug'>
               {work.title}
             </h1>
-            <M3eIconButton aria-label='收藏' onClick={() => setFavOpen(true)}>
-              <M3eIcon
-                name='favorite'
-                filled={workFav.data?.[work.id] === true}
-                className={
-                  workFav.data?.[work.id] === true
-                    ? 'text-[var(--md-sys-color-primary)]'
-                    : ''
-                }
-              />
-            </M3eIconButton>
+            {auth && (
+              <M3eIconButton aria-label='收藏' onClick={() => setFavOpen(true)}>
+                <M3eIcon
+                  name='favorite'
+                  filled={workFav.data?.[work.id] === true}
+                  className={
+                    workFav.data?.[work.id] === true
+                      ? 'text-[var(--md-sys-color-primary)]'
+                      : ''
+                  }
+                />
+              </M3eIconButton>
+            )}
           </div>
 
           {/* 社团 */}

@@ -51,6 +51,7 @@ export default function FavDialog({ open, onClose, work }: FavDialogProps) {
           <div className='flex items-center justify-between gap-3'>
             <span className='min-w-0 truncate text-sm'>{work.title}</span>
             <FavButton
+              size='sm'
               targetType='work'
               targetId={work.id}
               favourited={workFav.data?.[work.id]}
