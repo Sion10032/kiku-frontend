@@ -16,6 +16,7 @@ import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { getSeedColorForWork } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
+import AgeRatingBadge from '../common/AgeRatingBadge';
 import { vaChipSetStyles } from '../common/chipStyles';
 import { fieldQuery } from '../../utils/query';
 import { useUserStore } from '../../stores/userStore';
@@ -71,7 +72,11 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
     <Fragment>
       <M3eCard className='overflow-hidden [--m3e-card-padding:0px]'>
         <div slot='header' className='p-0'>
-          <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
+          <CoverSFW
+            workId={work.id}
+            ageRating={work.ageRating}
+            release={work.release}
+          />
         </div>
 
         <div slot='content' className='flex flex-col gap-3 p-4'>
@@ -166,11 +171,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
               <span className='opacity-70'>售出 {work.dl_count}</span>
             )}
             {work.release && <span className='opacity-70'>{work.release}</span>}
-            {!work.nsfw && (
-              <span className='rounded-sm bg-(--md-sys-color-primary-container) px-1.5 py-0.5 text-xs'>
-                全年龄
-              </span>
-            )}
+            <AgeRatingBadge rating={work.ageRating} />
           </div>
 
           {/* 标签（ChipSet 样式与 WorkCard 一致） */}

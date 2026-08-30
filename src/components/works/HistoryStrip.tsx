@@ -45,7 +45,11 @@ function HistoryCard({ work }: { work: Work }) {
   return (
     <M3eCard className='w-48 shrink-0 [--m3e-card-padding:0px]'>
       <div slot='header' className='relative p-0'>
-        <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
+        <CoverSFW
+          workId={work.id}
+          ageRating={work.ageRating}
+          release={work.release}
+        />
       </div>
       <div slot='content' className='flex flex-col gap-1 p-2'>
         <Link

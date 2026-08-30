@@ -3,12 +3,13 @@ import clsx from 'clsx';
 import { Link } from '@tanstack/react-router';
 import { mediaUrl } from '../../api/client';
 import { useSettingsStore } from '../../stores/settingsStore';
+import type { AgeRating } from '../../types';
 
 interface CoverSFWProps {
   /** 作品 id，完整 RJ code（如 "RJ01173549"） */
   workId: string;
-  /** 是否为 NSFW 作品（PC 端默认模糊，hover 显示） */
-  nsfw?: boolean;
+  /** 年龄分级（仅 r18 模糊；缺省 'r18' 保守处理，与旧 nsfw=true 一致） */
+  ageRating?: AgeRating;
   release?: string | null;
   /** 缩略图模式（列表用，固定小尺寸） */
 }
@@ -18,14 +19,15 @@ interface CoverSFWProps {
  *
  * - 显示 RJ 编号角标与发售日期（加载失败时同样显示）
  * - 加载失败时仅用同尺寸占位替换 img，角标/日期 overlay 不受影响
- * - 模糊行为由设置项「NSFW 封面」控制（settingsStore.coverBlurMode）：
+ * - 年龄分级（仅 R18 模糊）
+ * - 模糊行为由设置项「R18 封面」控制（settingsStore.coverBlurMode）：
  *   始终模糊 / 悬浮显示（默认模糊，鼠标悬停显示）/ 始终显示，对所有端生效
  *
  * 后端 cover 端点：/api/cover/:id（?type=sam 缩略图）。
  */
 export default function CoverSFW({
   workId,
-  nsfw = true,
+  ageRating = 'r18',
   release,
 }: CoverSFWProps) {
   const [hovering, setHovering] = useState(false);
@@ -34,7 +36,8 @@ export default function CoverSFW({
   const src = mediaUrl(`/api/cover/${workId}/file`);
 
   const shouldBlur =
-    nsfw && (blurMode === 'always' || (blurMode === 'hover' && !hovering));
+    ageRating === 'r18'
+    && (blurMode === 'always' || (blurMode === 'hover' && !hovering));
 
   // img 与占位共享的尺寸类，失败时占位保持与封面相同的占位大小
   const frameClass = 'aspect-[4/3] w-full';

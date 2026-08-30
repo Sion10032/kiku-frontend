@@ -5,6 +5,7 @@ import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
 import '@m3e/icons/outlined/mic';
 import type { Work } from '../../types';
 import CoverSFW from '../common/CoverSFW';
+import AgeRatingBadge from '../common/AgeRatingBadge';
 import { vaChipSetStyles } from '../common/chipStyles';
 import { M3eIcon } from '@m3e/react/icon';
 import { UnreadDot, ReadDot } from '../common/WorkProgress';
@@ -21,7 +22,7 @@ interface WorkCardProps {
  * 作品卡片（网格视图）。
  *
  * 展示：封面、标题、社团、评分（平均分 + 评分人数）、评论数、
- * 价格、售出数、NSFW 标记、标签、声优。
+ * 价格、售出数、年龄分级徽章、标签、声优。
  */
 export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   const navigate = useNavigate();
@@ -38,7 +39,11 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   return (
     <M3eCard className={clsx('h-full', cardVars)}>
       <div slot='header' className='relative p-0'>
-        <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
+        <CoverSFW
+          workId={work.id}
+          ageRating={work.ageRating}
+          release={work.release}
+        />
         {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
         {authed && (work.userProgress ? <ReadDot /> : <UnreadDot />)}
       </div>
@@ -116,11 +121,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
             {work.dl_count != null && (
               <span className='opacity-70'>售出 {work.dl_count}</span>
             )}
-            {!work.nsfw && (
-              <span className='rounded-sm bg-(--m3e-primary-container) px-1.5 py-0.5 text-xs'>
-                全年龄
-              </span>
-            )}
+            <AgeRatingBadge rating={work.ageRating} />
           </div>
 
           {(work.tags.length > 0 || work.vas.length > 0) && (

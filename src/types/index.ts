@@ -4,6 +4,9 @@
 
 // ---------- 基础实体 ----------
 
+/** 年龄分级三档（对齐后端 formattedWorkSchema.ageRating）。 */
+export type AgeRating = 'all' | 'r15' | 'r18';
+
 export interface Circle {
   id: number;
   name: string;
@@ -37,7 +40,8 @@ export interface Work {
   dir: string;
   title: string;
   circle: Circle;
-  nsfw: boolean;
+  /** 年龄分级：all 全年龄 / r15 / r18 */
+  ageRating: AgeRating;
   release: string | null;
   /** 下载量 */
   dl_count: number | null;
