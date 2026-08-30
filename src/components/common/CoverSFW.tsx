@@ -50,7 +50,7 @@ export default function CoverSFW({
       // NSFW 模糊时 filter 的边缘溢出
       className={clsx(
         'relative block w-full',
-        'overflow-hidden rounded-(--md-sys-shape-corner-medium)',
+        'overflow-hidden rounded-t-(--md-sys-shape-corner-medium)',
       )}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
