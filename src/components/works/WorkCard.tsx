@@ -10,14 +10,11 @@ import { M3eIcon } from '@m3e/react/icon';
 import { UnreadDot, ReadDot } from '../common/WorkProgress';
 import { useUserStore } from '../../stores/userStore';
 import { fieldQuery } from '../../utils/query';
-import FavButton from '../favourites/FavButton';
 
 interface WorkCardProps {
   work: Work;
   /** 缩略图模式（隐藏文字详情，仅封面 + 标题） */
   thumbnail?: boolean;
-  /** 当前用户是否已收藏；undefined = 不显示心形（未登录/未注入） */
-  favourited?: boolean;
 }
 
 /**
@@ -26,11 +23,7 @@ interface WorkCardProps {
  * 展示：封面、标题、社团、评分（平均分 + 评分人数）、评论数、
  * 价格、售出数、NSFW 标记、标签、声优。
  */
-export default function WorkCard({
-  work,
-  thumbnail = false,
-  favourited,
-}: WorkCardProps) {
+export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
   const navigate = useNavigate();
   // 未读角标仅登录用户显示（未登录时 userProgress 恒 null，无法区分）
   const authed = useUserStore((s) => s.auth);
@@ -48,16 +41,6 @@ export default function WorkCard({
         <CoverSFW workId={work.id} nsfw={work.nsfw} release={work.release} />
         {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
         {authed && (work.userProgress ? <ReadDot /> : <UnreadDot />)}
-        {/* 收藏心形（右下角，避开右上角未读点） */}
-        {favourited !== undefined && (
-          <div className='absolute bottom-2 end-2 z-10'>
-            <FavButton
-              targetType='work'
-              targetId={work.id}
-              favourited={favourited}
-            />
-          </div>
-        )}
       </div>
 
       {!thumbnail && (

@@ -11,7 +11,6 @@ import '@m3e/icons/outlined/apps';
 import '@m3e/icons/outlined/view_list';
 import { worksRoute } from '../routes/works';
 import { useWorksPage, useWorksInfinite } from '../queries/useWorksQuery';
-import { useFavouriteStatus } from '../queries/useFavouritesQuery';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUserStore } from '../stores/userStore';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
@@ -108,12 +107,6 @@ export default function Works() {
         ? (paged.data?.works ?? [])
         : (infinite.data?.pages.flatMap((p) => p.works) ?? []),
     [isPaginated, paged.data, infinite.data],
-  );
-
-  // 收藏状态批量查询（未登录时 hook 自动 disabled，心形不渲染）
-  const favStatus = useFavouriteStatus(
-    'work',
-    works.map((w) => w.id),
   );
 
   const pagination = isPaginated
@@ -276,11 +269,7 @@ export default function Works() {
       {!loading && viewMode === 'list' && (
         <M3eList>
           {works.map((work) => (
-            <WorkListItem
-              key={work.id}
-              work={work}
-              favourited={favStatus.data?.[work.id]}
-            />
+            <WorkListItem key={work.id} work={work} />
           ))}
         </M3eList>
       )}
@@ -289,11 +278,7 @@ export default function Works() {
       {!loading && viewMode === 'grid' && (
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
           {works.map((work) => (
-            <WorkCard
-              key={work.id}
-              work={work}
-              favourited={favStatus.data?.[work.id]}
-            />
+            <WorkCard key={work.id} work={work} />
           ))}
         </div>
       )}

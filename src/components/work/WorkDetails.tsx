@@ -4,6 +4,8 @@ import { M3eCard } from '@m3e/react/card';
 import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
 import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
+import { M3eIconButton } from '@m3e/react/icon-button';
+import '@m3e/icons/outlined/favorite';
 import '@m3e/icons/outlined/star';
 import '@m3e/icons/outlined/chat';
 import '@m3e/icons/outlined/open_in_new';
@@ -16,8 +18,8 @@ import { getSeedColorForWork } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
 import { vaChipSetStyles } from '../common/chipStyles';
 import { fieldQuery } from '../../utils/query';
-import FavButton from '../favourites/FavButton';
 import { useFavouriteStatus } from '../../queries/useFavouritesQuery';
+import FavDialog from '../favourites/FavDialog';
 import WriteReview from './WriteReview';
 
 interface WorkDetailsProps {
@@ -28,24 +30,18 @@ interface WorkDetailsProps {
  * 作品详情信息卡：封面、标题、社团、评分（平均分 + 分布）、价格/售出/发售日、
  * 标签、声优、DLsite 链接与「我的评价」入口。
  * 「我的评价」入口打开 WriteReview 对话框（星级 + 短评）。
+ * 标题旁心形图标按钮是全页唯一收藏入口，打开 FavDialog 列出所有可收藏目标。
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
   // 写评价对话框开关
   const [reviewOpen, setReviewOpen] = useState(false);
+  // 收藏对话框开关
+  const [favOpen, setFavOpen] = useState(false);
   // chip 点击跳转筛选（与 WorkCard 行为一致）
   const navigate = useNavigate();
 
-  // 收藏状态（四类目标各一次批量查询；未登录自动 disabled）
+  // 作品收藏状态（驱动标题旁心形；未登录自动 disabled）
   const workFav = useFavouriteStatus('work', [work.id]);
-  const circleFav = useFavouriteStatus('circle', [String(work.circle.id)]);
-  const seriesFav = useFavouriteStatus(
-    'series',
-    work.series ? [work.series.id] : [],
-  );
-  const vaFav = useFavouriteStatus(
-    'va',
-    work.vas.map((v) => v.id),
-  );
 
   // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
   // 设置中关闭动态取色时跳过提取并恢复默认色。
@@ -77,53 +73,43 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         </div>
 
         <div slot='content' className='flex flex-col gap-3 p-4'>
-          {/* 标题 + 作品收藏 */}
+          {/* 标题 + 收藏入口（心形图标按钮，打开 FavDialog） */}
           <div className='flex items-start justify-between gap-2'>
             <h1 className='m-0 min-w-0 text-xl font-normal leading-snug'>
               {work.title}
             </h1>
-            <FavButton
-              targetType='work'
-              targetId={work.id}
-              favourited={workFav.data?.[work.id]}
-            />
+            <M3eIconButton aria-label='收藏' onClick={() => setFavOpen(true)}>
+              <M3eIcon
+                name='favorite'
+                filled={workFav.data?.[work.id] === true}
+                className={
+                  workFav.data?.[work.id] === true
+                    ? 'text-[var(--md-sys-color-primary)]'
+                    : ''
+                }
+              />
+            </M3eIconButton>
           </div>
 
-          {/* 社团 + 收藏 */}
-          <div className='flex items-center gap-1'>
+          {/* 社团 */}
+          <Link
+            to='/works'
+            search={{ q: fieldQuery('circle', work.circle.name) }}
+            className='truncate text-sm no-underline opacity-70'
+          >
+            {work.circle.name}
+          </Link>
+
+          {/* 系列（单值归属信息，非 chips；样式与社团行一致，library_books 图标区分） */}
+          {work.series && (
             <Link
               to='/works'
-              search={{ q: fieldQuery('circle', work.circle.name) }}
-              className='min-w-0 truncate text-sm no-underline opacity-70'
+              search={{ q: fieldQuery('series', work.series.name) }}
+              className='inline-flex items-center gap-1 truncate text-sm no-underline opacity-70'
             >
-              {work.circle.name}
+              <M3eIcon name='library_books' />
+              {work.series.name}
             </Link>
-            <FavButton
-              size='sm'
-              targetType='circle'
-              targetId={String(work.circle.id)}
-              favourited={circleFav.data?.[String(work.circle.id)]}
-            />
-          </div>
-
-          {/* 系列 + 收藏（单值归属信息，非 chips；样式与社团行一致，library_books 图标区分） */}
-          {work.series && (
-            <div className='flex items-center gap-1'>
-              <Link
-                to='/works'
-                search={{ q: fieldQuery('series', work.series.name) }}
-                className='inline-flex min-w-0 items-center gap-1 truncate text-sm no-underline opacity-70'
-              >
-                <M3eIcon name='library_books' />
-                {work.series.name}
-              </Link>
-              <FavButton
-                size='sm'
-                targetType='series'
-                targetId={work.series.id}
-                favourited={seriesFav.data?.[work.series.id]}
-              />
-            </div>
           )}
 
           {/* 评分 / 评论 / DLsite */}
@@ -218,33 +204,25 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             </M3eChipSet>
           )}
 
-          {/* 声优（chip + 独立收藏心形；WorkCard 内保持纯 chips 不受影响） */}
+          {/* 声优（主色容器 + mic 图标，与 WorkCard 一致） */}
           {work.vas.length > 0 && (
-            <div className='flex flex-wrap items-center gap-x-1.5 gap-y-1'>
+            <M3eChipSet className='density-1' style={vaChipSetStyles}>
               {work.vas.map((va) => (
-                <span key={va.id} className='inline-flex items-center gap-0.5'>
-                  <M3eAssistChip
-                    variant='elevated'
-                    style={vaChipSetStyles}
-                    onClick={() =>
-                      navigate({
-                        to: '/works',
-                        search: { q: fieldQuery('va', va.name) },
-                      })
-                    }
-                  >
-                    <M3eIcon slot='icon' name='mic' />
-                    {va.name}
-                  </M3eAssistChip>
-                  <FavButton
-                    size='sm'
-                    targetType='va'
-                    targetId={va.id}
-                    favourited={vaFav.data?.[va.id]}
-                  />
-                </span>
+                <M3eAssistChip
+                  key={va.id}
+                  variant='elevated'
+                  onClick={() =>
+                    navigate({
+                      to: '/works',
+                      search: { q: fieldQuery('va', va.name) },
+                    })
+                  }
+                >
+                  <M3eIcon slot='icon' name='mic' />
+                  {va.name}
+                </M3eAssistChip>
               ))}
-            </div>
+            </M3eChipSet>
           )}
 
           {/* 我的评价入口（打开 WriteReview 对话框） */}
@@ -267,6 +245,12 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         open={reviewOpen}
         onClose={() => setReviewOpen(false)}
       />
+
+      {/**
+       * FavDialog 与 WriteReview 同理：必须渲染在 M3eCard 外部，
+       * 避免嵌在 shadow DOM 内的 <dialog> 焦点陷阱冲突。
+       */}
+      <FavDialog open={favOpen} onClose={() => setFavOpen(false)} work={work} />
     </Fragment>
   );
 }
