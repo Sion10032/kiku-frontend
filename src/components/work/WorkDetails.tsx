@@ -29,9 +29,8 @@ interface WorkDetailsProps {
 
 /**
  * 作品详情信息卡：封面、标题、社团、评分（平均分 + 分布）、价格/售出/发售日、
- * 标签、声优、DLsite 链接与「我的评价」入口。
- * 「我的评价」入口打开 WriteReview 对话框（星级 + 短评）。
- * 标题旁心形图标按钮是全页唯一收藏入口，打开 FavDialog 列出所有可收藏目标。
+ * 标签、声优、DLsite 链接与操作行（「我的评价」+ 收藏心形）。
+ * 操作行心形图标按钮是全页唯一收藏入口，打开 FavDialog 列出所有可收藏目标。
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
   // 写评价对话框开关
@@ -76,25 +75,10 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
         </div>
 
         <div slot='content' className='flex flex-col gap-3 p-4'>
-          {/* 标题 + 收藏入口（心形图标按钮，打开 FavDialog） */}
-          <div className='flex items-start justify-between gap-2'>
-            <h1 className='m-0 min-w-0 text-xl font-normal leading-snug'>
-              {work.title}
-            </h1>
-            {auth && (
-              <M3eIconButton aria-label='收藏' onClick={() => setFavOpen(true)}>
-                <M3eIcon
-                  name='favorite'
-                  filled={workFav.data?.[work.id] === true}
-                  className={
-                    workFav.data?.[work.id] === true
-                      ? 'text-[var(--md-sys-color-primary)]'
-                      : ''
-                  }
-                />
-              </M3eIconButton>
-            )}
-          </div>
+          {/* 标题 */}
+          <h1 className='m-0 min-w-0 text-xl font-normal leading-snug'>
+            {work.title}
+          </h1>
 
           {/* 社团 */}
           <Link
@@ -230,13 +214,26 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             </M3eChipSet>
           )}
 
-          {/* 我的评价入口（打开 WriteReview 对话框） */}
-          <div className='mt-1'>
+          {/* 我的评价 + 收藏入口（操作行并排；心形打开 FavDialog） */}
+          <div className='mt-1 flex items-center gap-2'>
             <M3eButton variant='tonal' onClick={() => setReviewOpen(true)}>
               {work.userRating != null
                 ? `我的评价：${'★'.repeat(work.userRating)}`
                 : '写评价'}
             </M3eButton>
+            {auth && (
+              <M3eIconButton aria-label='收藏' onClick={() => setFavOpen(true)}>
+                <M3eIcon
+                  name='favorite'
+                  filled={workFav.data?.[work.id] === true}
+                  className={
+                    workFav.data?.[work.id] === true
+                      ? 'text-[var(--md-sys-color-primary)]'
+                      : ''
+                  }
+                />
+              </M3eIconButton>
+            )}
           </div>
         </div>
       </M3eCard>
