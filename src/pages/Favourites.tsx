@@ -1,15 +1,17 @@
 import { useNavigate } from '@tanstack/react-router';
 import { M3eTabs, M3eTab } from '@m3e/react/tabs';
-import { M3eList, M3eListItem } from '@m3e/react/list';
+import { M3eActionList, M3eListAction } from '@m3e/react/list';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
+import '@m3e/icons/outlined/album';
 import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/mic';
 import '@m3e/icons/outlined/library_books';
 import '@m3e/icons/outlined/chevron_right';
 import { useFavourites } from '../queries/useFavouritesQuery';
-import CoverThumbnail from '../components/common/CoverThumbnail';
 import { fieldQuery } from '../utils/query';
+import { useM3eListActionStyle } from '../hooks/useM3eListActionStyle';
+import type { CssInput } from '../utils/css';
 import { isEntityTarget, type FavouriteTargetType } from '../types';
 
 export type FavouritesTab = 'works' | 'series' | 'vas' | 'circles';
@@ -49,10 +51,55 @@ function isEntityTab(tab: FavouritesTab): tab is EntityTab {
 }
 
 /**
+ * 注入内层 m3e-list-item-button 的 .content 样式：内容区弹性收缩并允许
+ * 内部截断（长标题横向溢出的根因是 .content 的 min-width:auto）。
+ */
+const contentStyle = {
+  '.content': {
+    flex: '1 !important',
+    minWidth: 0,
+  },
+} satisfies CssInput;
+
+/** 收藏行（对齐 List 页行结构）：图标 + 单行标题 + supporting-text 副行 + chevron。 */
+function FavRow({
+  icon,
+  title,
+  subtitle,
+  onClick,
+}: {
+  icon: string;
+  title: string;
+  subtitle?: string;
+  onClick: () => void;
+}) {
+  const ref = useM3eListActionStyle({ buttonStyle: contentStyle });
+
+  return (
+    <M3eListAction ref={ref} onClick={onClick}>
+      <span slot='leading' className='me-3 flex items-center opacity-60'>
+        <M3eIcon name={icon} />
+      </span>
+      <span className='block truncate'>{title}</span>
+      {subtitle && (
+        <span slot='supporting-text' className='truncate text-xs opacity-60'>
+          {subtitle}
+        </span>
+      )}
+      <span slot='trailing' className='flex items-center opacity-50'>
+        <M3eIcon name='chevron_right' />
+      </span>
+    </M3eListAction>
+  );
+}
+
+/**
  * 收藏页（重构后）：收藏的作品 / 系列 / 声优 / 社团 四视图。
  *
  * 数据：GET /api/favourites?targetType=...（后端已过滤目标已消失的收藏，
- * 按收藏时间倒序）。作品行点击进详情；实体行点击按名称筛选作品库。
+ * 按收藏时间倒序）。行结构对齐 List 页：图标 + 单行截断标题 +
+ * supporting-text 副行 + trailing chevron。作品行点击进详情；
+ * 实体行点击按名称筛选作品库。
  */
 export default function Favourites({ tab }: { tab: FavouritesTab }) {
   const navigate = useNavigate();
@@ -88,67 +135,52 @@ export default function Favourites({ tab }: { tab: FavouritesTab }) {
       )}
 
       {!query.isPending && !query.isError && items.length > 0 && (
-        <M3eList>
+        <M3eActionList
+          style={
+            {
+              '--m3e-list-item-container-shape': 'calc(infinity * 1px)',
+              '--m3e-list-item-hover-container-shape': 'calc(infinity * 1px)',
+            } as React.CSSProperties
+          }
+        >
           {items.map((item) => {
-            // 提取为 const 以便类型收窄在 onClick 闭包内保持有效
             const target = item.target;
-            if (isEntityTarget(target) && isEntityTab(tab)) {
+            // 作品行：album 图标 + 标题 + 社团名，点击进详情
+            if (!isEntityTarget(target) && !isEntityTab(tab)) {
+              const { id, title, circleName } = target;
               return (
-                <M3eListItem
+                <FavRow
                   key={`${item.targetType}:${item.targetId}`}
+                  icon='album'
+                  title={title}
+                  subtitle={circleName}
+                  onClick={() => navigate({ to: '/work/$id', params: { id } })}
+                />
+              );
+            }
+            // 实体行：类型图标 + 名称 + 在库作品数，点击按名称筛选作品库
+            if (isEntityTarget(target) && isEntityTab(tab)) {
+              const { name, workCount } = target;
+              return (
+                <FavRow
+                  key={`${item.targetType}:${item.targetId}`}
+                  icon={ENTITY_ICONS[tab]}
+                  title={name}
+                  subtitle={`${workCount} 部作品`}
                   onClick={() =>
                     navigate({
                       to: '/works',
                       search: {
-                        q: fieldQuery(ENTITY_FIELDS[tab], target.name),
+                        q: fieldQuery(ENTITY_FIELDS[tab], name),
                       },
                     })
                   }
-                >
-                  <span slot='leading' className='flex items-center opacity-60'>
-                    <M3eIcon name={ENTITY_ICONS[tab]} />
-                  </span>
-                  <div className='min-w-0 flex-1'>
-                    <div className='truncate text-base'>{target.name}</div>
-                    <div className='mt-1 text-sm opacity-70'>
-                      {target.workCount} 部作品
-                    </div>
-                  </div>
-                  <span
-                    slot='trailing'
-                    className='flex items-center opacity-50'
-                  >
-                    <M3eIcon name='chevron_right' />
-                  </span>
-                </M3eListItem>
-              );
-            }
-            if (!isEntityTarget(target) && !isEntityTab(tab)) {
-              return (
-                <M3eListItem
-                  key={`${item.targetType}:${item.targetId}`}
-                  onClick={() =>
-                    navigate({
-                      to: '/work/$id',
-                      params: { id: target.id },
-                    })
-                  }
-                >
-                  <span slot='leading'>
-                    <CoverThumbnail workId={target.id} />
-                  </span>
-                  <div className='min-w-0 flex-1'>
-                    <div className='line-clamp-2 text-base'>{target.title}</div>
-                    <div className='mt-1 text-sm opacity-70'>
-                      {target.circleName}
-                    </div>
-                  </div>
-                </M3eListItem>
+                />
               );
             }
             return null;
           })}
-        </M3eList>
+        </M3eActionList>
       )}
 
       {!query.isPending && !query.isError && items.length === 0 && (
