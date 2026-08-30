@@ -53,13 +53,33 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
             {work.title}
           </Link>
 
-          <Link
-            to='/works'
-            search={{ q: fieldQuery('circle', work.circle.name) }}
-            className='truncate text-sm no-underline opacity-70'
-          >
-            {work.circle.name}
-          </Link>
+          {work.series ? (
+            <div className='flex min-w-0 items-center gap-x-1'>
+              <Link
+                to='/works'
+                search={{ q: fieldQuery('circle', work.circle.name) }}
+                className='min-w-0 truncate text-sm no-underline opacity-70'
+              >
+                {work.circle.name}
+              </Link>
+              <span className='text-sm opacity-70'>·</span>
+              <Link
+                to='/works'
+                search={{ q: fieldQuery('series', work.series.name) }}
+                className='min-w-0 truncate text-sm no-underline opacity-70'
+              >
+                {work.series.name}
+              </Link>
+            </div>
+          ) : (
+            <Link
+              to='/works'
+              search={{ q: fieldQuery('circle', work.circle.name) }}
+              className='truncate text-sm no-underline opacity-70'
+            >
+              {work.circle.name}
+            </Link>
+          )}
 
           <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-sm'>
             {/* 平均评分 */}

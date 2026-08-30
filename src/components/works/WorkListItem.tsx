@@ -61,6 +61,18 @@ export default function WorkListItem({
           >
             {work.circle.name}
           </Link>
+          {work.series && (
+            <>
+              <span className='opacity-70'>·</span>
+              <Link
+                to='/works'
+                search={{ q: fieldQuery('series', work.series.name) }}
+                className='no-underline opacity-70'
+              >
+                {work.series.name}
+              </Link>
+            </>
+          )}
           {work.vas.map((va) => (
             <Link
               key={va.id}
