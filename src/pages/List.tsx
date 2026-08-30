@@ -217,7 +217,7 @@ export default function List({ type }: { type: ListType }) {
                     size='sm'
                     targetType={favType}
                     targetId={entry.key}
-                    favourited={favStatus.data?.[entry.key] === true}
+                    favourited={favStatus.data?.[entry.key]}
                   />
                 )}
                 <M3eIcon name='chevron_right' />

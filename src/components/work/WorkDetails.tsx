@@ -27,7 +27,7 @@ interface WorkDetailsProps {
 /**
  * 作品详情信息卡：封面、标题、社团、评分（平均分 + 分布）、价格/售出/发售日、
  * 标签、声优、DLsite 链接与「我的评价」入口。
- * 「我的评价」入口打开 WriteReview 对话框（星级 + 短评 + 进度，见步骤 12）。
+ * 「我的评价」入口打开 WriteReview 对话框（星级 + 短评）。
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
   // 写评价对话框开关
@@ -85,7 +85,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             <FavButton
               targetType='work'
               targetId={work.id}
-              favourited={workFav.data?.[work.id] === true}
+              favourited={workFav.data?.[work.id]}
             />
           </div>
 
@@ -102,7 +102,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
               size='sm'
               targetType='circle'
               targetId={String(work.circle.id)}
-              favourited={circleFav.data?.[String(work.circle.id)] === true}
+              favourited={circleFav.data?.[String(work.circle.id)]}
             />
           </div>
 
@@ -121,7 +121,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                 size='sm'
                 targetType='series'
                 targetId={work.series.id}
-                favourited={seriesFav.data?.[work.series.id] === true}
+                favourited={seriesFav.data?.[work.series.id]}
               />
             </div>
           )}
@@ -240,7 +240,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                     size='sm'
                     targetType='va'
                     targetId={va.id}
-                    favourited={vaFav.data?.[va.id] === true}
+                    favourited={vaFav.data?.[va.id]}
                   />
                 </span>
               ))}

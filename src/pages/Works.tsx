@@ -279,7 +279,7 @@ export default function Works() {
             <WorkListItem
               key={work.id}
               work={work}
-              favourited={favStatus.data?.[work.id] === true}
+              favourited={favStatus.data?.[work.id]}
             />
           ))}
         </M3eList>
@@ -292,7 +292,7 @@ export default function Works() {
             <WorkCard
               key={work.id}
               work={work}
-              favourited={favStatus.data?.[work.id] === true}
+              favourited={favStatus.data?.[work.id]}
             />
           ))}
         </div>
