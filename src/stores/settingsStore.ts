@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export type ColorMode = 'light' | 'dark' | 'auto';
 
-/** NSFW 封面显示模式。 */
+/** R18 封面显示模式（模糊仅对 R18 生效）。 */
 export type CoverBlurMode = 'always' | 'hover' | 'never';
 
 /** 播放器时间显示模式：total 总时长 / remaining 剩余时间（-mm:ss）。 */
@@ -60,7 +60,7 @@ interface SettingsState {
   floatingLyrics: FloatingLyricsSettings;
   /** 文件预览设置 */
   preview: PreviewSettings;
-  /** NSFW 封面显示模式：always 始终模糊 / hover 悬浮显示 / never 始终显示 */
+  /** R18 封面显示模式：always 始终模糊 / hover 悬浮显示 / never 始终显示 */
   coverBlurMode: CoverBlurMode;
   /** 播放器时间显示：total 总时长 / remaining 剩余时间 */
   timeDisplayMode: TimeDisplayMode;
