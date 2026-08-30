@@ -8,6 +8,7 @@ import {
 } from '@m3e/react/nav-menu';
 import '@m3e/icons/outlined/library_music';
 import '@m3e/icons/outlined/favorite';
+import '@m3e/icons/outlined/star';
 import '@m3e/icons/outlined/groups';
 import '@m3e/icons/outlined/tag';
 import '@m3e/icons/outlined/record_voice_over';
@@ -68,6 +69,17 @@ export default function NavDrawer() {
                 <M3eNavMenuItem selected={isActive}>
                   <M3eIcon slot='icon' name='favorite' />
                   <span slot='label'>收藏</span>
+                </M3eNavMenuItem>
+              )}
+            </Link>
+          )}
+          {/* 我的评价（评价视图独立页，匿名态隐藏） */}
+          {auth && (
+            <Link to='/my-reviews' className='block no-underline text-inherit'>
+              {({ isActive }) => (
+                <M3eNavMenuItem selected={isActive}>
+                  <M3eIcon slot='icon' name='star' />
+                  <span slot='label'>我的评价</span>
                 </M3eNavMenuItem>
               )}
             </Link>

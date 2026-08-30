@@ -7,6 +7,7 @@ import { historyRoute } from './history';
 import { settingsRoute } from './settings';
 import List from '../pages/List';
 import Favourites from '../pages/Favourites';
+import MyReviews from '../pages/MyReviews';
 import Login from '../pages/Login';
 import Setup from '../pages/Setup';
 import Register from '../pages/Register';
@@ -44,53 +45,35 @@ const listRoute = createRoute({
   },
 });
 
-// 收藏（我的评价 / 我的进度 / 分类整理 三视图，见 pages/Favourites.tsx）
-const favouritesRoute = createRoute({
+// 收藏（收藏的作品 / 系列 / 声优 / 社团 四视图，见 pages/Favourites.tsx）
+const favouritesIndexRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/favourites',
-  component: () => <Favourites route='review' />,
-});
-const favouritesReviewRoute = createRoute({
-  getParentRoute: () => mainLayoutRoute,
-  path: '/favourites/review',
-  component: () => <Favourites route='review' />,
-});
-
-// /favourites/progress → 默认标记进度 marked（对齐原项目路由语义）
-const favouritesProgressIndexRoute = createRoute({
-  getParentRoute: () => mainLayoutRoute,
-  path: '/favourites/progress',
   beforeLoad: () => {
-    throw redirect({
-      to: '/favourites/progress/$status',
-      params: { status: 'marked' },
-    });
+    // 默认进「作品」Tab
+    throw redirect({ to: '/favourites/$tab', params: { tab: 'works' } });
   },
 });
-
-// 进度 5 值枚举：marked/listening/listened/replay/postponed（对齐后端 reviewSchema.progress）
-const favouritesProgressRoute = createRoute({
+const favouritesTabRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
-  path: '/favourites/progress/$status',
+  path: '/favourites/$tab',
   params: {
     parse: (raw) => ({
-      status: z
-        .enum(['marked', 'listening', 'listened', 'replay', 'postponed'])
-        .parse(raw.status),
+      tab: z.enum(['works', 'series', 'vas', 'circles']).parse(raw.tab),
     }),
-    stringify: ({ status }) => ({ status }),
+    stringify: ({ tab }) => ({ tab }),
   },
-  component: function FavouritesProgress() {
-    const { status } = favouritesProgressRoute.useParams();
-    return <Favourites route='progress' status={status} />;
+  component: function FavouritesPage() {
+    const { tab } = favouritesTabRoute.useParams();
+    return <Favourites tab={tab} />;
   },
 });
 
-// /favourites/folder（路由收藏夹，原项目语义：分类整理视图）
-const favouritesFolderRoute = createRoute({
+// 我的评价（原收藏页评价视图独立成页）
+const myReviewsRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
-  path: '/favourites/folder',
-  component: () => <Favourites route='folder' />,
+  path: '/my-reviews',
+  component: MyReviews,
 });
 
 // 管理后台
@@ -157,11 +140,9 @@ export const routeTree = rootRoute.addChildren([
     workRoute,
     historyRoute,
     listRoute,
-    favouritesRoute,
-    favouritesReviewRoute,
-    favouritesProgressIndexRoute,
-    favouritesProgressRoute,
-    favouritesFolderRoute,
+    favouritesIndexRoute,
+    favouritesTabRoute,
+    myReviewsRoute,
     settingsRoute,
   ]),
   dashboardLayoutRoute.addChildren([
