@@ -11,6 +11,7 @@ import '@m3e/icons/outlined/favorite';
 import '@m3e/icons/outlined/groups';
 import '@m3e/icons/outlined/tag';
 import '@m3e/icons/outlined/record_voice_over';
+import '@m3e/icons/outlined/library_books';
 import '@m3e/icons/outlined/admin_panel_settings';
 import '@m3e/icons/outlined/settings';
 import '@m3e/icons/outlined/person';
@@ -112,6 +113,19 @@ export default function NavDrawer() {
               <M3eNavMenuItem selected={isActive}>
                 <M3eIcon slot='icon' name='record_voice_over' />
                 <span slot='label'>声优</span>
+              </M3eNavMenuItem>
+            )}
+          </Link>
+          <Link
+            to='/list/$type'
+            params={{ type: 'series' }}
+            className='block no-underline text-inherit'
+            activeOptions={{ exact: true }}
+          >
+            {({ isActive }) => (
+              <M3eNavMenuItem selected={isActive}>
+                <M3eIcon slot='icon' name='library_books' />
+                <span slot='label'>系列</span>
               </M3eNavMenuItem>
             )}
           </Link>

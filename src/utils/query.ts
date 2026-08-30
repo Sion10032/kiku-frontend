@@ -6,7 +6,7 @@
  * 值内的 " 与 \ 按 liqe 文法转义。
  */
 export function fieldQuery(
-  field: 'circle' | 'tag' | 'va',
+  field: 'circle' | 'tag' | 'va' | 'series',
   name: string,
 ): string {
   const escaped = name.replace(/["\\]/g, '\\$&');

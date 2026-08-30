@@ -9,25 +9,29 @@ import '@m3e/icons/outlined/chevron_right';
 import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/label';
 import '@m3e/icons/outlined/mic';
+import '@m3e/icons/outlined/library_books';
 import {
   useCirclesQuery,
+  useSeriesQuery,
   useTagsQuery,
   useVasQuery,
 } from '../queries/useListQuery';
 import { fieldQuery } from '../utils/query';
 
-export type ListType = 'circles' | 'tags' | 'vas';
+export type ListType = 'circles' | 'tags' | 'vas' | 'series';
 
 const LABELS: Record<ListType, string> = {
   circles: '社团',
   tags: '标签',
   vas: '声优',
+  series: '系列',
 };
 
 const LEADING_ICONS: Record<ListType, string> = {
   circles: 'group',
   tags: 'label',
   vas: 'mic',
+  series: 'library_books',
 };
 
 /** 列表项跳转 /works 携带的筛选 search 参数（对齐 worksRoute 的 validateSearch）。 */
@@ -40,9 +44,9 @@ interface Entry {
 }
 
 /**
- * 社团 / 标签 / 声优 列表页（步骤 9）。
+ * 社团 / 标签 / 声优 / 系列 列表页（步骤 9）。
  *
- * - 按路由 type 选择查询（getCircles / getTags / getVas，均返回裸数组）
+ * - 按路由 type 选择查询（getCircles / getTags / getVas / getSeries，均返回裸数组）
  * - m3e SearchBar 输入即筛（客户端按名称过滤）
  * - 点击项跳转 /works 并携带筛选参数：q = fieldQuery(field, name) 生成的 LQL 查询文本
  *
@@ -57,6 +61,7 @@ export default function List({ type }: { type: ListType }) {
   const circles = useCirclesQuery();
   const tags = useTagsQuery();
   const vas = useVasQuery();
+  const series = useSeriesQuery();
 
   // 列表项 + 跳转 search 参数（按 type 构建；导航用 onClick，见组件注释）
   const entries = useMemo<Entry[]>(() => {
@@ -80,6 +85,15 @@ export default function List({ type }: { type: ListType }) {
           search: { q: fieldQuery('tag', t.name) },
         }));
     }
+    if (type === 'series') {
+      return (series.data ?? [])
+        .filter((s) => match(s.name))
+        .map((s) => ({
+          key: String(s.id),
+          name: s.name,
+          search: { q: fieldQuery('series', s.name) },
+        }));
+    }
     return (vas.data ?? [])
       .filter((v) => match(v.name))
       .map((v) => ({
@@ -87,28 +101,34 @@ export default function List({ type }: { type: ListType }) {
         name: v.name,
         search: { q: fieldQuery('va', v.name) },
       }));
-  }, [type, circles.data, tags.data, vas.data, keyword]);
+  }, [type, circles.data, tags.data, vas.data, series.data, keyword]);
 
   const loading =
     type === 'circles'
       ? circles.isLoading
       : type === 'tags'
         ? tags.isLoading
-        : vas.isLoading;
+        : type === 'series'
+          ? series.isLoading
+          : vas.isLoading;
 
   const isError =
     type === 'circles'
       ? circles.isError
       : type === 'tags'
         ? tags.isError
-        : vas.isError;
+        : type === 'series'
+          ? series.isError
+          : vas.isError;
 
   const total =
     type === 'circles'
       ? (circles.data?.length ?? 0)
       : type === 'tags'
         ? (tags.data?.length ?? 0)
-        : (vas.data?.length ?? 0);
+        : type === 'series'
+          ? (series.data?.length ?? 0)
+          : (vas.data?.length ?? 0);
 
   return (
     <div className='mx-auto max-w-3xl'>

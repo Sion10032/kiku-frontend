@@ -20,6 +20,12 @@ export interface Va {
   name: string;
 }
 
+export interface Series {
+  /** 系列 id（后端为 string） */
+  id: string;
+  name: string;
+}
+
 /**
  * 作品（formattedWorkSchema）。
  * 字段命名与后端响应保持一致（snake_case）。
@@ -43,6 +49,8 @@ export interface Work {
   rank: Record<string, number> | null;
   tags: Tag[];
   vas: Va[];
+  /** 所属系列（至多 1 个，无系列为 null） */
+  series: Series | null;
   /** 当前用户对该作品的评分（1-5），未评分为 null */
   userRating: number | null;
   /** 当前用户播放进度聚合（null = 未读/未登录） */

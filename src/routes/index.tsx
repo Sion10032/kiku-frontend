@@ -28,13 +28,13 @@ const indexRoute = createRoute({
 
 // 作品详情：路径参数 id → number（定义见 routes/work.tsx）
 
-// 社团/标签/声优：path param 收敛为枚举（替代三个独立 prop 路由）
+// 社团/标签/声优/系列：path param 收敛为枚举（替代三个独立 prop 路由）
 const listRoute = createRoute({
   getParentRoute: () => mainLayoutRoute,
   path: '/list/$type',
   params: {
     parse: (raw) => ({
-      type: z.enum(['circles', 'tags', 'vas']).parse(raw.type),
+      type: z.enum(['circles', 'tags', 'vas', 'series']).parse(raw.type),
     }),
     stringify: ({ type }) => ({ type }),
   },

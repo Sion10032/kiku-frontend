@@ -1,6 +1,7 @@
 import { apiFetch } from './client';
 import type {
   Circle,
+  Series,
   Tag,
   Tracks,
   Va,
@@ -44,7 +45,7 @@ export function getTracks(id: string): Promise<Tracks> {
   return apiFetch<Tracks>(`tracks/${id}`);
 }
 
-// ---------- 社团 / 标签 / 声优 列表 ----------
+// ---------- 社团 / 标签 / 声优 / 系列 列表 ----------
 
 export function getCircles(): Promise<Circle[]> {
   return apiFetch<Circle[]>('circles/');
@@ -56,4 +57,8 @@ export function getTags(): Promise<Tag[]> {
 
 export function getVas(): Promise<Va[]> {
   return apiFetch<Va[]>('vas/');
+}
+
+export function getSeries(): Promise<Series[]> {
+  return apiFetch<Series[]>('series/');
 }

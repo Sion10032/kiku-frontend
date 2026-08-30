@@ -8,6 +8,7 @@ import '@m3e/icons/outlined/star';
 import '@m3e/icons/outlined/chat';
 import '@m3e/icons/outlined/open_in_new';
 import '@m3e/icons/outlined/mic';
+import '@m3e/icons/outlined/library_books';
 import type { Work } from '../../types';
 import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -73,6 +74,18 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           >
             {work.circle.name}
           </Link>
+
+          {/* 系列（单值归属信息，非 chips；样式与社团行一致，library_books 图标区分） */}
+          {work.series && (
+            <Link
+              to='/works'
+              search={{ q: fieldQuery('series', work.series.name) }}
+              className='inline-flex items-center gap-1 truncate text-sm no-underline opacity-70'
+            >
+              <M3eIcon name='library_books' />
+              {work.series.name}
+            </Link>
+          )}
 
           {/* 评分 / 评论 / DLsite */}
           <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-sm'>
