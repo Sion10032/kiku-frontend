@@ -144,6 +144,43 @@ export interface SubmitReviewInput {
   progressOnly?: boolean;
 }
 
+// ---------- 收藏 ----------
+
+/** 收藏目标类型（多态：四选一） */
+export type FavouriteTargetType = 'work' | 'series' | 'va' | 'circle';
+
+/** 作品目标摘要 */
+export interface FavouriteWorkTarget {
+  id: string;
+  title: string;
+  circleName: string;
+}
+
+/** 系列/声优/社团目标摘要（workCount 为在库作品数） */
+export interface FavouriteEntityTarget {
+  id: string | number;
+  name: string;
+  workCount: number;
+}
+
+/** GET /api/favourites 返回项 */
+export interface FavouriteItem {
+  targetType: FavouriteTargetType;
+  targetId: string;
+  createdAt: string;
+  target: FavouriteWorkTarget | FavouriteEntityTarget;
+}
+
+/** GET /api/favourites/status 返回（id → 是否已收藏） */
+export type FavouriteStatusMap = Record<string, boolean>;
+
+/** 判别收窄：实体目标（含 name）vs 作品目标（含 title） */
+export function isEntityTarget(
+  t: FavouriteItem['target'],
+): t is FavouriteEntityTarget {
+  return 'name' in t;
+}
+
 // ---------- 播放进度 ----------
 
 /** works 列表注入的进度聚合（userProgressSchema） */
