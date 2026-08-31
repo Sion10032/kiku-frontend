@@ -1,6 +1,4 @@
-import { apiFetch } from './client';
-import { mediaUrl } from './client';
-import type { CheckLrcResponse } from '../types';
+import { api, mediaUrl } from './client';
 
 /**
  * 音频流 URL（供 Howler）。
@@ -19,14 +17,18 @@ export function downloadUrl(workId: string, mediaIndex: string): string {
   return mediaUrl(path);
 }
 
-/** 检查歌词：GET /api/media/check-lrc/:id/:index */
-export function checkLrc(
+/**
+ * 拉取歌词原文（raw text）。解析由前端 parseLyrics 负责。
+ * 走 api 实例：Authorization header 自动注入；404/网络错误由调用方静默。
+ */
+export async function fetchLyricsText(
   workId: string,
-  mediaIndex: string,
-): Promise<CheckLrcResponse> {
-  return apiFetch<CheckLrcResponse>(
-    `media/check-lrc/${workId}/${encodeMediaIndex(mediaIndex)}`,
+  lyricsHash: string,
+): Promise<string> {
+  const res = await api(
+    `media/stream/${workId}/${encodeMediaIndex(lyricsHash)}`,
   );
+  return await res.text();
 }
 
 /** 编码 media index 中的路径分隔符，保持后端可解析。 */

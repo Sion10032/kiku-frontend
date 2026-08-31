@@ -101,12 +101,21 @@ export interface TrackFolder {
   children: TrackNode[];
 }
 
+/** 歌词文件引用（后端建树时匹配，仅 audio 叶子携带）。 */
+export interface LyricsRef {
+  /** 歌词文件相对路径（media index） */
+  hash: string;
+  type: 'lrc' | 'vtt';
+}
+
 export interface TrackLeaf {
   title: string;
   /** 文件类型（folder 单独建模为 TrackFolder） */
   type: Exclude<TrackItemType, 'folder'>;
   /** 文件相对路径（media index），如 `subfolder/track01.mp3` */
   hash: string;
+  /** 歌词引用（仅 audio；后端建树时匹配） */
+  lyrics?: LyricsRef;
   children?: never;
 }
 
@@ -322,17 +331,6 @@ export interface VersionResponse {
   latest: string | null;
   /** 是否有可用更新 */
   updateAvailable: boolean;
-}
-
-// ---------- 媒体 ----------
-
-export interface CheckLrcResponse {
-  hasLrc: boolean;
-  lrc?: string;
-  /** 歌词格式（未命中时缺省） */
-  type?: 'lrc' | 'vtt';
-  /** 歌词全文（未命中时缺省） */
-  text?: string;
 }
 
 // ---------- 扫描器 SSE ----------

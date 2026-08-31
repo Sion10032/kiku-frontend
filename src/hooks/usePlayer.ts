@@ -5,7 +5,7 @@ import {
   selectCurrentTrack,
   type Track,
 } from '../stores/playerStore';
-import { streamUrl, checkLrc } from '../api/media';
+import { streamUrl, fetchLyricsText } from '../api/media';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 import {
   trackPlayback,
@@ -69,7 +69,8 @@ function resolveSrc(track: Track): string | undefined {
  * - store 为唯一数据源：Howl 由 playing/volume/muted 单向驱动，
  *   onplay/onpause 不回写 store（避免切曲时 unload 触发 onpause 干扰状态）
  * - 切曲（currentTrack 引用变化）时卸载重建 Howl，
- *   并重新加载歌词（check-lrc）：轮询中行号变化才写 currentLyric
+ *   并按树节点歌词引用（lyrics）重新拉取原文：
+ *   轮询中行号变化才写 currentLyric
  * - onend 按 playMode 处理：repeatOne 原地重播；order 到末尾 nextTrack
  *   内部置 playing=false；shuffle 随机回当前曲目（store 无变化、不重建）
  *   时原地重播兜底
@@ -96,17 +97,16 @@ export function usePlayer(): void {
     usePlayerStore.getState().setLyrics([]);
     usePlayerStore.getState().setCurrentLyric('');
     let lyricCancelled = false;
-    if (currentTrack.workId) {
-      checkLrc(currentTrack.workId, currentTrack.hash)
-        .then((res) => {
+    const lyrics = currentTrack.lyrics;
+    if (currentTrack.workId && lyrics) {
+      fetchLyricsText(currentTrack.workId, lyrics.hash)
+        .then((text) => {
           // 响应晚于切曲（含 StrictMode 双执行）时丢弃
           if (lyricCancelled) return;
-          if (res.hasLrc && res.type && res.text) {
-            lyricLines = parseLyrics(res.type, res.text);
-            usePlayerStore.getState().setLyrics(lyricLines);
-          }
+          lyricLines = parseLyrics(lyrics.type, text);
+          usePlayerStore.getState().setLyrics(lyricLines);
         })
-        .catch(() => {}); // 无歌词属正常，静默
+        .catch(() => {}); // 404/网络错误按无歌词处理，静默
     }
 
     const src = resolveSrc(currentTrack);
