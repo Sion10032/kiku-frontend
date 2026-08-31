@@ -116,6 +116,8 @@ export interface TrackLeaf {
   hash: string;
   /** 歌词引用（仅 audio；后端建树时匹配） */
   lyrics?: LyricsRef;
+  /** 时长秒数（仅 audio；未探测/解析失败为 null，对齐后端 /api/tracks/:id） */
+  durationSec?: number | null;
   children?: never;
 }
 

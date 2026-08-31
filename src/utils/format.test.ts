@@ -34,4 +34,13 @@ describe('formatDuration', () => {
   it('小时以上为 h:mm:ss', () => {
     expect(formatDuration(3661)).toBe('1:01:01');
   });
+
+  it('不足一小时不补零分钟', () => {
+    expect(formatDuration(65)).toBe('1:05');
+  });
+
+  it('null/undefined 返回 —（时长未知）', () => {
+    expect(formatDuration(null)).toBe('—');
+    expect(formatDuration(undefined)).toBe('—');
+  });
 });

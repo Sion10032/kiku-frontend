@@ -26,6 +26,7 @@ import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../../types';
 import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
 import { useM3eStyle } from '../../hooks/useM3eStyle';
 import { toTrack } from '../../utils/track';
+import { formatDuration } from '../../utils/format';
 import { FilePreviewDialog } from '../preview/FilePreviewDialog';
 import { isPreviewable } from '../preview/registry';
 import { toPreviewFile, type PreviewFile } from '../preview/types';
@@ -381,7 +382,7 @@ interface TrackLeafListItemProps {
   onOpenMenu: (node: TrackLeaf, anchor: HTMLElement) => void;
 }
 
-/** 叶子文件行：类型图标 + 标题 + 播放/暂停 + ⋮ 更多操作。 */
+/** 叶子文件行：类型图标 + 标题 + 时长（音频，标题下方）+ 播放/暂停 + ⋮ 更多操作。 */
 function TrackLeafListItem({
   node,
   current,
@@ -403,17 +404,24 @@ function TrackLeafListItem({
         <M3eIcon name={leafIcon(node.type)} />
       </span>
       <span className='min-w-0 flex-1 truncate'>{node.title}</span>
-      <span slot='trailing' className='flex items-center gap-1'>
-        <M3eIconButton
-          aria-label='更多操作'
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenMenu(node, e.currentTarget as HTMLElement);
-          }}
+      {node.type === 'audio' && (
+        <span
+          slot='supporting-text'
+          className='text-xs tabular-nums opacity-60'
         >
-          <M3eIcon name='more_vert' />
-        </M3eIconButton>
-      </span>
+          {formatDuration(node.durationSec)}
+        </span>
+      )}
+      <M3eIconButton
+        slot='trailing'
+        aria-label='更多操作'
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenMenu(node, e.currentTarget as HTMLElement);
+        }}
+      >
+        <M3eIcon name='more_vert' />
+      </M3eIconButton>
     </M3eListOption>
   );
 }

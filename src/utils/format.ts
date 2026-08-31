@@ -1,9 +1,10 @@
 /**
- * 格式化时长为 mm:ss(小时以上为 h:mm:ss)。
+ * 格式化时长为 m:ss(小时以上为 h:mm:ss)；null/undefined（时长未知）返回 '—'。
  *
- * @param seconds 秒数(负数/非有限值按 0 处理)
+ * @param seconds 秒数(负数/非有限值按 0 处理；null/undefined 视为未知)
  */
-export function formatDuration(seconds: number): string {
+export function formatDuration(seconds: number | null | undefined): string {
+  if (seconds == null) return '—';
   const total =
     Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
   const h = Math.floor(total / 3600);
