@@ -4,6 +4,7 @@ import { M3eCard } from '@m3e/react/card';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import DashboardPage from '../../components/dashboard/DashboardPage';
 import type { RootFolder } from '../../types';
 import { showApiError } from '../../utils/apiError';
 import {
@@ -93,18 +94,24 @@ export default function Folders() {
   }
 
   if (isPending) {
-    return <p className='opacity-70'>加载中…</p>;
+    return (
+      <DashboardPage title='文件夹'>
+        <p className='opacity-70'>加载中…</p>
+      </DashboardPage>
+    );
   }
   if (!config) {
-    return <p className='text-[var(--md-sys-color-error)]'>无法加载配置</p>;
+    return (
+      <DashboardPage title='文件夹'>
+        <p className='text-[var(--md-sys-color-error)]'>无法加载配置</p>
+      </DashboardPage>
+    );
   }
 
   return (
-    <div className='flex flex-col gap-4'>
+    <DashboardPage title='文件夹'>
+      <h2 className='m-0 text-lg font-normal'>根文件夹</h2>
       <M3eCard>
-        <div slot='header'>
-          <span className='text-sm font-medium'>根文件夹</span>
-        </div>
         <div slot='content'>
           {folders.length === 0 && (
             <p className='m-0 text-sm opacity-50'>暂无根文件夹</p>
@@ -246,6 +253,6 @@ export default function Folders() {
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />
-    </div>
+    </DashboardPage>
   );
 }
