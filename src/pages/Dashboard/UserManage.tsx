@@ -3,10 +3,10 @@ import { M3eButton } from '@m3e/react/button';
 import { M3eCard } from '@m3e/react/card';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eFormField } from '@m3e/react/form-field';
-import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
-import { M3eOption } from '@m3e/react/option';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import DashboardPage from '../../components/dashboard/DashboardPage';
+import { InputRow, SegmentedRow } from '../../components/dashboard/SettingRows';
 import {
   useUsers,
   useCreateUser,
@@ -104,24 +104,19 @@ export default function UserManage() {
     }
   }
 
-  function onGroupChange(e: Event) {
-    const value = (e.target as M3eSelectElement).value as string | null;
-    if (value === 'user' || value === 'guest') {
-      setNewGroup(value);
-    }
-  }
-
   if (isPending) {
-    return <p className='opacity-70'>加载中…</p>;
+    return (
+      <DashboardPage title='用户管理'>
+        <p className='opacity-70'>加载中…</p>
+      </DashboardPage>
+    );
   }
 
   return (
-    <div className='flex flex-col gap-4'>
+    <DashboardPage title='用户管理'>
       {/* 用户列表 */}
+      <h2 className='m-0 text-lg font-normal'>用户列表 ({users.length})</h2>
       <M3eCard>
-        <div slot='header'>
-          <span className='text-sm font-medium'>用户列表 ({users.length})</span>
-        </div>
         <div slot='content'>
           {users.length === 0 && (
             <p className='m-0 text-sm opacity-50'>暂无用户</p>
@@ -172,50 +167,38 @@ export default function UserManage() {
       </M3eCard>
 
       {/* 创建用户 */}
+      <h2 className='m-0 text-lg font-normal'>创建用户</h2>
       <M3eCard>
-        <div slot='header'>
-          <span className='text-sm font-medium'>创建用户</span>
-        </div>
-        <div slot='content'>
-          <div className='flex flex-col gap-3'>
-            <M3eFormField variant='outlined' hideSubscript='always'>
-              <label slot='label' htmlFor='new-user-name'>
-                用户名（至少 4 个字符）
-              </label>
-              <input
-                id='new-user-name'
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder='用户名'
-                className='w-full border-none bg-transparent py-2 text-sm outline-none'
-              />
-            </M3eFormField>
-            <M3eFormField variant='outlined' hideSubscript='always'>
-              <label slot='label' htmlFor='new-user-pwd'>
-                密码（至少 5 个字符）
-              </label>
-              <input
-                id='new-user-pwd'
-                type='password'
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder='密码'
-                className='w-full border-none bg-transparent py-2 text-sm outline-none'
-              />
-            </M3eFormField>
-            <M3eFormField variant='outlined' hideSubscript='always'>
-              <label slot='label' htmlFor='new-user-group'>
-                用户组
-              </label>
-              <M3eSelect id='new-user-group' onChange={onGroupChange}>
-                <M3eOption value='user' selected={newGroup === 'user'}>
-                  user
-                </M3eOption>
-                <M3eOption value='guest' selected={newGroup === 'guest'}>
-                  guest
-                </M3eOption>
-              </M3eSelect>
-            </M3eFormField>
+        <div slot='content' className='flex flex-col gap-6'>
+          <InputRow
+            id='new-user-name'
+            label='用户名'
+            description='至少 4 个字符'
+            placeholder='用户名'
+            value={newName}
+            onChange={setNewName}
+          />
+          <InputRow
+            id='new-user-pwd'
+            type='password'
+            label='密码'
+            description='至少 5 个字符'
+            placeholder='密码'
+            value={newPassword}
+            onChange={setNewPassword}
+          />
+          <SegmentedRow
+            label='用户组'
+            options={[
+              { value: 'user', label: 'user' },
+              { value: 'guest', label: 'guest' },
+            ]}
+            value={newGroup}
+            onChange={(value) => {
+              if (value === 'user' || value === 'guest') setNewGroup(value);
+            }}
+          />
+          <div className='flex justify-end'>
             <M3eButton
               variant='filled'
               disabled={saving}
@@ -250,7 +233,7 @@ export default function UserManage() {
         onSave={handleUpdatePassword}
         onClose={() => setEditingUser(null)}
       />
-    </div>
+    </DashboardPage>
   );
 }
 
