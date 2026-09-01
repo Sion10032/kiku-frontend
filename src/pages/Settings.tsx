@@ -164,12 +164,12 @@ export default function Settings() {
             />
           </div>
 
-          {/* R18 封面 */}
+          {/* R-18 封面 */}
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <span className='flex flex-col'>
-              <span>R18 封面</span>
+              <span>R-18 封面</span>
               <span className='text-sm opacity-70'>
-                R18 封面模糊：始终模糊 / 默认模糊悬浮显示 / 始终清晰显示
+                R-18 封面模糊：始终模糊 / 默认模糊悬浮显示 / 始终清晰显示
               </span>
             </span>
             <M3eSegmentedButton

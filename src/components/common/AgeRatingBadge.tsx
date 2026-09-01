@@ -17,7 +17,7 @@ const AGE_RATING_BADGE: Record<
       'bg-(--md-sys-color-secondary-container) text-(--md-sys-color-on-secondary-container)',
   },
   r18: {
-    label: 'R18',
+    label: 'R-18',
     className:
       'bg-(--md-sys-color-error-container) text-(--md-sys-color-on-error-container)',
   },

@@ -88,7 +88,7 @@ export default function CoverSFW({
       )}
 
       {/* 左上角 RJ 编号 */}
-      <span className='absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white'>
+      <span className='absolute left-0 top-0 m-2 rounded-sm bg-(--md-sys-color-surface-container)/85 px-1.5 py-0.5 text-xs text-white'>
         {workId}
       </span>
       {/* 右上角分级徽章（原内容区 AgeRatingBadge 上移，缩略图模式也能看到分级） */}
@@ -97,7 +97,7 @@ export default function CoverSFW({
       </span>
       {/* 右下角：进度 · 总时长（两项/一项/不显示，视数据而定） */}
       {cornerText && (
-        <span className='absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white'>
+        <span className='absolute bottom-0 right-0 m-2 rounded-sm bg-(--md-sys-color-surface-container)/85 px-1.5 py-0.5 text-xs text-white'>
           {cornerText}
         </span>
       )}
