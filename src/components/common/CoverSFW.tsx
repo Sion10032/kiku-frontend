@@ -3,21 +3,26 @@ import clsx from 'clsx';
 import { Link } from '@tanstack/react-router';
 import { mediaUrl } from '../../api/client';
 import { useSettingsStore } from '../../stores/settingsStore';
-import type { AgeRating } from '../../types';
+import { formatProgress, formatTotalDuration } from '../../utils/format';
+import type { AgeRating, UserWorkProgress } from '../../types';
+import AgeRatingBadge from './AgeRatingBadge';
 
 interface CoverSFWProps {
   /** 作品 id，完整 RJ code（如 "RJ01173549"） */
   workId: string;
   /** 年龄分级（仅 r18 模糊；缺省 'r18' 保守处理，与旧 nsfw=true 一致） */
   ageRating?: AgeRating;
-  release?: string | null;
+  /** 播放进度聚合；有记录时右下角显示进度（xx% / 正在听） */
+  progress?: UserWorkProgress | null;
+  /** 作品总时长（秒）；有数据时右下角与进度并排显示（如 "5.4 小时"） */
+  duration?: number | null;
   /** 缩略图模式（列表用，固定小尺寸） */
 }
 
 /**
  * 封面图（R18 模糊）。
  *
- * - 显示 RJ 编号角标与发售日期（加载失败时同样显示）
+ * - 左上角 RJ 编号角标、右上角分级徽章、右下角进度 · 总时长（加载失败时同样显示）
  * - 加载失败时仅用同尺寸占位替换 img，角标/日期 overlay 不受影响
  * - 年龄分级（仅 R18 模糊）
  * - 模糊行为由设置项「R18 封面」控制（settingsStore.coverBlurMode）：
@@ -28,12 +33,19 @@ interface CoverSFWProps {
 export default function CoverSFW({
   workId,
   ageRating = 'r18',
-  release,
+  progress,
+  duration,
 }: CoverSFWProps) {
   const [hovering, setHovering] = useState(false);
   const [failed, setFailed] = useState(false);
   const blurMode = useSettingsStore((s) => s.coverBlurMode);
   const src = mediaUrl(`/api/cover/${workId}/file`);
+  const progressText = formatProgress(progress);
+  const durationText = formatTotalDuration(duration);
+  // 右下角：进度 · 总时长，按数据可用性显示两项/一项/不显示
+  const cornerText = [progressText, durationText]
+    .filter(Boolean)
+    .join(' · ');
 
   const shouldBlur =
     ageRating === 'r18'
@@ -75,12 +87,18 @@ export default function CoverSFW({
         />
       )}
 
+      {/* 左上角 RJ 编号 */}
       <span className='absolute left-0 top-0 m-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white'>
         {workId}
       </span>
-      {release && (
+      {/* 右上角分级徽章（原内容区 AgeRatingBadge 上移，缩略图模式也能看到分级） */}
+      <span className='absolute right-0 top-0 m-2'>
+        <AgeRatingBadge rating={ageRating} />
+      </span>
+      {/* 右下角：进度 · 总时长（两项/一项/不显示，视数据而定） */}
+      {cornerText && (
         <span className='absolute bottom-0 right-0 m-1 rounded bg-black/60 px-1 text-xs text-white'>
-          {release}
+          {cornerText}
         </span>
       )}
     </Link>

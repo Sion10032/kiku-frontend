@@ -1,24 +1,18 @@
 import { Fragment, useEffect, useState } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
 import { M3eCard } from '@m3e/react/card';
-import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
 import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import '@m3e/icons/outlined/favorite';
-import '@m3e/icons/outlined/star';
-import '@m3e/icons/outlined/chat';
-import '@m3e/icons/outlined/open_in_new';
-import '@m3e/icons/outlined/mic';
-import '@m3e/icons/outlined/library_books';
 import type { Work } from '../../types';
 import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { getSeedColorForWork } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
-import AgeRatingBadge from '../common/AgeRatingBadge';
-import { vaChipSetStyles } from '../common/chipStyles';
-import { fieldQuery } from '../../utils/query';
+import WorkCircleSeriesLinks from '../common/WorkCircleSeriesLinks';
+import WorkRatingRow from '../common/WorkRatingRow';
+import WorkFactsRow from '../common/WorkFactsRow';
+import WorkChips from '../common/WorkChips';
 import { useUserStore } from '../../stores/userStore';
 import { useFavouriteStatus } from '../../queries/useFavouritesQuery';
 import FavDialog from '../favourites/FavDialog';
@@ -29,8 +23,10 @@ interface WorkDetailsProps {
 }
 
 /**
- * 作品详情信息卡：封面、标题、社团、评分（平均分 + 分布）、价格/售出/发售日、
- * 标签、声优、DLsite 链接与操作行（「我的评价」+ 收藏心形）。
+ * 作品详情信息卡：封面（右上分级徽章、右下播放进度）、标题、社团 · 系列、
+ * 评分/评论/DLsite 行、价格/售出/发售日行、标签、声优、
+ * 操作行（「我的评价」+ 收藏心形）。
+ * 元信息行由 common/ 下的 Work* 共享组件提供（与 WorkCard 一致）。
  * 操作行心形图标按钮是全页唯一收藏入口，打开 FavDialog 列出所有可收藏目标。
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
@@ -38,8 +34,6 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   const [reviewOpen, setReviewOpen] = useState(false);
   // 收藏对话框开关
   const [favOpen, setFavOpen] = useState(false);
-  // chip 点击跳转筛选（与 WorkCard 行为一致）
-  const navigate = useNavigate();
 
   // 作品收藏状态（驱动操作行心形；未登录自动 disabled）
   const workFav = useFavouriteStatus('work', [work.id]);
@@ -75,7 +69,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           <CoverSFW
             workId={work.id}
             ageRating={work.ageRating}
-            release={work.release}
+            progress={work.userProgress}
           />
         </div>
 
@@ -85,54 +79,9 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             {work.title}
           </h1>
 
-          {/* 社团 */}
-          <Link
-            to='/works'
-            search={{ q: fieldQuery('circle', work.circle.name) }}
-            className='truncate text-sm no-underline opacity-70'
-          >
-            {work.circle.name}
-          </Link>
+          <WorkCircleSeriesLinks work={work} />
 
-          {/* 系列（单值归属信息，非 chips；样式与社团行一致，library_books 图标区分） */}
-          {work.series && (
-            <Link
-              to='/works'
-              search={{ q: fieldQuery('series', work.series.name) }}
-              className='inline-flex items-center gap-1 truncate text-sm no-underline opacity-70'
-            >
-              <M3eIcon name='library_books' />
-              {work.series.name}
-            </Link>
-          )}
-
-          {/* 评分 / 评论 / DLsite */}
-          <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-sm'>
-            {work.rate_average_2dp != null && (
-              <span className='font-medium text-(--md-sys-color-primary)'>
-                ★ {work.rate_average_2dp.toFixed(1)}
-                <span className='font-normal opacity-60'>
-                  {' '}
-                  ({work.rate_count ?? 0})
-                </span>
-              </span>
-            )}
-            {work.review_count != null && work.review_count > 0 && (
-              <span className='inline-flex items-center gap-1 opacity-70'>
-                <M3eIcon name='chat' />
-                {work.review_count}
-              </span>
-            )}
-            <a
-              href={dlsiteUrl(work.id)}
-              target='_blank'
-              rel='noreferrer noopener'
-              className='inline-flex items-center gap-0.5 no-underline text-(--md-sys-color-primary)'
-            >
-              DLsite
-              <M3eIcon name='open_in_new' />
-            </a>
-          </div>
+          <WorkRatingRow work={work} />
 
           {/* 评分分布 */}
           {/* {work.rate_count_detail &&
@@ -160,60 +109,10 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             </div>
           )} */}
 
-          {/* 价格 / 售出 / 发售日 */}
-          <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-sm'>
-            {work.price != null && (
-              <span className='font-medium text-(--md-sys-color-error)'>
-                {work.price} 日元
-              </span>
-            )}
-            {work.dl_count != null && (
-              <span className='opacity-70'>售出 {work.dl_count}</span>
-            )}
-            {work.release && <span className='opacity-70'>{work.release}</span>}
-            <AgeRatingBadge rating={work.ageRating} />
-          </div>
+          {/* 详情页显示发售日（卡片不显示，封面右下角已有） */}
+          <WorkFactsRow work={work} release={work.release} />
 
-          {/* 标签（ChipSet 样式与 WorkCard 一致） */}
-          {work.tags.length > 0 && (
-            <M3eChipSet className='density-1'>
-              {work.tags.map((tag) => (
-                <M3eAssistChip
-                  key={tag.id}
-                  variant='elevated'
-                  onClick={() =>
-                    navigate({
-                      to: '/works',
-                      search: { q: fieldQuery('tag', tag.name) },
-                    })
-                  }
-                >
-                  {tag.name}
-                </M3eAssistChip>
-              ))}
-            </M3eChipSet>
-          )}
-
-          {/* 声优（主色容器 + mic 图标，与 WorkCard 一致） */}
-          {work.vas.length > 0 && (
-            <M3eChipSet className='density-1' style={vaChipSetStyles}>
-              {work.vas.map((va) => (
-                <M3eAssistChip
-                  key={va.id}
-                  variant='elevated'
-                  onClick={() =>
-                    navigate({
-                      to: '/works',
-                      search: { q: fieldQuery('va', va.name) },
-                    })
-                  }
-                >
-                  <M3eIcon slot='icon' name='mic' />
-                  {va.name}
-                </M3eAssistChip>
-              ))}
-            </M3eChipSet>
-          )}
+          <WorkChips work={work} />
 
           {/* 我的评价 + 收藏入口（操作行并排；心形打开 FavDialog） */}
           <div className='mt-1 flex items-center gap-2'>
@@ -256,9 +155,4 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
       <FavDialog open={favOpen} onClose={() => setFavOpen(false)} work={work} />
     </Fragment>
   );
-}
-
-/** DLsite 作品页链接（与 WorkCard 保持一致；id 为完整 RJ code） */
-function dlsiteUrl(workId: string): string {
-  return `https://www.dlsite.com/home/work/=/product_id/${workId}.html`;
 }

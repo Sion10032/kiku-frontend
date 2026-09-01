@@ -48,7 +48,7 @@ function HistoryCard({ work }: { work: Work }) {
         <CoverSFW
           workId={work.id}
           ageRating={work.ageRating}
-          release={work.release}
+          progress={work.userProgress}
         />
       </div>
       <div slot='content' className='flex flex-col gap-1 p-2'>

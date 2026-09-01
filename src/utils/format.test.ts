@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { formatDuration, formatRemaining } from './format';
+import {
+  formatDuration,
+  formatProgress,
+  formatRemaining,
+  formatTotalDuration,
+} from './format';
+import type { UserWorkProgress } from '../types';
+
+/** 构造最小合法进度记录（测试用） */
+function makeProgress(
+  position: number,
+  duration: number | null,
+): UserWorkProgress {
+  return {
+    mediaIndex: 'folder/track01.mp3',
+    trackTitle: null,
+    position,
+    duration,
+    listenedCount: 0,
+    updatedAt: '2024-01-01T00:00:00Z',
+  };
+}
 
 describe('formatRemaining', () => {
   it('播放中返回带负号的剩余时长', () => {
@@ -27,6 +48,44 @@ describe('formatRemaining', () => {
 
   it('非有限 current 按 0 处理（即剩余完整时长）', () => {
     expect(formatRemaining(Number.NaN, 60)).toBe('-1:00');
+  });
+});
+
+describe('formatTotalDuration', () => {
+  it('一小时以上为一位小数小时', () => {
+    expect(formatTotalDuration(19440)).toBe('5.4 小时');
+    expect(formatTotalDuration(3600)).toBe('1.0 小时');
+  });
+
+  it('不足一小时为整分钟', () => {
+    expect(formatTotalDuration(2700)).toBe('45 分钟');
+    expect(formatTotalDuration(3599)).toBe('60 分钟');
+  });
+
+  it('无效输入返回 null（调用方不渲染）', () => {
+    expect(formatTotalDuration(null)).toBeNull();
+    expect(formatTotalDuration(undefined)).toBeNull();
+    expect(formatTotalDuration(0)).toBeNull();
+    expect(formatTotalDuration(-1)).toBeNull();
+    expect(formatTotalDuration(Number.NaN)).toBeNull();
+  });
+});
+
+describe('formatProgress', () => {
+  it('有音轨时长时返回整百分比（clamp 100）', () => {
+    expect(formatProgress(makeProgress(500, 1000))).toBe('50%');
+    expect(formatProgress(makeProgress(0, 1000))).toBe('0%');
+    expect(formatProgress(makeProgress(2000, 1000))).toBe('100%');
+  });
+
+  it('无音轨时长但有记录时返回「正在听」', () => {
+    expect(formatProgress(makeProgress(30, null))).toBe('正在听');
+    expect(formatProgress(makeProgress(30, 0))).toBe('正在听');
+  });
+
+  it('无记录（未听/未登录）返回 null（调用方不渲染）', () => {
+    expect(formatProgress(null)).toBeNull();
+    expect(formatProgress(undefined)).toBeNull();
   });
 });
 

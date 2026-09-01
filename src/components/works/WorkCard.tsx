@@ -1,16 +1,12 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { M3eCard } from '@m3e/react/card';
-import { M3eAssistChip, M3eChipSet } from '@m3e/react/chips';
-import '@m3e/icons/outlined/mic';
 import type { Work } from '../../types';
 import CoverSFW from '../common/CoverSFW';
-import AgeRatingBadge from '../common/AgeRatingBadge';
-import { vaChipSetStyles } from '../common/chipStyles';
-import { M3eIcon } from '@m3e/react/icon';
-import { UnreadDot, ReadDot } from '../common/WorkProgress';
-import { useUserStore } from '../../stores/userStore';
-import { fieldQuery } from '../../utils/query';
+import WorkCircleSeriesLinks from '../common/WorkCircleSeriesLinks';
+import WorkRatingRow from '../common/WorkRatingRow';
+import WorkFactsRow from '../common/WorkFactsRow';
+import WorkChips from '../common/WorkChips';
 
 interface WorkCardProps {
   work: Work;
@@ -21,14 +17,11 @@ interface WorkCardProps {
 /**
  * 作品卡片（网格视图）。
  *
- * 展示：封面、标题、社团、评分（平均分 + 评分人数）、评论数、
- * 价格、售出数、年龄分级徽章、标签、声优。
+ * 展示：封面（右上分级徽章、右下播放进度）、标题、社团 · 系列、
+ * 评分（平均分 + 评分人数）、评论数、DLsite 链接、价格、售出数、标签、声优。
+ * 元信息行由 common/ 下的 Work* 共享组件提供（与 WorkDetails 一致）。
  */
 export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
-  const navigate = useNavigate();
-  // 未读角标仅登录用户显示（未登录时 userProgress 恒 null，无法区分）
-  const authed = useUserStore((s) => s.auth);
-
   // m3e-card 的 slot 边距全部来自 --m3e-card-padding（默认 16px）：
   // 非媒体 header（header slot 直接子节点非 img/video）会被 shadow DOM
   // 加上 margin-inline/block-start 导致封面占不满卡片宽度，此即本卡片的
@@ -42,10 +35,8 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
         <CoverSFW
           workId={work.id}
           ageRating={work.ageRating}
-          release={work.release}
+          progress={work.userProgress}
         />
-        {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
-        {authed && (work.userProgress ? <ReadDot /> : <UnreadDot />)}
       </div>
 
       {!thumbnail && (
@@ -58,122 +49,16 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
             {work.title}
           </Link>
 
-          {work.series ? (
-            <div className='flex min-w-0 items-center gap-x-1'>
-              <Link
-                to='/works'
-                search={{ q: fieldQuery('circle', work.circle.name) }}
-                className='min-w-0 truncate text-sm no-underline opacity-70'
-              >
-                {work.circle.name}
-              </Link>
-              <span className='text-sm opacity-70'>·</span>
-              <Link
-                to='/works'
-                search={{ q: fieldQuery('series', work.series.name) }}
-                className='min-w-0 truncate text-sm no-underline opacity-70'
-              >
-                {work.series.name}
-              </Link>
-            </div>
-          ) : (
-            <Link
-              to='/works'
-              search={{ q: fieldQuery('circle', work.circle.name) }}
-              className='truncate text-sm no-underline opacity-70'
-            >
-              {work.circle.name}
-            </Link>
-          )}
+          <WorkCircleSeriesLinks work={work} />
 
-          <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-sm'>
-            {/* 平均评分 */}
-            {work.rate_average_2dp != null && (
-              <span className='font-medium text-(--m3e-error)'>
-                ★ {work.rate_average_2dp.toFixed(1)}
-                <span className='font-normal opacity-60'>
-                  {' '}
-                  ({work.rate_count ?? 0})
-                </span>
-              </span>
-            )}
-            {/* 评论数 */}
-            {work.review_count != null && work.review_count > 0 && (
-              <span className='opacity-70'>💬 {work.review_count}</span>
-            )}
-            {/* DLsite 链接 */}
-            <a
-              href={dlsiteUrl(work.id)}
-              target='_blank'
-              rel='noreferrer noopener'
-              className='no-underline'
-            >
-              DLsite
-            </a>
-          </div>
+          <WorkRatingRow work={work} />
 
-          <div className='flex flex-wrap items-center gap-x-2 text-sm'>
-            {work.price != null && (
-              <span className='font-medium text-(--m3e-error)'>
-                {work.price} 日元
-              </span>
-            )}
-            {work.dl_count != null && (
-              <span className='opacity-70'>售出 {work.dl_count}</span>
-            )}
-            <AgeRatingBadge rating={work.ageRating} />
-          </div>
+          {/* 卡片不显示发售日（封面已有），详情页才显示 */}
+          <WorkFactsRow work={work} />
 
-          {(work.tags.length > 0 || work.vas.length > 0) && (
-            <div className='flex flex-col items-start gap-2'>
-              {work.tags.length > 0 && (
-                <M3eChipSet className='density-1'>
-                  {work.tags.map((tag) => (
-                    <M3eAssistChip
-                      key={tag.id}
-                      variant='elevated'
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate({
-                          to: '/works',
-                          search: { q: fieldQuery('tag', tag.name) },
-                        });
-                      }}
-                    >
-                      {tag.name}
-                    </M3eAssistChip>
-                  ))}
-                </M3eChipSet>
-              )}
-              {work.vas.length > 0 && (
-                <M3eChipSet className='density-1' style={vaChipSetStyles}>
-                  {work.vas.map((va) => (
-                    <M3eAssistChip
-                      key={va.id}
-                      variant='elevated'
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate({
-                          to: '/works',
-                          search: { q: fieldQuery('va', va.name) },
-                        });
-                      }}
-                    >
-                      <M3eIcon slot='icon' name='mic'></M3eIcon>
-                      {va.name}
-                    </M3eAssistChip>
-                  ))}
-                </M3eChipSet>
-              )}
-            </div>
-          )}
+          <WorkChips work={work} />
         </div>
       )}
     </M3eCard>
   );
-}
-
-/** DLsite 作品页链接（id 为完整 RJ code） */
-function dlsiteUrl(workId: string): string {
-  return `https://www.dlsite.com/home/work/=/product_id/${workId}.html`;
 }
