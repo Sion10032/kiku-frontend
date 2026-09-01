@@ -70,6 +70,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             workId={work.id}
             ageRating={work.ageRating}
             progress={work.userProgress}
+            duration={work.duration}
           />
         </div>
 

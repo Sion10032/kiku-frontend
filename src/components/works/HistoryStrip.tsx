@@ -49,6 +49,7 @@ function HistoryCard({ work }: { work: Work }) {
           workId={work.id}
           ageRating={work.ageRating}
           progress={work.userProgress}
+          duration={work.duration}
         />
       </div>
       <div slot='content' className='flex flex-col gap-1 p-2'>
