@@ -9,6 +9,7 @@ import '@m3e/icons/outlined/check_circle';
 import '@m3e/icons/outlined/error';
 import { useSSE } from '../../hooks/useSSE';
 import { startScan, killScan, type ScanMode } from '../../api/scanner';
+import DashboardPage from '../../components/dashboard/DashboardPage';
 import type {
   ScanInitState,
   ScanLogPayload,
@@ -177,7 +178,7 @@ export default function Scanner() {
   const isRunning = state === 'running';
 
   return (
-    <div className='flex flex-col gap-4'>
+    <DashboardPage title='扫描器'>
       {/* 操作按钮 */}
       <div className='flex flex-wrap gap-3'>
         <M3eButton
@@ -327,6 +328,6 @@ export default function Scanner() {
           </div>
         </M3eCard>
       )}
-    </div>
+    </DashboardPage>
   );
 }
