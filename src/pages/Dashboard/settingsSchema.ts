@@ -30,6 +30,7 @@ export type FieldDef =
       key: NumberKeys;
       type: 'number';
       label: string;
+      description?: string;
       min?: number;
       max?: number;
       placeholder?: number;
@@ -38,13 +39,20 @@ export type FieldDef =
       key: EditableTextKeys;
       type: 'text';
       label: string;
+      description?: string;
       placeholder?: string;
     }
-  | { key: EditableBoolKeys; type: 'bool'; label: string }
+  | {
+      key: EditableBoolKeys;
+      type: 'bool';
+      label: string;
+      description?: string;
+    }
   | {
       key: 'instanceMode' | 'tagLanguage';
       type: 'select';
       label: string;
+      description?: string;
       options: Array<{ value: string; label: string }>;
     };
 
@@ -61,6 +69,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'pageSize',
         type: 'number',
         label: '每页数量',
+        description: '作品列表每页显示的作品数',
         min: 1,
         max: 100,
         placeholder: 20,
@@ -79,17 +88,24 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'instanceMode',
         type: 'select',
         label: '实例模式',
+        description: '公开模式下匿名用户可只读访问',
         options: [
           { value: 'private', label: '私有（需要登录）' },
           { value: 'public', label: '公开（匿名只读）' },
         ],
       },
-      { key: 'allowRegistration', type: 'bool', label: '允许注册' },
+      {
+        key: 'allowRegistration',
+        type: 'bool',
+        label: '允许注册',
+        description: '是否允许新用户自助注册',
+      },
       { key: 'enableGzip', type: 'bool', label: '启用 Gzip' },
       {
         key: 'rewindSeekTime',
         type: 'number',
         label: '快退秒数',
+        description: '播放器快退按钮的步长（秒）',
         min: 0,
         max: 120,
         placeholder: 5,
@@ -98,6 +114,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'forwardSeekTime',
         type: 'number',
         label: '快进秒数',
+        description: '播放器快进按钮的步长（秒）',
         min: 0,
         max: 300,
         placeholder: 30,
@@ -113,6 +130,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'scannerMaxRecursionDepth',
         type: 'number',
         label: '最大递归深度',
+        description: '扫描时递归进入子文件夹的层数',
         min: 0,
         max: 16,
         placeholder: 3,
@@ -121,6 +139,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'retry',
         type: 'number',
         label: '重试次数',
+        description: 'DLsite / HVDB 请求失败后的重试次数',
         min: 0,
         max: 10,
         placeholder: 3,
@@ -129,6 +148,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'retryDelay',
         type: 'number',
         label: '重试间隔(ms)',
+        description: '基础重试间隔，随重试次数线性递增',
         min: 0,
         max: 600000,
         placeholder: 5000,
@@ -137,6 +157,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'dlsiteTimeout',
         type: 'number',
         label: 'DLsite 超时(ms)',
+        description: '单个 DLsite 请求的超时时间',
         min: 1000,
         max: 300000,
         placeholder: 30000,
@@ -145,6 +166,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'hvdbTimeout',
         type: 'number',
         label: 'HVDB 超时(ms)',
+        description: '单个 HVDB 请求的超时时间',
         min: 1000,
         max: 300000,
         placeholder: 30000,
@@ -166,6 +188,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'dbBusyTimeout',
         type: 'number',
         label: '数据库忙超时(ms)',
+        description: 'SQLite 写入冲突时的等待上限',
         min: 0,
         max: 600000,
         placeholder: 5000,
@@ -174,6 +197,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'expiresIn',
         type: 'number',
         label: 'JWT 有效期(s)',
+        description: '登录会话有效期，过期需重新登录',
         min: 60,
         max: 2592000,
         placeholder: 86400,
@@ -182,6 +206,7 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         key: 'maxParallelism',
         type: 'number',
         label: '最大并行数',
+        description: '扫描等并发任务的最大并行数',
         min: 1,
         max: 32,
         placeholder: 2,

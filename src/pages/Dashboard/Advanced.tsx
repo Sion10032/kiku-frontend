@@ -3,7 +3,6 @@ import { useBlocker } from '@tanstack/react-router';
 import { M3eButton } from '@m3e/react/button';
 import { M3eCard } from '@m3e/react/card';
 import { M3eDialog } from '@m3e/react/dialog';
-import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import type { AdminConfig } from '../../types';
 import { showApiError } from '../../utils/apiError';
@@ -13,6 +12,8 @@ import {
 } from '../../queries/useAdminQuery';
 import { SETTINGS_SECTIONS, validateNumbers } from './settingsSchema';
 import SettingsSection from './SettingsSection';
+import DashboardPage from '../../components/dashboard/DashboardPage';
+import { InputRow } from '../../components/dashboard/SettingRows';
 
 /**
  * 高级设置页面：SETTINGS_SECTIONS 驱动的表单。
@@ -29,9 +30,18 @@ export default function Advanced() {
   );
   const [secret, setSecret] = useState('');
 
-  if (isPending) return <p className='opacity-70'>加载中…</p>;
+  if (isPending)
+    return (
+      <DashboardPage title='高级设置'>
+        <p className='opacity-70'>加载中…</p>
+      </DashboardPage>
+    );
   if (!cfg)
-    return <p className='text-[var(--md-sys-color-error)]'>无法加载配置</p>;
+    return (
+      <DashboardPage title='高级设置'>
+        <p className='text-[var(--md-sys-color-error)]'>无法加载配置</p>
+      </DashboardPage>
+    );
 
   // 只读视图：服务器配置 + 本地增量 delta，无需同步 effect。
   // dirty = delta 非空（有字段改动）或填了新 secret。
@@ -100,7 +110,7 @@ export default function Advanced() {
   };
 
   return (
-    <div className='flex flex-col gap-4'>
+    <DashboardPage title='高级设置'>
       {SETTINGS_SECTIONS.map((section) => (
         <SettingsSection
           key={section.title}
@@ -127,11 +137,11 @@ export default function Advanced() {
       </div>
 
       <LeaveGuard isDirty={isDirty} />
-    </div>
+    </DashboardPage>
   );
 }
 
-/** md5secret 只写输入区（独立卡片）。 */
+/** md5secret 只写输入区（h2 标题 + 行式输入，同设置分组版式）。 */
 function SecretCard({
   secret,
   onSecretChange,
@@ -140,26 +150,23 @@ function SecretCard({
   onSecretChange: (v: string) => void;
 }) {
   return (
-    <M3eCard>
-      <div slot='header'>
-        <span className='mb-2 block text-sm font-medium'>安全设置</span>
-      </div>
-      <div slot='content'>
-        <M3eFormField variant='outlined' hideSubscript='always'>
-          <label slot='label' htmlFor='md5secret'>
-            MD5 Secret（留空则不修改）
-          </label>
-          <input
+    <>
+      <h2 className='m-0 text-lg font-normal'>安全设置</h2>
+      <M3eCard>
+        <div slot='content' className='flex flex-col gap-6'>
+          <InputRow
             id='md5secret'
+            label='MD5 Secret'
+            description='只写不回显，留空则不修改'
             type='password'
-            value={secret}
-            onChange={(e) => onSecretChange(e.target.value)}
             placeholder='输入新 secret…'
-            className='w-full border-none bg-transparent py-2 text-sm outline-none'
+            widthClassName='sm:w-72'
+            value={secret}
+            onChange={onSecretChange}
           />
-        </M3eFormField>
-      </div>
-    </M3eCard>
+        </div>
+      </M3eCard>
+    </>
   );
 }
 

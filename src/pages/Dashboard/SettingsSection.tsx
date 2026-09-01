@@ -1,14 +1,17 @@
 import { M3eCard } from '@m3e/react/card';
-import { M3eFormField } from '@m3e/react/form-field';
-import { M3eOption } from '@m3e/react/option';
-import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
-import { M3eSwitch } from '@m3e/react/switch';
 import type { AdminConfig } from '../../types';
 import type { SettingsSectionDef } from './settingsSchema';
+import {
+  InputRow,
+  SegmentedRow,
+  SwitchRow,
+} from '../../components/dashboard/SettingRows';
 
 /**
- * 单个设置分组卡片。按 FieldDef.type 渲染：
- * number → 数字输入（原始文本期由父组件管理）；text → 文本；bool → Switch；select → 下拉。
+ * 单个设置分组：标题在卡片外（h2，层级风格同本地设置页 h1 降级），
+ * 卡片内容按 FieldDef.type 渲染行：
+ * bool → SwitchRow；select → SegmentedRow；number/text → InputRow
+ * （number 的原始文本期由父组件管理，save 前统一解析）。
  */
 export default function SettingsSection({
   section,
@@ -28,120 +31,76 @@ export default function SettingsSection({
   onNumberTextChange: (key: string, text: string) => void;
 }) {
   return (
-    <M3eCard>
-      <div slot='header'>
-        <span className='mb-2 block text-sm font-medium'>{section.title}</span>
-      </div>
-      <div slot='content'>
-        <div className='flex flex-col gap-3'>
+    <>
+      <h2 className='m-0 text-lg font-normal'>{section.title}</h2>
+      <M3eCard>
+        <div slot='content' className='flex flex-col gap-6'>
           {section.fields.map((field) => {
             const id = `setting-${String(field.key)}`;
             if (field.type === 'bool') {
               return (
-                <label
+                <SwitchRow
                   key={field.key}
-                  htmlFor={id}
-                  className='flex items-center justify-between gap-4 py-1 text-sm'
-                >
-                  <span>{field.label}</span>
-                  <M3eSwitch
-                    id={id}
-                    checked={!!draft[field.key]}
-                    onInput={(e) => {
-                      const on = (e.target as HTMLInputElement).checked;
-                      onChange(field.key, on);
-                    }}
-                  />
-                </label>
+                  id={id}
+                  label={field.label}
+                  description={field.description}
+                  checked={!!draft[field.key]}
+                  onChecked={(on) => onChange(field.key, on)}
+                />
               );
             }
             if (field.type === 'select') {
               return (
-                <M3eFormField
+                <SegmentedRow
                   key={field.key}
-                  variant='outlined'
-                  hideSubscript='always'
-                >
-                  <label slot='label' htmlFor={id}>
-                    {field.label}
-                  </label>
-                  <M3eSelect
-                    id={id}
-                    onChange={(e) =>
-                      onChange(
-                        field.key,
-                        String((e.target as M3eSelectElement).value ?? ''),
-                      )
-                    }
-                  >
-                    {field.options.map((opt) => (
-                      <M3eOption
-                        key={opt.value}
-                        value={opt.value}
-                        selected={opt.value === draft[field.key]}
-                      >
-                        {opt.label}
-                      </M3eOption>
-                    ))}
-                  </M3eSelect>
-                </M3eFormField>
+                  label={field.label}
+                  description={field.description}
+                  options={field.options}
+                  value={String(draft[field.key] ?? '')}
+                  onChange={(value) => onChange(field.key, value)}
+                />
               );
             }
             if (field.type === 'number') {
               return (
-                <M3eFormField
+                <InputRow
                   key={field.key}
-                  variant='outlined'
-                  hideSubscript='always'
-                >
-                  <label slot='label' htmlFor={id}>
-                    {field.label}
-                  </label>
-                  <input
-                    id={id}
-                    type='number'
-                    inputMode='numeric'
-                    min={field.min}
-                    max={field.max}
-                    placeholder={
-                      field.placeholder !== undefined
-                        ? String(field.placeholder)
-                        : undefined
-                    }
-                    value={
-                      numberText[field.key] ?? String(draft[field.key] ?? '')
-                    }
-                    onChange={(e) =>
-                      onNumberTextChange(field.key, e.target.value)
-                    }
-                    className='w-full border-none bg-transparent py-2 text-sm outline-none'
-                  />
-                </M3eFormField>
+                  id={id}
+                  label={field.label}
+                  description={field.description}
+                  type='number'
+                  inputMode='numeric'
+                  min={field.min}
+                  max={field.max}
+                  placeholder={
+                    field.placeholder !== undefined
+                      ? String(field.placeholder)
+                      : undefined
+                  }
+                  value={
+                    numberText[field.key] ?? String(draft[field.key] ?? '')
+                  }
+                  onChange={(text) => onNumberTextChange(field.key, text)}
+                />
               );
             }
             return (
-              <M3eFormField
+              <InputRow
                 key={field.key}
-                variant='outlined'
-                hideSubscript='always'
-              >
-                <label slot='label' htmlFor={id}>
-                  {field.label}
-                </label>
-                <input
-                  id={id}
-                  value={String(draft[field.key] ?? '')}
-                  placeholder={
-                    'placeholder' in field ? field.placeholder : undefined
-                  }
-                  onChange={(e) => onChange(field.key, e.target.value)}
-                  className='w-full border-none bg-transparent py-2 text-sm outline-none'
-                />
-              </M3eFormField>
+                id={id}
+                label={field.label}
+                description={field.description}
+                placeholder={
+                  'placeholder' in field ? field.placeholder : undefined
+                }
+                widthClassName='sm:w-72'
+                value={String(draft[field.key] ?? '')}
+                onChange={(value) => onChange(field.key, value)}
+              />
             );
           })}
         </div>
-      </div>
-    </M3eCard>
+      </M3eCard>
+    </>
   );
 }
