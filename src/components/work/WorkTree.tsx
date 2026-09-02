@@ -21,6 +21,11 @@ import '@m3e/icons/outlined/open_in_new';
 import '@m3e/icons/outlined/arrow_back';
 import '@m3e/icons/outlined/visibility';
 import { selectCurrentTrack, usePlayerStore } from '../../stores/playerStore';
+import {
+  selectResumeStartAt,
+  useProgressStore,
+  type TrackProgress,
+} from '../../stores/progressStore';
 import { downloadUrl, streamUrl } from '../../api/media';
 import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../../types';
 import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
@@ -71,6 +76,9 @@ export default function WorkTree({
   const setQueue = usePlayerStore((s) => s.setQueue);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
+
+  // 单轨播放进度（hash → 进度）：驱动音频行 supporting-text 与点击续播
+  const progressByHash = useProgressStore((s) => s.byWork[work.id]);
 
   // 单目录作品自动进入根目录（对齐原 kikoeru-quasar 行为；
   // 渲染期调整 state，替代 effect 中 setState）
@@ -146,7 +154,16 @@ export default function WorkTree({
 
   function playLeaf(leaf: TrackLeaf) {
     const index = queueTracks.findIndex((t) => t.hash === leaf.hash);
-    setQueue(queueTracks, index === -1 ? 0 : index);
+    const i = index === -1 ? 0 : index;
+    const queue = queueTracks.map((t) => ({ ...t }));
+    // 点击续播（D5）：该轨有未听完历史 → 从上次位置恢复；已听完/无历史 → 从头
+    const startAt = selectResumeStartAt(
+      useProgressStore.getState(),
+      work.id,
+      leaf.hash,
+    );
+    if (startAt != null) queue[i] = { ...queue[i], startAt };
+    setQueue(queue, i);
   }
 
   function downloadLeaf(leaf: TrackLeaf) {
@@ -252,6 +269,7 @@ export default function WorkTree({
                 <TrackLeafListItem
                   key={node.hash}
                   node={node}
+                  progress={progressByHash?.[node.hash]}
                   current={isCurrent(node)}
                   onLeafClick={handleLeafClick}
                   onOpenMenu={openMenu}
@@ -376,6 +394,8 @@ function TrackFolderListItem({
 
 interface TrackLeafListItemProps {
   node: TrackLeaf;
+  /** 单轨播放进度（无历史为 undefined）。 */
+  progress?: TrackProgress;
   /** 是否为当前播放曲目（高亮显示）。 */
   current: boolean;
   onLeafClick: (node: TrackLeaf) => void;
@@ -385,6 +405,7 @@ interface TrackLeafListItemProps {
 /** 叶子文件行：类型图标 + 标题 + 时长（音频，标题下方）+ 播放/暂停 + ⋮ 更多操作。 */
 function TrackLeafListItem({
   node,
+  progress,
   current,
   onLeafClick,
   onOpenMenu,
@@ -409,7 +430,7 @@ function TrackLeafListItem({
           slot='supporting-text'
           className='text-xs tabular-nums opacity-60'
         >
-          {formatDuration(node.durationSec)}
+          {audioSubtext(node, progress)}
         </span>
       )}
       <M3eIconButton
@@ -424,6 +445,18 @@ function TrackLeafListItem({
       </M3eIconButton>
     </M3eListOption>
   );
+}
+
+/** 音频行副文本（D4）：总时长 · 已听百分比；无历史维持纯总时长。 */
+function audioSubtext(node: TrackLeaf, p?: TrackProgress): string {
+  const total = node.durationSec ?? p?.duration ?? null;
+  if (!p) return formatDuration(total);
+  const denom = p.duration ?? node.durationSec;
+  const pct =
+    denom != null && denom > 0
+      ? ` · ${Math.min(100, Math.round((p.position / denom) * 100))}%`
+      : '';
+  return `${formatDuration(total)}${pct}`;
 }
 
 function leafIcon(type: TrackLeaf['type']): string {
