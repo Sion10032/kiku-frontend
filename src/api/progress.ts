@@ -35,6 +35,22 @@ export function deleteWorkProgress(
   );
 }
 
+/** 标记作品已读（PUT /api/progress/:workId/read，不动进度） */
+export function markWorkRead(workId: string): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>(
+    `progress/${encodeURIComponent(workId)}/read`,
+    { method: 'PUT' },
+  );
+}
+
+/** 标记作品未读（DELETE /api/progress/:workId/read，进度保留） */
+export function markWorkUnread(workId: string): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>(
+    `progress/${encodeURIComponent(workId)}/read`,
+    { method: 'DELETE' },
+  );
+}
+
 /** 用户收听历史（按作品去重，最近收听时间倒序）：GET /api/history */
 export function getHistory(params: {
   page?: number;

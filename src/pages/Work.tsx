@@ -1,5 +1,6 @@
 import { workRoute } from '../routes/work';
 import { useWorkQuery, useTracksQuery } from '../queries/useWorksQuery';
+import { useWorkProgressQuery } from '../queries/useProgressQuery';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import WorkDetails from '../components/work/WorkDetails';
 import WorkTree from '../components/work/WorkTree';
@@ -16,6 +17,7 @@ export default function Work() {
   const { id } = workRoute.useParams();
   const workQuery = useWorkQuery(id);
   const tracksQuery = useTracksQuery(id);
+  useWorkProgressQuery(id); // 进度行 → progressStore（WorkTree 显示/续播共用）
 
   if (workQuery.isLoading) {
     return (
