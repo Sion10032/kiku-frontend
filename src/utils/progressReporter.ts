@@ -1,6 +1,7 @@
 import { reportProgress } from '../api/progress';
 import { ApiError } from '../api/client';
 import { getToken } from '../api/token';
+import { useProgressStore } from '../stores/progressStore';
 import { useUserStore } from '../stores/userStore';
 
 /**
@@ -71,6 +72,10 @@ async function send(keepalive = false): Promise<void> {
       },
       { keepalive },
     );
+    // 展示/续播数据源同步（WorkTree 以 10s 上报节奏自然刷新）
+    useProgressStore
+      .getState()
+      .record(p.workId, p.hash, p.position, p.duration);
   } catch (err) {
     // 拦截后不再重发：404 作品不在库（前端缓存页面播放已重建库）；
     // 401 用户不存在（幽灵 token，全局 beforeError 已清 token 跳登录）
@@ -153,6 +158,10 @@ export function reportTrackEnd(track: ProgressTrack, duration: number): void {
     duration,
     lastSentAt: 0,
   };
+  // 自然结束立即置为听完态（100%），不等待网络往返
+  useProgressStore
+    .getState()
+    .record(track.workId, track.hash, duration, duration);
   void send();
 }
 
