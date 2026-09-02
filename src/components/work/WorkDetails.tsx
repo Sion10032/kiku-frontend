@@ -76,6 +76,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             ageRating={work.ageRating}
             progress={work.userProgress}
             duration={work.duration}
+            read={work.read}
           />
         </div>
 
