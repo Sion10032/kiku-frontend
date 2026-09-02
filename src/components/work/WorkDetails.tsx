@@ -4,6 +4,8 @@ import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import '@m3e/icons/outlined/favorite';
+import '@m3e/icons/outlined/done_all';
+import '@m3e/icons/outlined/remove_done';
 import type { Work } from '../../types';
 import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -15,6 +17,7 @@ import WorkFactsRow from '../common/WorkFactsRow';
 import WorkChips from '../common/WorkChips';
 import { useUserStore } from '../../stores/userStore';
 import { useFavouriteStatus } from '../../queries/useFavouritesQuery';
+import { useReadStateMutation } from '../../queries/useProgressMutation';
 import FavDialog from '../favourites/FavDialog';
 import WriteReview from './WriteReview';
 
@@ -25,7 +28,7 @@ interface WorkDetailsProps {
 /**
  * 作品详情信息卡：封面（右上分级徽章、右下播放进度）、标题、社团 · 系列、
  * 评分/评论/DLsite 行、价格/售出/发售日行、标签、声优、
- * 操作行（「我的评价」+ 收藏心形）。
+ * 操作行（「我的评价」+ 收藏心形 + 已读/未读切换）。
  * 元信息行由 common/ 下的 Work* 共享组件提供（与 WorkCard 一致）。
  * 操作行心形图标按钮是全页唯一收藏入口，打开 FavDialog 列出所有可收藏目标。
  */
@@ -39,6 +42,8 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   const workFav = useFavouriteStatus('work', [work.id]);
   // 匿名零侵入：未登录不渲染收藏入口（匿名用户不应看到任何收藏 UI）
   const auth = useUserStore((s) => s.auth);
+  // 已读/未读切换（进度不动；pending 期间禁用按钮防连点）
+  const readMutation = useReadStateMutation();
 
   // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
   // 设置中关闭动态取色时跳过提取并恢复默认色。
@@ -115,7 +120,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
 
           <WorkChips work={work} />
 
-          {/* 我的评价 + 收藏入口（操作行并排；心形打开 FavDialog） */}
+          {/* 我的评价 + 收藏 + 已读切换入口（操作行并排；心形打开 FavDialog） */}
           <div className='mt-1 flex items-center gap-2'>
             <M3eButton variant='tonal' onClick={() => setReviewOpen(true)}>
               {work.userRating != null
@@ -133,6 +138,18 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                       : ''
                   }
                 />
+              </M3eIconButton>
+            )}
+            {auth && (
+              <M3eIconButton
+                aria-label={work.read ? '标记未读' : '标记已读'}
+                title={work.read ? '标记未读' : '标记已读'}
+                disabled={readMutation.isPending}
+                onClick={() =>
+                  readMutation.mutate({ workId: work.id, read: !work.read })
+                }
+              >
+                <M3eIcon name={work.read ? 'remove_done' : 'done_all'} />
               </M3eIconButton>
             )}
           </div>

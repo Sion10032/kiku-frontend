@@ -23,3 +23,20 @@ export function useDeleteProgressMutation() {
     },
   });
 }
+
+/**
+ * 标记已读/未读（PUT/DELETE /api/progress/:workId/read，进度不动）。
+ * 成功后失效 works/work（read 随 formattedWork 注入）。
+ */
+export function useReadStateMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ workId, read }: { workId: string; read: boolean }) =>
+      read ? api.markWorkRead(workId) : api.markWorkUnread(workId),
+    onSuccess: (_data, { workId }) => {
+      queryClient.invalidateQueries({ queryKey: ['works'] });
+      queryClient.invalidateQueries({ queryKey: ['work'] });
+      queryClient.invalidateQueries({ queryKey: ['progress', workId] });
+    },
+  });
+}
