@@ -37,6 +37,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
           ageRating={work.ageRating}
           progress={work.userProgress}
           duration={work.duration}
+          read={work.read}
         />
       </div>
 

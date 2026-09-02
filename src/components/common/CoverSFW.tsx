@@ -16,6 +16,8 @@ interface CoverSFWProps {
   progress?: UserWorkProgress | null;
   /** 作品总时长（秒）；有数据时右下角与进度并排显示（如 "5.4 小时"） */
   duration?: number | null;
+  /** 已读标记（听完自动置/手动）：右下角优先显示「已读 · 总时长」，取代进度百分比 */
+  read?: boolean;
   /** 缩略图模式（列表用，固定小尺寸） */
 }
 
@@ -35,6 +37,7 @@ export default function CoverSFW({
   ageRating = 'r18',
   progress,
   duration,
+  read = false,
 }: CoverSFWProps) {
   const [hovering, setHovering] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -42,10 +45,11 @@ export default function CoverSFW({
   const src = mediaUrl(`/api/cover/${workId}/file`);
   const progressText = formatProgress(progress);
   const durationText = formatTotalDuration(duration);
-  // 右下角：进度 · 总时长，按数据可用性显示两项/一项/不显示
-  const cornerText = [progressText, durationText]
-    .filter(Boolean)
-    .join(' · ');
+  // 右下角三分支（D9）：已读 → 「已读 · 总时长」（read=听完/手动，取代百分比）；
+  // 未读维持「进度 · 总时长」（两项/一项/不显示，视数据而定）
+  const cornerText = read
+    ? ['已读', durationText].filter(Boolean).join(' · ')
+    : [progressText, durationText].filter(Boolean).join(' · ');
 
   const shouldBlur =
     ageRating === 'r18'
