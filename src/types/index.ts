@@ -381,3 +381,16 @@ export interface ScanEvent {
 export interface ApiErrorBody {
   error?: string;
 }
+
+// ---------- 云端备份 ----------
+
+export interface SettingsBackupSummary {
+  name: string;
+  updatedAt: string;
+}
+
+export interface SettingsBackupDetail {
+  name: string;
+  payload: Record<string, unknown>;
+  updatedAt: string;
+}
