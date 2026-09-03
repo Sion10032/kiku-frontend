@@ -87,6 +87,34 @@ interface SettingsState {
   setUiScale: (scale: number) => void;
 }
 
+/**
+ * 快照白名单：persist 落盘字段与云端备份快照共用同一份来源（见 pickSettings），
+ * 避免两处白名单漂移。uiScaleAuto 是内部标记（首次加载自动推断 uiScale 用），
+ * 需随 persist 持久化，但**不属于**快照白名单。
+ */
+const SNAPSHOT_KEYS = [
+  'dynamicColor',
+  'colorMode',
+  'mediaNotification',
+  'floatingLyrics',
+  'preview',
+  'coverBlurMode',
+  'timeDisplayMode',
+  'worksPaginationMode',
+  'worksPaginatorPosition',
+  'worksHistoryStrip',
+  'uiScale',
+] as const;
+
+type SnapshotKey = (typeof SNAPSHOT_KEYS)[number];
+
+/** 按 SNAPSHOT_KEYS 白名单从 state 收集字段值（键序与白名单一致）。 */
+function pickSettings(state: SettingsState): Record<SnapshotKey, unknown> {
+  return Object.fromEntries(
+    SNAPSHOT_KEYS.map((key) => [key, state[key]] as const),
+  ) as Record<SnapshotKey, unknown>;
+}
+
 /** 本地设置（纯用户偏好，localStorage 持久化，不依赖登录态）。 */
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -121,17 +149,8 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'kiku-settings',
       partialize: (s) => ({
-        dynamicColor: s.dynamicColor,
-        colorMode: s.colorMode,
-        mediaNotification: s.mediaNotification,
-        floatingLyrics: s.floatingLyrics,
-        preview: s.preview,
-        coverBlurMode: s.coverBlurMode,
-        timeDisplayMode: s.timeDisplayMode,
-        worksPaginationMode: s.worksPaginationMode,
-        worksPaginatorPosition: s.worksPaginatorPosition,
-        worksHistoryStrip: s.worksHistoryStrip,
-        uiScale: s.uiScale,
+        ...pickSettings(s),
+        // uiScaleAuto 为内部标记：持久化以支持「首次加载推断一次 uiScale」，但不进快照
         uiScaleAuto: s.uiScaleAuto,
       }),
       // 首次使用时按屏幕像素密度推断一次界面缩放档位，之后沿用持久化值
@@ -144,3 +163,25 @@ export const useSettingsStore = create<SettingsState>()(
     },
   ),
 );
+
+/** 收集当前持久化设置为可 JSON 化快照（白名单 = SNAPSHOT_KEYS，不含 uiScaleAuto）。 */
+export function getSettingsSnapshot(): Record<string, unknown> {
+  return pickSettings(useSettingsStore.getState());
+}
+
+/** 应用备份快照：仅接受白名单字段，未知/缺失字段忽略（保留当前值），uiScale 夹取 80–130。 */
+export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
+  const patch: Partial<Record<SnapshotKey, unknown>> = {};
+  for (const key of SNAPSHOT_KEYS) {
+    if (key in snapshot) {
+      patch[key] = snapshot[key];
+    }
+  }
+  // uiScale 夹取 80–130 并取整，防止备份中的越界值破坏界面缩放
+  if ('uiScale' in patch) {
+    patch.uiScale = clamp(Math.round(Number(patch.uiScale)), 80, 130);
+  }
+  // 快照来自同结构 store（写入方同源），字段类型整体信任；嵌套对象整体替换不深合并。
+  // setState 走 persist 中间件自动落盘；uiScale 变化由 ThemeRoot 现有 effect 即时生效。
+  useSettingsStore.setState(patch as Partial<SettingsState>);
+}
