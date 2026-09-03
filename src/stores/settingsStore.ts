@@ -91,6 +91,9 @@ interface SettingsState {
  * 快照白名单：persist 落盘字段与云端备份快照共用同一份来源（见 pickSettings），
  * 避免两处白名单漂移。uiScaleAuto 是内部标记（首次加载自动推断 uiScale 用），
  * 需随 persist 持久化，但**不属于**快照白名单。
+ *
+ * 后端 kiku-backend/src/routes/settingsBackup.ts 的 payloadSchema 严格镜像此白名单与类型，
+ * 新增/修改字段（含枚举值）时必须同步后端 schema，否则备份时该字段会被 trim/拒绝，还原丢失。
  */
 const SNAPSHOT_KEYS = [
   'dynamicColor',
