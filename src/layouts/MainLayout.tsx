@@ -89,6 +89,8 @@ export default function MainLayout() {
         <M3eAppBar className='[grid-area:appbar]'>
           <M3eIconButton
             slot='leading'
+            size='medium'
+            className='density-2'
             aria-label={
               isNarrow ? '打开导航' : navHidden ? '显示侧栏' : '隐藏侧栏'
             }
@@ -103,7 +105,7 @@ export default function MainLayout() {
               靠左紧跟菜单按钮（Gmail/Drive 式）：AppBar small 态 shadow 内
               .title 为普通块级容器、无 margin auto 居中样式，去掉 mx-auto
               后 w-full max-w-xl 自然靠左，无需 me-auto 覆盖 */}
-          <div slot='title' className='w-full max-w-xl'>
+          <div slot='title' className='w-full max-w-xl pr-3'>
             <GlobalSearchBar />
           </div>
         </M3eAppBar>

@@ -224,17 +224,11 @@ export default function GlobalSearchBar() {
       onClickCapture={() => {
         lastClickAtRef.current = Date.now();
       }}
-      className={clsx(
-        'w-full',
-        open
-          ? ''
-          : 'rounded-full border border-(--md-sys-color-outline-variant) [--m3e-search-bar-container-color:transparent] hover:bg-(--md-sys-color-surface-container-low)',
-      )}
     >
       <M3eSearchView
         ref={viewRef}
         mode='auto'
-        className='w-full [--m3e-search-bar-container-height:48px] [--m3e-search-view-docked-header-container-height:48px] [--m3e-search-view-full-screen-header-container-height:48px] [--m3e-search-view-contained-full-screen-bar-container-height:48px]'
+        className='w-full [--m3e-search-bar-container-height:3rem] [--m3e-search-view-docked-header-container-height:3rem] [--m3e-search-view-full-screen-header-container-height:3rem] [--m3e-search-view-contained-full-screen-bar-container-height:3rem]'
         onQuery={(e) => setTerm(e.detail.term)}
         onClear={handleClear}
         onToggle={(e) => setOpen((e as ToggleEvent).newState === 'open')}
@@ -243,6 +237,7 @@ export default function GlobalSearchBar() {
           ref={inputRef}
           slot='input'
           type='text'
+          className='w-full'
           placeholder='搜索作品、标签、社团、声优…'
           value={term}
           onKeyDown={handleInputKeyDown}
