@@ -99,8 +99,11 @@ export default function MainLayout() {
           >
             <M3eIcon name='menu' />
           </M3eIconButton>
-          {/* 全局搜索：任意页面输入即跳 /works 搜索（详见组件注释） */}
-          <div slot='title' className='mx-auto w-full max-w-xl'>
+          {/* 全局搜索：任意页面输入即跳 /works 搜索（详见组件注释）。
+              靠左紧跟菜单按钮（Gmail/Drive 式）：AppBar small 态 shadow 内
+              .title 为普通块级容器、无 margin auto 居中样式，去掉 mx-auto
+              后 w-full max-w-xl 自然靠左，无需 me-auto 覆盖 */}
+          <div slot='title' className='w-full max-w-xl'>
             <GlobalSearchBar />
           </div>
         </M3eAppBar>
