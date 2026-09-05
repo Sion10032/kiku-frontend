@@ -62,3 +62,29 @@ export function getVas(): Promise<Va[]> {
 export function getSeries(): Promise<Series[]> {
   return apiFetch<Series[]>('series/');
 }
+
+// ---------- 管理员单作品操作 ----------
+
+/** 音轨同步统计（added/updated/removed 与后端 syncWorkTracks 对齐）。 */
+interface TrackStats {
+  added: number;
+  updated: number;
+  removed: number;
+}
+
+/** 重抓 DLsite 元数据 + 音轨时长同步：POST /api/work/:id/refresh（管理员） */
+export function refreshWorkMetadata(
+  id: string,
+): Promise<{ title: string; tracks: TrackStats }> {
+  return apiFetch(`work/${id}/refresh`, { method: 'POST' });
+}
+
+/** 按磁盘内容同步音轨时长：POST /api/work/:id/sync-tracks（管理员） */
+export function syncWorkTracks(id: string): Promise<{ tracks: TrackStats }> {
+  return apiFetch(`work/${id}/sync-tracks`, { method: 'POST' });
+}
+
+/** 软删除作品（读路径已过滤 deletedAt，删除后立即不可见）：DELETE /api/work/:id（管理员） */
+export function softDeleteWork(id: string): Promise<{ success: boolean }> {
+  return apiFetch(`work/${id}`, { method: 'DELETE' });
+}
