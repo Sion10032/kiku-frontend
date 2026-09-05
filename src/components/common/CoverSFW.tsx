@@ -21,6 +21,12 @@ interface CoverSFWProps {
   /** 缩略图模式（列表用，固定小尺寸） */
 }
 
+// 三个角标共用的定位，left/right/top/bottom 由各处自行指定
+const cornerClass = 'absolute m-2';
+// 文字角标（左上 RJ 号、右下进度/已读）共用的徽章外观
+const badgeClass =
+  'px-1.5 py-0.5 rounded-sm bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-container) text-xs';
+
 /**
  * 封面图（R18 模糊）。
  *
@@ -92,16 +98,16 @@ export default function CoverSFW({
       )}
 
       {/* 左上角 RJ 编号 */}
-      <span className='absolute left-0 top-0 m-2 rounded-sm bg-(--md-sys-color-surface-container)/85 px-1.5 py-0.5 text-xs text-white'>
+      <span className={clsx(cornerClass, 'left-0 top-0', badgeClass)}>
         {workId}
       </span>
       {/* 右上角分级徽章（原内容区 AgeRatingBadge 上移，缩略图模式也能看到分级） */}
-      <span className='absolute right-0 top-0 m-2'>
+      <span className={clsx(cornerClass, 'right-0 top-0')}>
         <AgeRatingBadge rating={ageRating} />
       </span>
       {/* 右下角：进度 · 总时长（两项/一项/不显示，视数据而定） */}
       {cornerText && (
-        <span className='absolute bottom-0 right-0 m-2 rounded-sm bg-(--md-sys-color-surface-container)/85 px-1.5 py-0.5 text-xs text-white'>
+        <span className={clsx(cornerClass, 'right-0 bottom-0', badgeClass)}>
           {cornerText}
         </span>
       )}
