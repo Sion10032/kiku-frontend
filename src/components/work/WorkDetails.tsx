@@ -1,11 +1,19 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { M3eCard } from '@m3e/react/card';
 import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eIconButton } from '@m3e/react/icon-button';
+import { useNavigate } from '@tanstack/react-router';
+import { M3eMenu, M3eMenuItem, type M3eMenuElement } from '@m3e/react/menu';
+import { M3eDialog } from '@m3e/react/dialog';
 import '@m3e/icons/outlined/favorite';
 import '@m3e/icons/outlined/done_all';
 import '@m3e/icons/outlined/remove_done';
+import '@m3e/icons/outlined/rate_review';
+import '@m3e/icons/outlined/more_vert';
+import '@m3e/icons/outlined/sync';
+import '@m3e/icons/outlined/av_timer';
+import '@m3e/icons/outlined/delete';
 import type { Work } from '../../types';
 import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -18,6 +26,11 @@ import WorkChips from '../common/WorkChips';
 import { useUserStore } from '../../stores/userStore';
 import { useFavouriteStatus } from '../../queries/useFavouritesQuery';
 import { useReadStateMutation } from '../../queries/useProgressMutation';
+import {
+  useRefreshWorkMetadataMutation,
+  useSoftDeleteWorkMutation,
+  useSyncWorkTracksMutation,
+} from '../../queries/useWorkAdminMutation';
 import FavDialog from '../favourites/FavDialog';
 import WriteReview from './WriteReview';
 
@@ -31,6 +44,7 @@ interface WorkDetailsProps {
  * 操作行（「我的评价」+ 收藏心形 + 已读/未读切换）。
  * 元信息行由 common/ 下的 Work* 共享组件提供（与 WorkCard 一致）。
  * 操作行心形图标按钮是全页唯一收藏入口，打开 FavDialog 列出所有可收藏目标。
+ * 管理员另见操作行最右 ⋮ 菜单：更新元数据 / 更新音轨时长 / 删除（软删）。
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
   // 写评价对话框开关
@@ -44,6 +58,26 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   const auth = useUserStore((s) => s.auth);
   // 已读/未读切换（进度不动；pending 期间禁用按钮防连点）
   const readMutation = useReadStateMutation();
+
+  // 管理员判定（对齐 __root.tsx 路由守卫的校验规则）
+  const group = useUserStore((s) => s.group);
+  const isAdmin = auth && group === 'administrator';
+
+  // 管理菜单：{ anchor } 对象每次点击都新建，确保重复点击 ⋮ 也会重新 show（同 WorkTree）
+  const [menu, setMenu] = useState<{ anchor: HTMLElement } | null>(null);
+  const menuRef = useRef<M3eMenuElement>(null);
+  // 删除确认对话框
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const navigate = useNavigate();
+  const refreshMutation = useRefreshWorkMetadataMutation();
+  const syncTracksMutation = useSyncWorkTracksMutation();
+  const deleteMutation = useSoftDeleteWorkMutation();
+
+  // 菜单打开：以 ⋮ 按钮为锚点（m3e-menu 自动翻转防溢出）
+  useEffect(() => {
+    if (menu) void menuRef.current?.show(menu.anchor);
+  }, [menu]);
 
   // 动态取色：切换作品时从封面提取种子色，失败保持当前主题。
   // 设置中关闭动态取色时跳过提取并恢复默认色。
@@ -121,13 +155,19 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
 
           <WorkChips work={work} />
 
-          {/* 我的评价 + 收藏 + 已读切换入口（操作行并排；心形打开 FavDialog） */}
+          {/* 我的评价 + 收藏 + 已读切换 + 管理菜单（操作行并排；管理菜单推到最右） */}
           <div className='mt-1 flex items-center gap-2'>
-            <M3eButton variant='tonal' onClick={() => setReviewOpen(true)}>
-              {work.userRating != null
-                ? `我的评价：${'★'.repeat(work.userRating)}`
-                : '写评价'}
-            </M3eButton>
+            <M3eIconButton
+              aria-label={work.userRating != null ? '我的评价' : '写评价'}
+              title={
+                work.userRating != null
+                  ? `我的评价：${'★'.repeat(work.userRating)}`
+                  : '写评价'
+              }
+              onClick={() => setReviewOpen(true)}
+            >
+              <M3eIcon name='rate_review' />
+            </M3eIconButton>
             {auth && (
               <M3eIconButton aria-label='收藏' onClick={() => setFavOpen(true)}>
                 <M3eIcon
@@ -153,6 +193,18 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                 <M3eIcon name={work.read ? 'remove_done' : 'done_all'} />
               </M3eIconButton>
             )}
+            {isAdmin && (
+              <M3eIconButton
+                aria-label='管理操作'
+                title='管理操作'
+                className='ml-auto'
+                onClick={(e) =>
+                  setMenu({ anchor: e.currentTarget as HTMLElement })
+                }
+              >
+                <M3eIcon name='more_vert' />
+              </M3eIconButton>
+            )}
           </div>
         </div>
       </M3eCard>
@@ -172,6 +224,76 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
        * 避免嵌在 shadow DOM 内的 <dialog> 焦点陷阱冲突。
        */}
       <FavDialog open={favOpen} onClose={() => setFavOpen(false)} work={work} />
+
+      {isAdmin && (
+        <M3eMenu ref={menuRef}>
+          <M3eMenuItem
+            disabled={refreshMutation.isPending}
+            onClick={() => refreshMutation.mutate(work.id)}
+          >
+            <span slot='icon'>
+              <M3eIcon name='sync' />
+            </span>
+            更新元数据
+          </M3eMenuItem>
+          <M3eMenuItem
+            disabled={syncTracksMutation.isPending}
+            onClick={() => syncTracksMutation.mutate(work.id)}
+          >
+            <span slot='icon'>
+              <M3eIcon name='av_timer' />
+            </span>
+            更新音轨时长
+          </M3eMenuItem>
+          <M3eMenuItem onClick={() => setDeleteOpen(true)}>
+            <span slot='icon'>
+              <M3eIcon name='delete' />
+            </span>
+            删除
+          </M3eMenuItem>
+        </M3eMenu>
+      )}
+
+      {isAdmin && (
+        /**
+         * 删除确认：与 WriteReview/FavDialog 同理渲染在 M3eCard 外部。
+         * 软删除语义：立即从库中隐藏；磁盘仍在的作品重扫时恢复。
+         */
+        <M3eDialog
+          open={deleteOpen}
+          onClosed={() => setDeleteOpen(false)}
+          dismissible
+          closeLabel='关闭'
+        >
+          <span slot='header'>删除作品</span>
+          <div className='flex flex-col gap-4 py-2'>
+            <p className='m-0 text-sm'>
+              确定删除《{work.title}》（{work.id}
+              ）？删除后作品将立即从库中隐藏；
+              若磁盘上文件仍在，重新扫描时会恢复。
+            </p>
+            <div className='flex justify-end gap-2'>
+              <M3eButton variant='text' onClick={() => setDeleteOpen(false)}>
+                取消
+              </M3eButton>
+              <M3eButton
+                variant='filled'
+                disabled={deleteMutation.isPending}
+                onClick={() =>
+                  deleteMutation.mutate(work.id, {
+                    onSuccess: () => {
+                      setDeleteOpen(false);
+                      navigate({ to: '/works' });
+                    },
+                  })
+                }
+              >
+                删除
+              </M3eButton>
+            </div>
+          </div>
+        </M3eDialog>
+      )}
     </Fragment>
   );
 }
