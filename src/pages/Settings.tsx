@@ -14,6 +14,7 @@ import {
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { SETTING_CONTROL_FILL, SETTING_ROW_LAYOUT } from '../constants';
 import {
   useBackupSettingsMutation,
   useDeleteSettingBackupMutation,
@@ -120,12 +121,12 @@ export default function Settings() {
       <M3eCard>
         <div slot='content' className='flex flex-col gap-6'>
           {/* 颜色模式：窄屏时标签与分段按钮上下堆叠，避免横向溢出 */}
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className={SETTING_ROW_LAYOUT}>
             <span>颜色模式</span>
             {/* 注意：组的 value 是 getter-only 派生属性（同 radio-group），
                 受控方式是给每个 M3eButtonSegment 传 checked */}
             <M3eSegmentedButton
-              className='w-full sm:w-auto'
+              className={SETTING_CONTROL_FILL}
               onInput={(e) =>
                 setColorMode((e.target as HTMLInputElement).value as ColorMode)
               }
@@ -186,7 +187,7 @@ export default function Settings() {
           </div>
 
           {/* R-18 封面 */}
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
               <span>R-18 封面</span>
               <span className='text-sm opacity-70'>
@@ -194,7 +195,7 @@ export default function Settings() {
               </span>
             </span>
             <M3eSegmentedButton
-              className='w-full sm:w-auto'
+              className={SETTING_CONTROL_FILL}
               onInput={(e) =>
                 setCoverBlurMode(
                   (e.target as HTMLInputElement).value as CoverBlurMode,
@@ -214,7 +215,7 @@ export default function Settings() {
           </div>
 
           {/* 时间显示模式 */}
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
               <span>时间显示</span>
               <span className='text-sm opacity-70'>
@@ -222,7 +223,7 @@ export default function Settings() {
               </span>
             </span>
             <M3eSegmentedButton
-              className='w-full sm:w-auto'
+              className={SETTING_CONTROL_FILL}
               onInput={(e) =>
                 setTimeDisplayMode(
                   (e.target as HTMLInputElement).value as TimeDisplayMode,
@@ -242,7 +243,7 @@ export default function Settings() {
           </div>
 
           {/* 作品库翻页方式 */}
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
               <span>作品库翻页方式</span>
               <span className='text-sm opacity-70'>
@@ -250,7 +251,7 @@ export default function Settings() {
               </span>
             </span>
             <M3eSegmentedButton
-              className='w-full sm:w-auto'
+              className={SETTING_CONTROL_FILL}
               onInput={(e) =>
                 setWorksPaginationMode(
                   (e.target as HTMLInputElement).value as WorksPaginationMode,
@@ -270,7 +271,7 @@ export default function Settings() {
           </div>
 
           {/* 分页控件显示位置 */}
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
               <span>分页控件显示位置</span>
               <span className='text-sm opacity-70'>
@@ -278,7 +279,7 @@ export default function Settings() {
               </span>
             </span>
             <M3eSegmentedButton
-              className='w-full sm:w-auto'
+              className={SETTING_CONTROL_FILL}
               onInput={(e) =>
                 setWorksPaginatorPosition(
                   (e.target as HTMLInputElement)
@@ -379,7 +380,7 @@ export default function Settings() {
           </div>
 
           {/* 行数 */}
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
               <span className={floatingLyrics.enabled ? '' : 'opacity-50'}>
                 行数上限
@@ -389,7 +390,7 @@ export default function Settings() {
               </span>
             </span>
             <M3eSegmentedButton
-              className='w-full sm:w-auto'
+              className={SETTING_CONTROL_FILL}
               disabled={!floatingLyrics.enabled}
               onInput={(e) =>
                 setFloatingLyrics({
@@ -558,11 +559,11 @@ function SettingsBackupCard() {
           {!auth && <p className='m-0 text-sm opacity-70'>登录后可用</p>}
 
           {/* 行 1：选择配置 + 新增 / 删除 */}
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className={SETTING_ROW_LAYOUT}>
             <M3eFormField
               variant='outlined'
               hideSubscript='always'
-              className='w-full sm:w-auto min-w-48 [--m3e-form-field-width:12rem]'
+              className={`${SETTING_CONTROL_FILL} min-w-48 [--m3e-form-field-width:12rem]`}
             >
               <label slot='label' htmlFor='settings-backup-select'>
                 选择配置
@@ -605,7 +606,7 @@ function SettingsBackupCard() {
 
           {/* 行 2：选中配置后显示，备份到此配置（覆盖）/ 还原 */}
           {selected && (
-            <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+            <div className={SETTING_ROW_LAYOUT}>
               <span className='text-sm opacity-70'>
                 「{selected.name}」备份于 {formatDate(selected.updatedAt)}
               </span>

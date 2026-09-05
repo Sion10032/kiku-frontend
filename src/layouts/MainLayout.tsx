@@ -12,8 +12,13 @@ import AudioPlayer from '../components/player/AudioPlayer';
 import PlayerBar from '../components/player/PlayerBar';
 import { useUiStore } from '../stores/uiStore';
 
-/** 视口 ≥1024px（lg 断点）视为宽屏；窄屏时侧栏自动收起。 */
-const WIDE_QUERY = '(min-width: 1024px)';
+/** 视口 ≥64rem（lg 断点）视为宽屏；窄屏时侧栏自动收起。
+ *
+ * 用 rem 而非 1024px：与 Tailwind --breakpoint-lg（64rem）生成的媒体查询
+ * 字面同源。media query 中的 rem 基于浏览器初始字号（不受页面 uiScale
+ * 修改 html font-size 影响），用户调大浏览器默认字号时 Tailwind 断点与
+ * 此查询同步移动，不会出现“侧栏已展开而 lg: 类仍是窄屏形态”的错位。 */
+const WIDE_QUERY = '(min-width: 64rem)';
 let wideMq: MediaQueryList | null = null;
 function getWideMq(): MediaQueryList {
   wideMq ??= window.matchMedia(WIDE_QUERY);
@@ -24,7 +29,7 @@ function subscribeNarrow(callback: () => void): () => void {
   mq.addEventListener('change', callback);
   return () => mq.removeEventListener('change', callback);
 }
-/** 是否窄屏（<1024px）：窄屏下侧栏强制隐藏，菜单按钮改以浮层抽屉打开。 */
+/** 是否窄屏（<64rem / lg）：窄屏下侧栏强制隐藏，菜单按钮改以浮层抽屉打开。 */
 function isNarrowViewport(): boolean {
   return !getWideMq().matches;
 }
@@ -36,7 +41,7 @@ function isNarrowViewport(): boolean {
  * 品牌与主导航见 NavDrawer）+ 内容列（appbar / content / player）；
  * 侧栏隐藏后内容区占满全宽，顶栏 leading 常驻菜单按钮负责显示/隐藏。
  *
- * 响应式：<1024px 时侧栏自动收起（不覆盖用户偏好，回到宽屏后还原），
+ * 响应式：<lg（64rem）时侧栏自动收起（不覆盖用户偏好，回到宽屏后还原），
  * 菜单按钮此时以浮层抽屉（带遮罩）临时展开导航，点击抽屉或遮罩关闭。
  *
  * AudioElement 承载 Howler 实例（无 UI）；AudioPlayer 为全屏覆盖层

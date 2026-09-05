@@ -4,6 +4,7 @@ import {
   M3eSegmentedButton,
 } from '@m3e/react/segmented-button';
 import { M3eSwitch } from '@m3e/react/switch';
+import { SETTING_CONTROL_FILL, SETTING_ROW_LAYOUT } from '../../constants';
 
 /**
  * 设置行组件族：与本地设置页（pages/Settings.tsx）行风格一致的布局单元。
@@ -70,10 +71,10 @@ export function SegmentedRow({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+    <div className={SETTING_ROW_LAYOUT}>
       <RowLabel label={label} description={description} />
       <M3eSegmentedButton
-        className='w-full sm:w-auto'
+        className={SETTING_CONTROL_FILL}
         onInput={(e) => onChange((e.target as HTMLInputElement).value)}
       >
         {options.map((opt) => (
@@ -117,7 +118,7 @@ export function InputRow({
   widthClassName?: string;
 }) {
   return (
-    <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+    <div className={SETTING_ROW_LAYOUT}>
       <RowLabel label={label} description={description} />
       <M3eFormField
         variant='outlined'

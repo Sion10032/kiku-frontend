@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import type { CSSProperties } from 'react';
 import { M3eDialog } from '@m3e/react/dialog';
 import type { M3eDialogElement } from '@m3e/react/dialog';
 import { M3eIconButton } from '@m3e/react/icon-button';
@@ -12,14 +11,6 @@ import { downloadUrl, streamUrl } from '../../api/media';
 import { findPreviewer } from './registry';
 import type { PreviewFile } from './types';
 import { useM3eStyle } from '../../hooks/useM3eStyle';
-
-/**
- * 覆写 m3e 默认 35rem 宽度上限：CSS 变量从祖先 div 继承进
- * shadow DOM（不依赖 React wrapper 对 host style 的透传）。
- * 高度由 useM3eStyle 注入 shadow DOM（.base 90dvh + .content flex:1），
- * 见下方 dialogRef。
- */
-const WRAPPER_STYLE = { '--m3e-dialog-max-width': '95vw' } as CSSProperties;
 
 interface FilePreviewDialogProps {
   /** 受控开关（组件常驻，open=false 时不渲染内容避免后台 fetch） */
@@ -90,7 +81,7 @@ export function FilePreviewDialog({
   }
 
   return (
-    <div style={WRAPPER_STYLE}>
+    <div className='[--m3e-dialog-min-width:95vw] [--m3e-dialog-max-width:95vw] lg:[--m3e-dialog-min-width:60vw] lg:[--m3e-dialog-max-width:60vw]'>
       <M3eDialog
         ref={dialogRef}
         open={open}

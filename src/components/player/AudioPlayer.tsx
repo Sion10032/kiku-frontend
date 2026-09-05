@@ -113,9 +113,9 @@ export default function AudioPlayer() {
         </M3eIconButton>
       </div>
 
-      {/* 中部：宽屏封面/歌词左右双栏自动显示；窄屏两视图绝对定位叠放，
-          opacity 交叉淡化切换（点封面→歌词，点歌词空白→封面；
-          无歌词时仅封面） */}
+      {/* 中部：默认（<lg）封面/歌词两视图绝对定位叠放，opacity 交叉淡化
+          切换（点封面→歌词，点歌词空白→封面；无歌词时仅封面）；
+          ≥lg 恢复左右双栏常驻 */}
       <div className='relative flex min-h-0 flex-1 gap-4 overflow-hidden lg:flex-row lg:items-stretch lg:px-6'>
         {/* 封面 + 曲目信息：窄屏为查看歌词热区（有歌词时整块可点） */}
         <div
@@ -134,11 +134,12 @@ export default function AudioPlayer() {
               : undefined
           }
           className={clsx(
-            'flex flex-col items-center justify-center gap-4 overflow-y-auto transition-opacity duration-300',
-            'max-lg:absolute max-lg:inset-0 max-lg:px-6 max-lg:pb-6 lg:flex-1',
+            // 窄屏叠放层：绝对定位 + 交叉淡化；≥lg 恢复正常流双栏
+            'absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-y-auto px-6 pb-6 transition-opacity duration-300',
+            'lg:static lg:flex-1 lg:px-0 lg:pb-0',
             showLyrics
-              ? 'max-lg:pointer-events-none max-lg:opacity-0'
-              : 'max-lg:opacity-100',
+              ? 'pointer-events-none opacity-0 lg:pointer-events-auto lg:opacity-100'
+              : 'opacity-100',
           )}
         >
           {track.workId ? (
@@ -162,12 +163,12 @@ export default function AudioPlayer() {
         <div
           onClick={() => setShowLyrics(false)}
           className={clsx(
-            'flex min-h-0 flex-col transition-opacity duration-300',
-            'max-lg:absolute max-lg:inset-0 max-lg:px-6 max-lg:pt-8 max-lg:pb-6',
-            'lg:flex-1 lg:py-8',
+            // 窄屏叠放层：绝对定位 + 交叉淡化；≥lg 恢复正常流双栏常驻
+            'absolute inset-0 flex min-h-0 flex-col px-6 pt-8 pb-6 transition-opacity duration-300',
+            'lg:static lg:flex-1 lg:px-0 lg:py-8',
             showLyrics && hasLyrics
-              ? 'max-lg:opacity-100'
-              : 'max-lg:pointer-events-none max-lg:opacity-0',
+              ? 'opacity-100'
+              : 'pointer-events-none opacity-0 lg:pointer-events-auto lg:opacity-100',
             hasLyrics ? 'lg:flex' : 'lg:hidden',
           )}
         >

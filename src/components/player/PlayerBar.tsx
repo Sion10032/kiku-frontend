@@ -37,7 +37,7 @@ function stopAnd(fn: () => void) {
  * - 信息区（封面/标题/作品名）整块点击 → toggleHide 展开全屏播放器
  * - 进度条可拖拽 seek；标题溢出 hover 跑马灯
  * - 宽屏：上一首/播放/下一首 + 播放模式/音量/播放列表/展开
- * - 窄屏（<md）：仅播放/暂停 + 播放列表
+ * - 窄屏（<lg，与侧栏/全屏播放器同一分界）：仅播放/暂停 + 播放列表
  * - 内部渲染 LyricsBar（悬浮于播放条上方的浮动歌词）
  */
 export default function PlayerBar() {
@@ -119,9 +119,9 @@ export default function PlayerBar() {
               ? formatRemaining(currentTime, duration)
               : formatDuration(duration)}
           </span>
-          {/* 核心组：窄屏保留 ▶/⏸ + ☰，其余 md: 起显示 */}
+          {/* 核心组：窄屏保留 ▶/⏸ + ☰，其余 lg: 起显示 */}
           <M3eIconButton
-            className='hidden md:inline-flex'
+            className='hidden lg:inline-flex'
             aria-label='上一首'
             onClick={stopAnd(previousTrack)}
           >
@@ -134,24 +134,24 @@ export default function PlayerBar() {
             <M3eIcon name={playing ? 'pause' : 'play_arrow'} />
           </M3eIconButton>
           <M3eIconButton
-            className='hidden md:inline-flex'
+            className='hidden lg:inline-flex'
             aria-label='下一首'
             onClick={stopAnd(nextTrack)}
           >
             <M3eIcon name='skip_next' />
           </M3eIconButton>
 
-          <span className='mx-1 hidden h-6 w-px bg-(--md-sys-color-outline-variant) md:block' />
+          <span className='mx-1 hidden h-6 w-px bg-(--md-sys-color-outline-variant) lg:block' />
 
-          {/* 次要组：全部 md: 起显示 */}
+          {/* 次要组：全部 lg: 起显示 */}
           <M3eIconButton
-            className='hidden md:inline-flex'
+            className='hidden lg:inline-flex'
             aria-label={`播放模式：${PLAY_MODE_LABEL[playMode]}`}
             onClick={stopAnd(changePlayMode)}
           >
             <M3eIcon name={PLAY_MODE_ICON[playMode]} />
           </M3eIconButton>
-          <VolumeControl className='hidden md:block' />
+          <VolumeControl className='hidden lg:block' />
           <M3eIconButton
             aria-label='播放列表'
             onClick={stopAnd(() => setQueueOpen(true))}
