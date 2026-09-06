@@ -101,6 +101,9 @@ export default function Setup() {
         err instanceof ApiError ? err.message : '初始化失败，请检查网络';
       M3eSnackbar.open(msg);
       goPhase('idle');
+      // 置空迁移状态触发重新拉取：迁移已完成时（migrated=true）重试将
+      // 直接提交初始化，避免重复 runMigration 而陷入迁移错误循环
+      setMigStatus(null);
     }
   }
 
