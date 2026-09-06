@@ -152,7 +152,7 @@ export default function Works() {
   // 分页控件（仅分页模式）：提取为局部元素，按设置在网格前/后渲染，两处共用同一 props
   const paginator =
     isPaginated && !loading && pagination && pagination.totalCount > 0 ? (
-      <div className='mt-6 flex items-center justify-center gap-2'>
+      <div className='mt-3 mb-3 flex items-center justify-center gap-2'>
         <Paginator
           length={pagination.totalCount}
           pageSize={pagination.pageSize}
