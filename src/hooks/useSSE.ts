@@ -26,6 +26,7 @@ export function useSSE(
   });
 
   useEffect(() => {
+    if (!url) return; // url 为空不订阅（条件订阅开关）
     const ctrl = new AbortController();
     const token = getToken();
 

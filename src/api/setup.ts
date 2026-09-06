@@ -6,13 +6,12 @@ export function getSetupStatus(): Promise<{ needed: boolean }> {
   return apiFetch<{ needed: boolean }>('setup');
 }
 
-/** Setup 输入：管理员账号 + 实例配置（migrateFromKikoeru 在可用时随初始化一并迁移） */
+/** Setup 输入：管理员账号 + 实例配置 */
 export interface SetupInput {
   name: string;
   password: string;
   instanceMode: InstanceMode;
   allowRegistration: boolean;
-  migrateFromKikoeru?: boolean;
 }
 
 /** 初始化：POST /api/setup（成功返回登录态） */
@@ -41,9 +40,21 @@ export function getMigrationStatus(): Promise<MigrationStatus> {
   return apiFetch<MigrationStatus>('setup/migration/status');
 }
 
-/** 执行迁移：POST /api/setup/migration/run */
-export function runMigration(): Promise<{ stats: Record<string, number> }> {
-  return apiFetch<{ stats: Record<string, number> }>('setup/migration/run', {
+/** 启动后台迁移：POST /api/setup/migration/run（运行中 409；进度走 /setup/migration/events SSE） */
+export function runMigration(): Promise<{ started: boolean }> {
+  return apiFetch<{ started: boolean }>('setup/migration/run', {
     method: 'POST',
   });
 }
+
+/** /setup/migration/events 的负载：MIGRATION_STATE 为全量 state，其余为对应事件对象 */
+export interface MigrationSseData {
+  running: boolean;
+  imported: number;
+  total: number;
+  stats: Record<string, number> | null;
+  error: string | null;
+}
+
+/** 迁移进度 SSE 端点（Setup 向导用，免鉴权白名单内） */
+export const MIGRATION_SSE_URL = '/api/setup/migration/events';

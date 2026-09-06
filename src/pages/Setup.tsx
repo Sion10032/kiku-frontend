@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eButton } from '@m3e/react/button';
@@ -16,9 +16,16 @@ import { M3eSnackbar } from '@m3e/react/snackbar';
 import '@m3e/icons/outlined/person';
 import '@m3e/icons/outlined/lock';
 import '@m3e/icons/outlined/library_music';
-import { setup as apiSetup, getMigrationStatus } from '../api/setup';
+import {
+  MIGRATION_SSE_URL,
+  setup as apiSetup,
+  getMigrationStatus,
+  runMigration,
+  type MigrationSseData,
+} from '../api/setup';
 import { setToken } from '../api/token';
 import { markSetupDone, refreshSharedConfig } from '../api/sharedConfig';
+import { useSSE } from '../hooks/useSSE';
 import { useUserStore } from '../stores/userStore';
 import { ApiError } from '../api/client';
 import type { InstanceMode } from '../types';
@@ -30,9 +37,13 @@ import type { InstanceMode } from '../types';
  * 3. 实例模式（默认私有）
  * 4. 允许注册开关（默认关）
  *
- * 提交 POST /api/setup（migrateFromKikoeru 随提交一并迁移）→ 存 token + 更新 userStore → 跳 /works。
+ * 点击完成初始化：需迁移时先启动后台迁移（SSE 展示进度，完成/失败自动衔接），随后
+ * 提交 POST /api/setup → 存 token + 更新 userStore → 跳 /works。
  * 根路由守卫保证仅在用户表为空时可到达本页。
  */
+
+/** 向导提交阶段：idle 可点击；migrating 后台迁移中；finishing 正在写入初始化配置 */
+type SetupPhase = 'idle' | 'migrating' | 'finishing';
 export default function Setup() {
   const navigate = useNavigate();
   const setUser = useUserStore((s) => s.setUser);
@@ -42,12 +53,19 @@ export default function Setup() {
   const [password, setPassword] = useState('');
   const [instanceMode, setInstanceMode] = useState<InstanceMode>('private');
   const [allowRegistration, setAllowRegistration] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<SetupPhase>('idle');
+  const phaseRef = useRef<SetupPhase>('idle');
+  const [mig, setMig] = useState({ imported: 0, total: 0 });
   const [migStatus, setMigStatus] = useState<Awaited<
     ReturnType<typeof getMigrationStatus>
   > | null>(null);
   const [migLoading, setMigLoading] = useState(true);
   const [migEnabled, setMigEnabled] = useState(true);
+
+  const goPhase = (p: SetupPhase): void => {
+    phaseRef.current = p;
+    setPhase(p);
+  };
 
   // 首次挂载拉取迁移状态（migLoading 初始即 true，避免在 effect 体内 setState）；
   // migStatus 就绪（含失败兜底值）后 effect 早退，不会重复请求
@@ -59,16 +77,17 @@ export default function Setup() {
       .finally(() => setMigLoading(false));
   }, [migStatus]);
 
-  async function onSubmit() {
-    if (loading) return;
-    setLoading(true);
+  // 是否随初始化迁移：检测到旧数据且开关打开且尚未迁移
+  const shouldMigrate =
+    migStatus?.available === true && migEnabled && !migStatus.migrated;
+
+  async function submitSetup(): Promise<void> {
     try {
       const res = await apiSetup({
         name: name.trim(),
         password,
         instanceMode,
         allowRegistration,
-        migrateFromKikoeru: migStatus?.available ? migEnabled : undefined,
       });
       setToken(res.token);
       setUser(res.name, res.group);
@@ -81,10 +100,69 @@ export default function Setup() {
       const msg =
         err instanceof ApiError ? err.message : '初始化失败，请检查网络';
       M3eSnackbar.open(msg);
-    } finally {
-      setLoading(false);
+      goPhase('idle');
     }
   }
+
+  function proceedAfterMigration(): void {
+    if (phaseRef.current !== 'migrating') return;
+    goPhase('finishing');
+    void submitSetup();
+  }
+
+  function failMigration(error?: string | null): void {
+    if (phaseRef.current !== 'migrating') return;
+    goPhase('idle');
+    M3eSnackbar.open(error ?? '迁移失败');
+  }
+
+  async function onSubmit(): Promise<void> {
+    if (phaseRef.current !== 'idle') return;
+    if (!shouldMigrate) {
+      goPhase('finishing');
+      await submitSetup();
+      return;
+    }
+    goPhase('migrating');
+    try {
+      await runMigration();
+    } catch (err) {
+      // 409 = 已有迁移在跑（如上次中断遗留），直接订阅进度即可
+      if (!(err instanceof ApiError && err.status === 409)) {
+        goPhase('idle');
+        M3eSnackbar.open(
+          err instanceof ApiError ? err.message : '迁移启动失败，请检查网络',
+        );
+      }
+    }
+  }
+
+  // 仅迁移阶段订阅；DONE/ERROR 终态由 init 重放兜底（刷新/断线重连恢复）
+  useSSE(phase === 'migrating' ? MIGRATION_SSE_URL : '', (event, data) => {
+    const d = data as MigrationSseData;
+    switch (event) {
+      case 'MIGRATION_STATE':
+        if (d.error) {
+          failMigration(d.error);
+          return;
+        }
+        if (d.stats) {
+          proceedAfterMigration();
+          return;
+        }
+        if (d.running) setMig({ imported: d.imported, total: d.total });
+        return;
+      case 'MIGRATION_PROGRESS':
+        setMig({ imported: d.imported, total: d.total });
+        return;
+      case 'MIGRATION_DONE':
+        proceedAfterMigration();
+        return;
+      case 'MIGRATION_ERROR':
+        failMigration(d.error);
+        return;
+    }
+  });
 
   return (
     <div className='flex min-h-dvh items-center justify-center p-4'>
@@ -249,12 +327,36 @@ export default function Setup() {
                 }
               />
             </label>
+            {(phase === 'migrating' || phase === 'finishing') && (
+              <div className='mt-3 flex flex-col gap-1'>
+                {phase === 'migrating' ? (
+                  <>
+                    <span className='text-sm opacity-70'>
+                      正在迁移旧数据… {mig.imported}/{mig.total} 张封面
+                    </span>
+                    <progress
+                      className='w-full'
+                      value={mig.total > 0 ? mig.imported : 0}
+                      max={mig.total > 0 ? mig.total : 1}
+                    />
+                  </>
+                ) : (
+                  <span className='text-sm opacity-70'>
+                    迁移完成，正在写入初始化配置…
+                  </span>
+                )}
+              </div>
+            )}
             <div slot='actions'>
               <M3eButton>
                 <M3eStepperPrevious>上一步</M3eStepperPrevious>
               </M3eButton>
-              <M3eButton disabled={loading} onClick={onSubmit}>
-                {loading ? '初始化中…' : '完成初始化'}
+              <M3eButton disabled={phase !== 'idle'} onClick={onSubmit}>
+                {phase === 'migrating'
+                  ? '迁移中…'
+                  : phase === 'finishing'
+                    ? '初始化中…'
+                    : '完成初始化'}
               </M3eButton>
             </div>
           </M3eStepPanel>
