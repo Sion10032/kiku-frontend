@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eButton } from '@m3e/react/button';
@@ -17,6 +17,7 @@ import '@m3e/icons/outlined/person';
 import '@m3e/icons/outlined/lock';
 import '@m3e/icons/outlined/library_music';
 import { setup as apiSetup } from '../api/auth';
+import { getMigrationStatus, runMigration } from '../api/setupMigration';
 import { setToken } from '../api/token';
 import { markSetupDone, refreshSharedConfig } from '../api/sharedConfig';
 import { useUserStore } from '../stores/userStore';
@@ -24,10 +25,11 @@ import { ApiError } from '../api/client';
 import type { InstanceMode } from '../types';
 
 /**
- * 首次部署引导向导（m3e-stepper 三步，linear）：
+ * 首次部署引导向导（m3e-stepper 四步，linear）：
  * 1. 管理员账号（form 校验 name ≥ 4、password ≥ 5 门控下一步）
- * 2. 实例模式（默认私有）
- * 3. 允许注册开关（默认关）
+ * 2. 迁移旧数据（检测 kikoeru 旧数据，展示版本与统计，可执行迁移或跳过）
+ * 3. 实例模式（默认私有）
+ * 4. 允许注册开关（默认关）
  *
  * 提交 POST /api/auth/setup → 存 token + 更新 userStore → 跳 /works。
  * 根路由守卫保证仅在用户表为空时可到达本页。
@@ -42,6 +44,37 @@ export default function Setup() {
   const [instanceMode, setInstanceMode] = useState<InstanceMode>('private');
   const [allowRegistration, setAllowRegistration] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [migStatus, setMigStatus] = useState<Awaited<
+    ReturnType<typeof getMigrationStatus>
+  > | null>(null);
+  const [migLoading, setMigLoading] = useState(false);
+  const [migDone, setMigDone] = useState(false);
+  const [migStats, setMigStats] = useState<Record<string, number> | null>(null);
+
+  useEffect(() => {
+    if (migStatus || migLoading) return;
+    setMigLoading(true);
+    getMigrationStatus()
+      .then(setMigStatus)
+      .catch(() => setMigStatus({ available: false, migrated: false }))
+      .finally(() => setMigLoading(false));
+  }, [migStatus, migLoading]);
+
+  async function onMigrate() {
+    setMigLoading(true);
+    try {
+      const res = await runMigration();
+      setMigStats(res.stats);
+      setMigDone(true);
+      M3eSnackbar.open('迁移完成');
+    } catch (err) {
+      const msg =
+        err instanceof ApiError ? err.message : '迁移失败，请检查后端日志';
+      M3eSnackbar.open(msg);
+    } finally {
+      setMigLoading(false);
+    }
+  }
 
   async function onSubmit() {
     if (loading) return;
@@ -81,6 +114,7 @@ export default function Setup() {
           {/* 第 1 步：管理员账号（form 校验门控下一步） */}
           {/* for 是 React 保留属性名，用 attr:for 前缀设置为 attribute */}
           <M3eStep htmlFor='setup-step-account'>管理员账号</M3eStep>
+          <M3eStep htmlFor='setup-step-migrate'>迁移旧数据</M3eStep>
           <M3eStep htmlFor='setup-step-mode'>实例模式</M3eStep>
           <M3eStep htmlFor='setup-step-register'>注册开关</M3eStep>
 
@@ -122,6 +156,82 @@ export default function Setup() {
             <div slot='actions'>
               <M3eButton>
                 <M3eStepperNext>下一步</M3eStepperNext>
+              </M3eButton>
+            </div>
+          </M3eStepPanel>
+
+          {/* 第 2 步：迁移旧数据（进入时自动检测，可执行迁移或跳过） */}
+          <M3eStepPanel id='setup-step-migrate'>
+            {migLoading && !migStatus && (
+              <p className='m-0 text-sm opacity-70'>检测中…</p>
+            )}
+
+            {!migStatus?.available && !migLoading && (
+              <p className='m-0 text-sm opacity-70'>
+                未检测到旧数据（old-data 目录）。可跳过此步，之后无法自动迁移。
+              </p>
+            )}
+
+            {migStatus?.available && !migDone && (
+              <div className='flex flex-col gap-3'>
+                <p className='m-0 text-sm opacity-70'>
+                  检测到
+                  {migStatus.flavor === 'number178-fork'
+                    ? ' Number178 fork 版（kikoeru number17）'
+                    : ' kikoeru 原版'}
+                  旧数据：
+                </p>
+                <ul className='m-0 list-inside list-disc text-sm'>
+                  <li>作品 {migStatus.stats?.works ?? 0} 部</li>
+                  <li>用户 {migStatus.stats?.users ?? 0} 个（含密码）</li>
+                  <li>评论 {migStatus.stats?.reviews ?? 0} 条</li>
+                  <li>
+                    播放历史 {migStatus.stats?.playHistory ?? 0}{' '}
+                    条（迁为已读标记）
+                  </li>
+                  <li>封面 {migStatus.stats?.covers ?? 0} 张</li>
+                </ul>
+                <p className='m-0 text-xs opacity-60'>
+                  迁移后请在设置中把 rootFolder
+                  路径改为当前环境实际路径，再执行扫描。
+                </p>
+              </div>
+            )}
+
+            {migDone && migStats && (
+              <div className='flex flex-col gap-2'>
+                <p className='m-0 text-sm'>迁移完成：</p>
+                <ul className='m-0 list-inside list-disc text-sm'>
+                  <li>
+                    作品 {migStats.works} 部
+                    {migStats.worksSkipped
+                      ? `（跳过 ${migStats.worksSkipped}）`
+                      : ''}
+                  </li>
+                  <li>
+                    用户 {migStats.users} 个
+                    {migStats.usersSkipped
+                      ? `（保留已有 ${migStats.usersSkipped}）`
+                      : ''}
+                  </li>
+                  <li>评论 {migStats.reviews} 条</li>
+                  <li>已读标记 {migStats.readStates} 条</li>
+                  <li>封面 {migStats.coversImported} 张</li>
+                </ul>
+              </div>
+            )}
+
+            <div slot='actions'>
+              <M3eButton>
+                <M3eStepperPrevious>上一步</M3eStepperPrevious>
+              </M3eButton>
+              {migStatus?.available && !migDone && (
+                <M3eButton disabled={migLoading} onClick={onMigrate}>
+                  {migLoading ? '迁移中…' : '迁移旧数据'}
+                </M3eButton>
+              )}
+              <M3eButton>
+                <M3eStepperNext>{migDone ? '下一步' : '跳过'}</M3eStepperNext>
               </M3eButton>
             </div>
           </M3eStepPanel>
