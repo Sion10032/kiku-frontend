@@ -1,5 +1,5 @@
 import { getSharedConfig } from '../api/config';
-import { getSetupStatus } from './auth';
+import { getSetupStatus } from './setup';
 import type { SharedConfig } from '../types';
 
 /**

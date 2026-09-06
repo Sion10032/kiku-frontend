@@ -16,8 +16,7 @@ import { M3eSnackbar } from '@m3e/react/snackbar';
 import '@m3e/icons/outlined/person';
 import '@m3e/icons/outlined/lock';
 import '@m3e/icons/outlined/library_music';
-import { setup as apiSetup } from '../api/auth';
-import { getMigrationStatus, runMigration } from '../api/setupMigration';
+import { setup as apiSetup, getMigrationStatus } from '../api/setup';
 import { setToken } from '../api/token';
 import { markSetupDone, refreshSharedConfig } from '../api/sharedConfig';
 import { useUserStore } from '../stores/userStore';
@@ -27,11 +26,11 @@ import type { InstanceMode } from '../types';
 /**
  * 首次部署引导向导（m3e-stepper 四步，linear）：
  * 1. 管理员账号（form 校验 name ≥ 4、password ≥ 5 门控下一步）
- * 2. 迁移旧数据（检测 kikoeru 旧数据，展示版本与统计，可执行迁移或跳过）
+ * 2. 迁移旧数据（检测 kikoeru 旧数据，展示版本与统计；开关选择是否迁移）
  * 3. 实例模式（默认私有）
  * 4. 允许注册开关（默认关）
  *
- * 提交 POST /api/auth/setup → 存 token + 更新 userStore → 跳 /works。
+ * 提交 POST /api/setup（migrateFromKikoeru 随提交一并迁移）→ 存 token + 更新 userStore → 跳 /works。
  * 根路由守卫保证仅在用户表为空时可到达本页。
  */
 export default function Setup() {
@@ -48,8 +47,7 @@ export default function Setup() {
     ReturnType<typeof getMigrationStatus>
   > | null>(null);
   const [migLoading, setMigLoading] = useState(false);
-  const [migDone, setMigDone] = useState(false);
-  const [migStats, setMigStats] = useState<Record<string, number> | null>(null);
+  const [migEnabled, setMigEnabled] = useState(true);
 
   useEffect(() => {
     if (migStatus || migLoading) return;
@@ -60,22 +58,6 @@ export default function Setup() {
       .finally(() => setMigLoading(false));
   }, [migStatus, migLoading]);
 
-  async function onMigrate() {
-    setMigLoading(true);
-    try {
-      const res = await runMigration();
-      setMigStats(res.stats);
-      setMigDone(true);
-      M3eSnackbar.open('迁移完成');
-    } catch (err) {
-      const msg =
-        err instanceof ApiError ? err.message : '迁移失败，请检查后端日志';
-      M3eSnackbar.open(msg);
-    } finally {
-      setMigLoading(false);
-    }
-  }
-
   async function onSubmit() {
     if (loading) return;
     setLoading(true);
@@ -85,6 +67,7 @@ export default function Setup() {
         password,
         instanceMode,
         allowRegistration,
+        migrateFromKikoeru: migStatus?.available ? migEnabled : undefined,
       });
       setToken(res.token);
       setUser(res.name, res.group);
@@ -160,7 +143,7 @@ export default function Setup() {
             </div>
           </M3eStepPanel>
 
-          {/* 第 2 步：迁移旧数据（进入时自动检测，可执行迁移或跳过） */}
+          {/* 第 2 步：迁移旧数据（探测数量展示 + 是否迁移的选择，迁移推迟到提交时执行） */}
           <M3eStepPanel id='setup-step-migrate'>
             {migLoading && !migStatus && (
               <p className='m-0 text-sm opacity-70'>检测中…</p>
@@ -172,7 +155,7 @@ export default function Setup() {
               </p>
             )}
 
-            {migStatus?.available && !migDone && (
+            {migStatus?.available && (
               <div className='flex flex-col gap-3'>
                 <p className='m-0 text-sm opacity-70'>
                   检测到
@@ -191,6 +174,18 @@ export default function Setup() {
                   </li>
                   <li>封面 {migStatus.stats?.covers ?? 0} 张</li>
                 </ul>
+                <label className='mt-2 flex items-center justify-between gap-3'>
+                  <span className='text-sm'>迁移旧数据</span>
+                  <M3eSwitch
+                    checked={migEnabled}
+                    onInput={(e) =>
+                      setMigEnabled((e.target as HTMLInputElement).checked)
+                    }
+                  />
+                </label>
+                <p className='m-0 text-xs opacity-60'>
+                  将在完成初始化时一并迁移；关闭则跳过，之后无法自动迁移。
+                </p>
                 <p className='m-0 text-xs opacity-60'>
                   迁移后请在设置中把 rootFolder
                   路径改为当前环境实际路径，再执行扫描。
@@ -198,40 +193,12 @@ export default function Setup() {
               </div>
             )}
 
-            {migDone && migStats && (
-              <div className='flex flex-col gap-2'>
-                <p className='m-0 text-sm'>迁移完成：</p>
-                <ul className='m-0 list-inside list-disc text-sm'>
-                  <li>
-                    作品 {migStats.works} 部
-                    {migStats.worksSkipped
-                      ? `（跳过 ${migStats.worksSkipped}）`
-                      : ''}
-                  </li>
-                  <li>
-                    用户 {migStats.users} 个
-                    {migStats.usersSkipped
-                      ? `（保留已有 ${migStats.usersSkipped}）`
-                      : ''}
-                  </li>
-                  <li>评论 {migStats.reviews} 条</li>
-                  <li>已读标记 {migStats.readStates} 条</li>
-                  <li>封面 {migStats.coversImported} 张</li>
-                </ul>
-              </div>
-            )}
-
             <div slot='actions'>
               <M3eButton>
                 <M3eStepperPrevious>上一步</M3eStepperPrevious>
               </M3eButton>
-              {migStatus?.available && !migDone && (
-                <M3eButton disabled={migLoading} onClick={onMigrate}>
-                  {migLoading ? '迁移中…' : '迁移旧数据'}
-                </M3eButton>
-              )}
               <M3eButton>
-                <M3eStepperNext>{migDone ? '下一步' : '跳过'}</M3eStepperNext>
+                <M3eStepperNext>下一步</M3eStepperNext>
               </M3eButton>
             </div>
           </M3eStepPanel>
