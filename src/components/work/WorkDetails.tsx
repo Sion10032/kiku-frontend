@@ -7,8 +7,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { M3eMenu, M3eMenuItem, type M3eMenuElement } from '@m3e/react/menu';
 import { M3eDialog } from '@m3e/react/dialog';
 import '@m3e/icons/outlined/favorite';
-import '@m3e/icons/outlined/done_all';
-import '@m3e/icons/outlined/remove_done';
+import '@m3e/icons/outlined/check_circle';
 import '@m3e/icons/outlined/rate_review';
 import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/sync';
@@ -166,7 +165,15 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
               }
               onClick={() => setReviewOpen(true)}
             >
-              <M3eIcon name='rate_review' />
+              <M3eIcon
+                name='rate_review'
+                filled={work.userRating != null}
+                className={
+                  work.userRating != null
+                    ? 'text-[var(--md-sys-color-primary)]'
+                    : ''
+                }
+              />
             </M3eIconButton>
             {auth && (
               <M3eIconButton aria-label='收藏' onClick={() => setFavOpen(true)}>
@@ -190,7 +197,13 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                   readMutation.mutate({ workId: work.id, read: !work.read })
                 }
               >
-                <M3eIcon name={work.read ? 'remove_done' : 'done_all'} />
+                <M3eIcon
+                  name='check_circle'
+                  filled={work.read}
+                  className={
+                    work.read ? 'text-[var(--md-sys-color-primary)]' : ''
+                  }
+                />
               </M3eIconButton>
             )}
             {isAdmin && (
