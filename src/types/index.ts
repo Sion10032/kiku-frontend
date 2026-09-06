@@ -50,7 +50,12 @@ export interface Work {
   rate_count: number | null;
   rate_average_2dp: number | null;
   rate_count_detail: Record<string, number>;
-  rank: Record<string, number> | null;
+  rank: Array<{
+    term: string;
+    category: string;
+    rank: number;
+    rank_date: string;
+  }> | null;
   tags: Tag[];
   vas: Va[];
   /** 所属系列（至多 1 个，无系列为 null） */
