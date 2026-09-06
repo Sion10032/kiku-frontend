@@ -46,17 +46,18 @@ export default function Setup() {
   const [migStatus, setMigStatus] = useState<Awaited<
     ReturnType<typeof getMigrationStatus>
   > | null>(null);
-  const [migLoading, setMigLoading] = useState(false);
+  const [migLoading, setMigLoading] = useState(true);
   const [migEnabled, setMigEnabled] = useState(true);
 
+  // 首次挂载拉取迁移状态（migLoading 初始即 true，避免在 effect 体内 setState）；
+  // migStatus 就绪（含失败兜底值）后 effect 早退，不会重复请求
   useEffect(() => {
-    if (migStatus || migLoading) return;
-    setMigLoading(true);
+    if (migStatus) return;
     getMigrationStatus()
       .then(setMigStatus)
       .catch(() => setMigStatus({ available: false, migrated: false }))
       .finally(() => setMigLoading(false));
-  }, [migStatus, migLoading]);
+  }, [migStatus]);
 
   async function onSubmit() {
     if (loading) return;

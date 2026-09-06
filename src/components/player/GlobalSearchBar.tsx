@@ -323,11 +323,14 @@ function SearchPanel({
   }, [term, tags.data, circles.data, vas.data]);
 
   // 扁平可选项序列：输入态为建议项，默认态为历史项。
-  // 渲染期写入 ref 供父组件 keydown 读取（事件时机读取，无 effect）。
+  // commit 期写入 ref 供父组件 keydown 读取：React 在派发下一个离散事件前会
+  // flush 掉 pending 的 passive effect，事件时机读到的必是本次渲染的 items。
   const items: SearchItem[] = isInputMode
     ? groups.flatMap((g) => g.items)
     : history.map((h) => ({ key: h, name: h, q: h }));
-  itemsRef.current = items;
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items, itemsRef]);
 
   // 各分组的扁平索引起点（历史行索引即数组下标，无需换算）
   let offset = 0;
