@@ -74,13 +74,17 @@ export async function apiFetch<T>(
   } catch (err) {
     if (err instanceof HTTPError) {
       const response = err.response;
-      const body = await response
-        .json()
-        .catch(() => ({ error: response.statusText }));
-      throw new ApiError(
-        (body as { error?: string })?.error || response.statusText,
-        response.status,
-      );
+      // ky v2 已消费 response body 并把解析结果放在 HTTPError.data 上；
+      // 二次 response.json() 会抛 "Body already used"，故优先读 data。
+      const raw =
+        (err as { data?: unknown }).data
+        ?? (await response.json().catch(() => undefined));
+      // data 不一定是对象（可能为数组/字符串），做形状防护
+      const body =
+        typeof raw === 'object' && raw !== null && 'error' in raw
+          ? (raw as { error?: string })
+          : undefined;
+      throw new ApiError(body?.error || response.statusText, response.status);
     }
     // 网络错误等其他异常，原样抛出
     throw err;
