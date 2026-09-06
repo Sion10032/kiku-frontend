@@ -3,21 +3,25 @@ import { getWorkCodePrefix, normalizeWorkId } from './workId';
 
 describe('normalizeWorkId（规范化作品 id）', () => {
   it.each([
-    ['RJ01173549', 'RJ01173549'],
-    ['rj1173549', 'RJ01173549'], // 小写前缀归一 + 补零
-    ['1173549', 'RJ01173549'], // 无前缀默认按 RJ 处理（既有行为）
+    ['RJ01173549', 'RJ01173549'], // 8 位原样保留
+    ['rj231176', 'RJ231176'], // 6 位不补零（核心回归用例：迁移作品代码）
+    ['231176', 'RJ231176'], // 裸 6 位默认按 RJ 处理
+    ['01173549', 'RJ01173549'], // 裸 8 位默认按 RJ 处理
     ['VJ01003042', 'VJ01003042'],
-    ['vj1003042', 'VJ01003042'],
   ])('%s → %s', (input, expected) => {
     expect(normalizeWorkId(input)).toBe(expected);
   });
 
-  it('数字超 8 位无法解析', () => {
-    expect(() => normalizeWorkId('RJ123456789')).toThrow();
-  });
-
-  it('非数字输入抛错', () => {
-    expect(() => normalizeWorkId('abc')).toThrow();
+  it.each([
+    'rj1173549', // 7 位数字不再合法
+    '1173549',
+    'vj1003042', // 7 位数字不再合法（旧补零行为已移除）
+    'RJ123', // 3 位
+    'RJ12345', // 5 位
+    'RJ123456789', // 9 位
+    'abc', // 非数字
+  ])('%s 抛错', (input) => {
+    expect(() => normalizeWorkId(input)).toThrow();
   });
 });
 
