@@ -13,6 +13,7 @@ import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/sync';
 import '@m3e/icons/outlined/av_timer';
 import '@m3e/icons/outlined/delete';
+import '@m3e/icons/outlined/edit';
 import type { Work } from '../../types';
 import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -32,6 +33,7 @@ import {
 } from '../../queries/useWorkAdminMutation';
 import FavDialog from '../favourites/FavDialog';
 import WriteReview from './WriteReview';
+import MetadataEditDialog from './MetadataEditDialog';
 
 interface WorkDetailsProps {
   work: Work;
@@ -67,6 +69,8 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   const menuRef = useRef<M3eMenuElement>(null);
   // 删除确认对话框
   const [deleteOpen, setDeleteOpen] = useState(false);
+  // 元数据覆盖编辑弹窗（仅管理员）
+  const [editOpen, setEditOpen] = useState(false);
 
   const navigate = useNavigate();
   const refreshMutation = useRefreshWorkMetadataMutation();
@@ -117,6 +121,14 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {/* 标题 */}
           <h1 className='m-0 min-w-0 text-xl font-normal leading-snug'>
             {work.title}
+            {work.overriddenFields?.includes('title') && (
+              <span
+                className='ml-2 align-middle text-xs opacity-60'
+                title='该字段已被管理员覆盖，与 DLsite 原始数据不同'
+              >
+                *
+              </span>
+            )}
           </h1>
 
           <WorkCircleSeriesLinks work={work} />
@@ -238,6 +250,16 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
        */}
       <FavDialog open={favOpen} onClose={() => setFavOpen(false)} work={work} />
 
+      {/**
+       * MetadataEditDialog 与 WriteReview/FavDialog 同理：必须渲染在 M3eCard 外部，
+       * 避免嵌在 shadow DOM 内的 <dialog> 焦点陷阱冲突。
+       */}
+      <MetadataEditDialog
+        workId={work.id}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+      />
+
       {isAdmin && (
         <M3eMenu ref={menuRef}>
           <M3eMenuItem
@@ -257,6 +279,12 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
               <M3eIcon name='av_timer' />
             </span>
             更新音轨时长
+          </M3eMenuItem>
+          <M3eMenuItem onClick={() => setEditOpen(true)}>
+            <span slot='icon'>
+              <M3eIcon name='edit' />
+            </span>
+            编辑元数据
           </M3eMenuItem>
           <M3eMenuItem onClick={() => setDeleteOpen(true)}>
             <span slot='icon'>
