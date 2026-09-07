@@ -68,6 +68,8 @@ export interface Work {
   read: boolean;
   /** 作品总时长（秒，后端 SUM(t_track.duration_sec)）；无音轨/全未知为 null（对齐 formattedWorkSchema.duration） */
   duration: number | null;
+  /** 被管理员覆盖的字段（无覆盖时缺省） */
+  overriddenFields?: MetadataField[];
 }
 
 export interface Pagination {
@@ -398,4 +400,66 @@ export interface SettingsBackupDetail {
   name: string;
   payload: Record<string, unknown>;
   updatedAt: string;
+}
+
+// ---------- 元数据覆盖 ----------
+
+export const METADATA_FIELDS = [
+  'title',
+  'circle',
+  'series',
+  'ageRating',
+  'tags',
+  'vas',
+] as const;
+export type MetadataField = (typeof METADATA_FIELDS)[number];
+
+export type MetadataEntityRef<T> = { id: T; name: string };
+export type MetadataActionRow<T> = MetadataEntityRef<T> & {
+  action: 'add' | 'remove';
+};
+
+export interface MetadataOverrideDetail {
+  original: {
+    title: string;
+    circle: MetadataEntityRef<number> | null;
+    series: MetadataEntityRef<string> | null;
+    ageRating: string;
+    tags: MetadataEntityRef<number>[];
+    vas: MetadataEntityRef<string>[];
+  };
+  effective: {
+    title: string;
+    circle: MetadataEntityRef<number> | null;
+    series: MetadataEntityRef<string> | null;
+    ageRating: string;
+    tags: MetadataEntityRef<number>[];
+    vas: MetadataEntityRef<string>[];
+  };
+  override: {
+    title: string | null;
+    circle: MetadataEntityRef<number> | null;
+    series: MetadataEntityRef<string> | null;
+    ageRating: string | null;
+    tagsCleared: boolean;
+    vasCleared: boolean;
+    tagActions: MetadataActionRow<number>[];
+    vaActions: MetadataActionRow<string>[];
+    updatedBy: string | null;
+    updatedAt: string | null;
+  };
+  overriddenFields: MetadataField[];
+}
+
+export interface SaveMetadataOverrideInput {
+  title?: string | null;
+  circleName?: string | null;
+  seriesName?: string | null;
+  ageRating?: 'all' | 'r15' | 'r18' | null;
+  tagsCleared?: boolean;
+  vasCleared?: boolean;
+  addTags?: string[];
+  removeTagIds?: number[];
+  addVas?: Array<{ id?: string; name: string }>;
+  removeVaIds?: string[];
 }
