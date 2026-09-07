@@ -16,6 +16,7 @@ import Folders from '../pages/Dashboard/Folders';
 import Scanner from '../pages/Dashboard/Scanner';
 import Advanced from '../pages/Dashboard/Advanced';
 import UserManage from '../pages/Dashboard/UserManage';
+import MetadataOverride from '../pages/Dashboard/MetadataOverride';
 import { getCachedSharedConfig } from '../api/sharedConfig';
 
 // / → 重定向到 /works
@@ -97,6 +98,11 @@ const userManageRoute = createRoute({
   path: '/admin/usermanage',
   component: UserManage,
 });
+const metadataAdminRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/admin/metadata',
+  component: MetadataOverride,
+});
 
 // 登录 / 初始化 / 注册 / 404（无布局包裹）
 const loginRoute = createRoute({
@@ -150,6 +156,7 @@ export const routeTree = rootRoute.addChildren([
     scannerRoute,
     advancedRoute,
     userManageRoute,
+    metadataAdminRoute,
   ]),
   loginRoute,
   setupRoute,

@@ -9,6 +9,7 @@ import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eTab, M3eTabs } from '@m3e/react/tabs';
 import '@m3e/icons/outlined/document_scanner';
+import '@m3e/icons/outlined/edit';
 import '@m3e/icons/outlined/folder';
 import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/tune';
@@ -25,6 +26,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { to: '/admin/scanner', label: '扫描器', icon: 'document_scanner' },
   { to: '/admin/advanced', label: '高级', icon: 'tune' },
   { to: '/admin/usermanage', label: '用户管理', icon: 'group' },
+  { to: '/admin/metadata', label: '元数据覆盖', icon: 'edit' },
 ];
 
 /**
