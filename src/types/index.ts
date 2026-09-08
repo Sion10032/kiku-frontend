@@ -15,12 +15,16 @@ export interface Circle {
 export interface Tag {
   id: number;
   name: string;
+  /** 管理员覆盖新增（原始项缺省，对齐后端 formattedWorkSchema） */
+  overridden?: boolean;
 }
 
 export interface Va {
   /** 声优 id（后端为 string） */
   id: string;
   name: string;
+  /** 管理员覆盖新增（原始项缺省，对齐后端 formattedWorkSchema） */
+  overridden?: boolean;
 }
 
 export interface Series {

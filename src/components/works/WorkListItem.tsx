@@ -6,6 +6,7 @@ import { useM3eListActionStyle } from '../../hooks/useM3eListActionStyle';
 import { UnreadDot, ReadDot } from '../common/WorkProgress';
 import { useUserStore } from '../../stores/userStore';
 import { fieldQuery } from '../../utils/query';
+import clsx from 'clsx';
 
 interface WorkListItemProps {
   work: Work;
@@ -78,8 +79,9 @@ export default function WorkListItem({
               key={va.id}
               to='/works'
               search={{ q: fieldQuery('va', va.name) }}
-              className='no-underline'
+              className={clsx('no-underline', va.overridden && 'opacity-80')}
               style={{ color: 'var(--m3e-primary)' }}
+              title={va.overridden ? '管理员覆盖新增' : undefined}
             >
               {va.name}
             </Link>
@@ -93,7 +95,8 @@ export default function WorkListItem({
                 key={tag.id}
                 to='/works'
                 search={{ q: fieldQuery('tag', tag.name) }}
-                className='no-underline'
+                className={clsx('no-underline', tag.overridden && 'opacity-80')}
+                title={tag.overridden ? '管理员覆盖新增' : undefined}
               >
                 {tag.name}
               </Link>

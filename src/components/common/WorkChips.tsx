@@ -35,6 +35,7 @@ export default function WorkChips({ work }: WorkChipsProps) {
                   search: { q: fieldQuery('tag', tag.name) },
                 })
               }
+              className={tag.overridden ? 'opacity-60' : undefined}
             >
               {tag.name}
             </M3eAssistChip>
@@ -53,6 +54,7 @@ export default function WorkChips({ work }: WorkChipsProps) {
                   search: { q: fieldQuery('va', va.name) },
                 })
               }
+              className={va.overridden ? 'opacity-60' : undefined}
             >
               <M3eIcon slot='icon' name='mic' />
               {va.name}
