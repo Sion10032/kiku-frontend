@@ -13,12 +13,12 @@ import {
 } from '@m3e/react/chips';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eFormField } from '@m3e/react/form-field';
-import { M3eOption } from '@m3e/react/option';
+import { M3eOption, type M3eOptionElement } from '@m3e/react/option';
 import {
   M3eButtonSegment,
   M3eSegmentedButton,
 } from '@m3e/react/segmented-button';
-import { getTags, getVas } from '../../api/works';
+import { getCircles, getSeries, getTags, getVas } from '../../api/works';
 import { SETTING_CONTROL_FILL } from '../../constants';
 import {
   useMetadataOverride,
@@ -81,6 +81,17 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
   const vasQuery = useQuery({
     queryKey: ['vas'],
     queryFn: getVas,
+    enabled: open,
+  });
+  // 社团/系列：与列表页共享缓存（useListQuery 同 key），仅弹窗打开时拉取
+  const circlesQuery = useQuery({
+    queryKey: ['circles'],
+    queryFn: getCircles,
+    enabled: open,
+  });
+  const seriesQuery = useQuery({
+    queryKey: ['series'],
+    queryFn: getSeries,
     enabled: open,
   });
 
@@ -234,9 +245,11 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
               overridden={overridden.has('circle')}
               onReset={() => resetMutation.mutate('circle')}
             >
-              <SettingsInput
+              <SingleAutocomplete
                 label='社团'
+                placeholder='输入过滤，或从下拉选择'
                 value={draft.circleName}
+                candidates={circlesQuery.data?.map((c) => c.name) ?? []}
                 onChange={(circleName) => setDraft({ ...draft, circleName })}
               />
             </FieldRow>
@@ -246,9 +259,11 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
               overridden={overridden.has('series')}
               onReset={() => resetMutation.mutate('series')}
             >
-              <SettingsInput
+              <SingleAutocomplete
                 label='系列'
+                placeholder='输入过滤，或从下拉选择'
                 value={draft.seriesName}
+                candidates={seriesQuery.data?.map((s) => s.name) ?? []}
                 onChange={(seriesName) => setDraft({ ...draft, seriesName })}
               />
             </FieldRow>
@@ -509,6 +524,109 @@ function ChipSetSync(props: {
         ))}
       </M3eAutocomplete>
     </>
+  );
+}
+
+/**
+ * 单选 autocomplete 输入框（社团/系列）：自由输入 + 下拉候选（与 ChipSetSync
+ * 共用 computeChipOptions 过滤规则与 380px 面板限高），区别是无 chip-set——
+ * input 本身就是唯一值。
+ *
+ * 联动要点（@m3e/web 2.7.11 selectOption 源码）：
+ * - 选中时组件直接赋 input.value = option.label（不派发 input 事件），随后
+ *   在 autocomplete 元素上派发 bubbles 的 change——草稿必须监听该 change
+ *   同步，否则 React 下次渲染会把输入框值打回旧草稿。
+ * - selectOption 开头 if (option.selected) return：已选中的 option 再点会
+ *   静默失效（先选 A、改输入、再点回 A 的路径）。query 每次输入都会派发，
+ *   在此清除全部 option 的选中态，保证重选始终生效。
+ * - required 必须保持 false：required 时组件会在 change 里把 input.value
+ *   强制改写为选中 label，自由输入会被抹掉。
+ */
+function SingleAutocomplete(props: {
+  label: string;
+  placeholder: string;
+  value: string;
+  /** 候选全量：按输入过滤后最多展示 MAX_AUTOCOMPLETE_OPTIONS 条 */
+  candidates: string[];
+  onChange: (value: string) => void;
+}) {
+  const autocompleteRef = useRef<M3eAutocompleteElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputId] = useState(
+    () => `metadata-single-input-${++chipInputIdSeed}`,
+  );
+  const [options, setOptions] = useState<string[]>([]);
+
+  const candidatesRef = useRef(props.candidates);
+  candidatesRef.current = props.candidates;
+  const termRef = useRef('');
+
+  // query 事件：按输入更新候选 + 清除 option 选中态（重选同项需能再次
+  // selectOption，见组件注释）。candidates 存 ref 避免监听器随派生数组重挂。
+  useEffect(() => {
+    const el = autocompleteRef.current;
+    if (!el) return;
+    function onQuery(e: CustomEvent<AutocompleteQueryEventDetail>) {
+      const current = autocompleteRef.current;
+      if (!current) return;
+      termRef.current = e.detail.term;
+      setOptions(computeChipOptions(candidatesRef.current, termRef.current));
+      for (const opt of current.querySelectorAll<M3eOptionElement>(
+        'm3e-option',
+      ))
+        opt.selected = false;
+    }
+    el.addEventListener('query', onQuery);
+    return () => el.removeEventListener('query', onQuery);
+  }, []);
+
+  // 选中 option 时组件派发 bubbles change（此时 input.value 已是 label）
+  useEffect(() => {
+    const el = autocompleteRef.current;
+    if (!el) return;
+    function onChange() {
+      if (inputRef.current) props.onChange(inputRef.current.value);
+    }
+    el.addEventListener('change', onChange);
+    return () => el.removeEventListener('change', onChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.onChange]);
+
+  // 候选数据异步到达/变化时按当前词重算，避免面板停留在空快照
+  useEffect(() => {
+    setOptions(computeChipOptions(props.candidates, termRef.current));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.candidates]);
+
+  return (
+    <M3eFormField
+      variant='outlined'
+      hideSubscript='always'
+      className='w-full [--m3e-form-field-width:100%]'
+    >
+      <input
+        ref={inputRef}
+        id={inputId}
+        type='text'
+        aria-label={props.label}
+        placeholder={props.placeholder}
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+        className='w-full border-none bg-transparent py-2 text-sm outline-none'
+      />
+      <M3eAutocomplete
+        ref={autocompleteRef}
+        htmlFor={inputId}
+        panelClass='metadata-autocomplete-panel'
+        noDataLabel='无匹配项'
+      >
+        {options.map((name) => (
+          <M3eOption key={name} value={name}>
+            {name}
+          </M3eOption>
+        ))}
+      </M3eAutocomplete>
+    </M3eFormField>
   );
 }
 
