@@ -11,6 +11,7 @@ import { downloadUrl, streamUrl } from '../../api/media';
 import { findPreviewer } from './registry';
 import type { PreviewFile } from './types';
 import { useM3eStyle } from '../../hooks/useM3eStyle';
+import clsx from 'clsx';
 
 interface FilePreviewDialogProps {
   /** 受控开关（组件常驻，open=false 时不渲染内容避免后台 fetch） */
@@ -81,7 +82,15 @@ export function FilePreviewDialog({
   }
 
   return (
-    <div className='[--m3e-dialog-min-width:95vw] [--m3e-dialog-max-width:95vw] lg:[--m3e-dialog-min-width:60vw] lg:[--m3e-dialog-max-width:60vw]'>
+    <div
+      className={clsx(
+        // 官方 CSS 变量：弹窗尺寸 + 下拉面板限高（变量沿 DOM 继承到面板）
+        '[--m3e-dialog-min-width:95vw] [--m3e-dialog-max-width:95vw]',
+        'lg:[--m3e-dialog-min-width:60vw] lg:[--m3e-dialog-max-width:60vw]',
+        '[--m3e-dialog-max-height:90dvh]',
+        '[--m3e-option-panel-container-max-height:380px]',
+      )}
+    >
       <M3eDialog
         ref={dialogRef}
         open={open}
