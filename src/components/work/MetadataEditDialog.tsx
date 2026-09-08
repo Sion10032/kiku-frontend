@@ -1,20 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  M3eAutocomplete,
+  type AutocompleteQueryEventDetail,
+  type M3eAutocompleteElement,
+} from '@m3e/react/autocomplete';
 import { M3eButton } from '@m3e/react/button';
 import {
   M3eInputChipSet,
   type M3eInputChipElement,
   type M3eInputChipSetElement,
 } from '@m3e/react/chips';
-import { M3eDialog, type M3eDialogElement } from '@m3e/react/dialog';
+import { M3eDialog } from '@m3e/react/dialog';
 import { M3eFormField } from '@m3e/react/form-field';
+import { M3eOption } from '@m3e/react/option';
 import {
   M3eButtonSegment,
   M3eSegmentedButton,
 } from '@m3e/react/segmented-button';
 import { getTags, getVas } from '../../api/works';
 import { SETTING_CONTROL_FILL } from '../../constants';
-import { useM3eStyle } from '../../hooks/useM3eStyle';
 import {
   useMetadataOverride,
   useResetMetadataFieldMutation,
@@ -24,6 +29,7 @@ import type {
   MetadataOverrideDetail,
   SaveMetadataOverrideInput,
 } from '../../types';
+import clsx from 'clsx';
 
 interface Props {
   workId: string;
@@ -83,19 +89,11 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
     if (detail) setDraft(toDraft(detail));
   }, [detail]);
 
-  // 对话框卡片：限高 + 内容区内部滚动（头部/操作栏常驻），
-  // 部件级样式注入同 components/preview/FilePreviewDialog.tsx
-  const dialogRef = useM3eStyle<M3eDialogElement>({
-    style: {
-      '.base': { maxHeight: '90dvh' },
-      '.content': {
-        flex: 1,
-        overflowY: 'auto',
-        paddingTop: 'var(--md-sys-measurement-space300, 24px)',
-        paddingBottom: 'var(--md-sys-measurement-space300, 24px)',
-      },
-    },
-  });
+  // 对话框高度：用官方变量 --m3e-dialog-max-height 限高（2.7.11 起默认
+  // min(560px, 100% - 48px)），内容超出时由 dialog 内置的 m3e-scroll-container
+  // 滚动（.content 自带 flex/padding，无需注入）。
+  // 注：不使用 useM3eStyle——open=false 时 dialog 未渲染，ref 为 null，
+  // 挂载时一次性注入会空跑且不再重试。
 
   if (!open) return null;
 
@@ -201,8 +199,13 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
 
   return (
     <M3eDialog
-      ref={dialogRef}
-      className='[--m3e-dialog-min-width:95vw] [--m3e-dialog-max-width:95vw] lg:[--m3e-dialog-min-width:60vw] lg:[--m3e-dialog-max-width:60vw]'
+      className={clsx(
+        // 官方 CSS 变量：弹窗尺寸 + 下拉面板限高（变量沿 DOM 继承到面板）
+        '[--m3e-dialog-min-width:95vw] [--m3e-dialog-max-width:95vw]',
+        'lg:[--m3e-dialog-min-width:60vw] lg:[--m3e-dialog-max-width:60vw]',
+        '[--m3e-dialog-max-height:90dvh]',
+        '[--m3e-option-panel-container-max-height:380px]',
+      )}
       open={open}
       onClosed={onClose}
       dismissible
@@ -292,18 +295,13 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
                 <ChipSetSync
                   version={detail}
                   items={detail.effective.tags.map((t) => t.name)}
+                  candidates={tagsQuery.data?.map((t) => t.name) ?? []}
                   ariaLabel='标签'
-                  listId='metadata-tag-options'
                   placeholder='新增标签，回车确认'
                   onAdd={addTagByName}
                   onRemove={removeTagByName}
                 />
               </M3eFormField>
-              <datalist id='metadata-tag-options'>
-                {tagsQuery.data?.map((t) => (
-                  <option key={t.id} value={t.name} />
-                ))}
-              </datalist>
             </FieldRow>
 
             <FieldRow
@@ -319,18 +317,13 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
                 <ChipSetSync
                   version={detail}
                   items={detail.effective.vas.map((v) => v.name)}
+                  candidates={vasQuery.data?.map((v) => v.name) ?? []}
                   ariaLabel='声优'
-                  listId='metadata-va-options'
                   placeholder='新增声优，回车确认'
                   onAdd={addVaByName}
                   onRemove={removeVaByName}
                 />
               </M3eFormField>
-              <datalist id='metadata-va-options'>
-                {vasQuery.data?.map((v) => (
-                  <option key={v.id} value={v.name} />
-                ))}
-              </datalist>
             </FieldRow>
 
             <p className='text-xs opacity-60'>
@@ -358,29 +351,58 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
   );
 }
 
+/** autocomplete 下拉最多展示的候选条数（配合全局 380px 面板限高，8 条约 374px 全显） */
+const MAX_AUTOCOMPLETE_OPTIONS = 8;
+
 /**
- * 组件自治的输入 chip 集合（m3e-input-chip-set 的正确用法）。
+ * ChipSetSync 输入框 id 生成器（须为 CSS 安全 ident：chip-set 与 autocomplete
+ * 都用 querySelector 按 id 解析联动，React useId 的 «r0» 格式不可靠）
+ */
+let chipInputIdSeed = 0;
+
+/**
+ * 按当前输入计算下拉候选：空输入给默认前缀（前 8 条），非空 contains 过滤。
+ * 必须保证克隆快照非空：autocomplete 的 showMenu 在 input/focus 时同步读
+ * light-DOM 选项的克隆快照判定是否开面板，而 React 渲染 + MutationObserver
+ * 重建克隆是异步的——若把空结果渲染为空，面板将永远等不到首次打开。
+ */
+function computeChipOptions(candidates: string[], term: string): string[] {
+  const t = term.trim().toLowerCase();
+  const pool = t
+    ? candidates.filter((name) => name.toLowerCase().includes(t))
+    : candidates;
+  return pool.slice(0, MAX_AUTOCOMPLETE_OPTIONS);
+}
+
+/**
+ * 组件自治的输入 chip 集合（m3e-input-chip-set 的正确用法），
+ * 配套 m3e-autocomplete 提供按输入过滤的候选下拉（query 事件模式）。
  *
  * chip 的 DOM 完全由 m3e-input-chip-set 自己增删：Enter 提交时自建 chip、
  * remove 事件时自摘节点（源码 handleChipRemove 会 chip.remove()）。
  * 不能用 JSX 渲染 chip——组件命令式摘除后 React 再卸载同一节点会报
  * 「Node.removeChild: not a child of this node」。
  *
- * React 侧只渲染 slotted 输入框：初始 chips 在 version（detail 对象）变化时
- * 命令式重建；增/删通过 change 事件（detail.type add/remove + value）同步草稿。
+ * React 侧只渲染 slotted 输入框与候选选项：初始 chips 在 version（detail 对象）
+ * 变化时命令式重建；候选 options 在 query 事件后按输入过滤渲染；
+ * chip 增/删通过 chip-set 的 change 事件（detail.type add/remove + value）同步草稿。
  */
 function ChipSetSync(props: {
   /** 重建标识：detail 对象身份变化（载入/恢复/保存后重拉）时重建全部 chip */
   version: unknown;
   /** 初始 chip 集合（value = label = 维度名） */
   items: string[];
+  /** 候选全量：autocomplete 按输入过滤后最多展示 MAX_AUTOCOMPLETE_OPTIONS 条 */
+  candidates: string[];
   ariaLabel: string;
-  listId: string;
   placeholder: string;
   onAdd: (name: string) => void;
   onRemove: (name: string) => void;
 }) {
   const ref = useRef<M3eInputChipSetElement>(null);
+  const autocompleteRef = useRef<M3eAutocompleteElement>(null);
+  const [inputId] = useState(() => `metadata-chip-input-${++chipInputIdSeed}`);
+  const [options, setOptions] = useState<string[]>([]);
 
   // 按 version 重建初始 chips（items 随 version 一起变，不进依赖避免每渲染重建）
   useEffect(() => {
@@ -431,16 +453,62 @@ function ChipSetSync(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.onAdd, props.onRemove]);
 
+  // autocomplete 的 query 事件：按输入更新候选（空输入 = 默认前缀，见
+  // computeChipOptions）。candidates 存 ref 避免监听器随派生数组每渲染重挂。
+  const candidatesRef = useRef(props.candidates);
+  candidatesRef.current = props.candidates;
+  const termRef = useRef('');
+  useEffect(() => {
+    const el = autocompleteRef.current;
+    if (!el) return;
+    function onQuery(e: CustomEvent<AutocompleteQueryEventDetail>) {
+      termRef.current = e.detail.term;
+      setOptions(computeChipOptions(candidatesRef.current, termRef.current));
+    }
+    el.addEventListener('query', onQuery);
+    return () => el.removeEventListener('query', onQuery);
+  }, []);
+
+  // 候选数据异步到达/变化时按当前词重算，避免面板停留在空快照
+  useEffect(() => {
+    setOptions(computeChipOptions(props.candidates, termRef.current));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.candidates]);
+
+  // 下拉面板挂载：@m3e/web 2.7.11 起 autocomplete 会优先把面板挂到
+  // closest("m3e-dialog")（旧版硬编码挂 body，会被 showModal 的 hit-test
+  // 拦截导致无法点击/滚动）；本次升级后无需再手工搬运。
+
   return (
-    <M3eInputChipSet ref={ref} aria-label={props.ariaLabel}>
-      <input
-        slot='input'
-        type='text'
-        aria-label={props.placeholder}
-        list={props.listId}
-        placeholder={props.placeholder}
-      />
-    </M3eInputChipSet>
+    <>
+      <M3eInputChipSet ref={ref} aria-label={props.ariaLabel}>
+        <input
+          slot='input'
+          id={inputId}
+          type='text'
+          aria-label={props.placeholder}
+          placeholder={props.placeholder}
+        />
+      </M3eInputChipSet>
+      {/* 不设 hideNoData：无匹配时面板显示「无匹配项」并保持打开——
+          autocomplete 仅在菜单存在时随选项变化重投影（handleMutation 的
+          if (this.menu) 分支），一旦因无匹配关面板，之后的选项恢复将无人
+          重新打开（克隆更新不触发 showMenu）。面板由组件投影到 body，
+          不受弹窗内容区 overflow 裁剪；required 保持 false 保留自由输入。
+          panelClass：全局样式把面板限高提到 380px，8 条候选全显无滚动。 */}
+      <M3eAutocomplete
+        ref={autocompleteRef}
+        htmlFor={inputId}
+        panelClass='metadata-autocomplete-panel'
+        noDataLabel='无匹配项'
+      >
+        {options.map((name) => (
+          <M3eOption key={name} value={name}>
+            {name}
+          </M3eOption>
+        ))}
+      </M3eAutocomplete>
+    </>
   );
 }
 
