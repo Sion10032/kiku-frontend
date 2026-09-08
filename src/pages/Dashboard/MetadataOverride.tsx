@@ -1,28 +1,35 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { M3eButton } from '@m3e/react/button';
+import { useEffect, useState } from 'react';
 import { M3eFormField } from '@m3e/react/form-field';
+import { M3eActionList, M3eListAction } from '@m3e/react/list';
 import { getWorksList } from '../../api/works';
 import DashboardPage from '../../components/dashboard/DashboardPage';
+import Paginator from '../../components/common/Paginator';
 import MetadataEditDialog from '../../components/work/MetadataEditDialog';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 /**
  * 元数据覆盖管理页：搜索作品 → 选中打开编辑弹窗（复用 MetadataEditDialog）。
  * 搜索复用公开 works 列表 API（LQL：标题/社团/标签/声优/裸词）；
- * 「列出全部有覆盖的作品」为 spec 开放问题，暂不做。
+ * 列表仅显示标题（列表项同作品库列表视图的 M3eListAction 样式）并带分页。
  */
 export default function MetadataOverride() {
   const [q, setQ] = useState('');
   const debouncedQ = useDebouncedValue(q, 300);
+  const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string | null>(null);
 
+  // 搜索词变化（防抖后）时回到第 1 页
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQ]);
+
   const worksQuery = useQuery({
-    queryKey: ['works', { adminSearch: debouncedQ, page: 1 }],
+    queryKey: ['works', { adminSearch: debouncedQ, page }],
     queryFn: () =>
       getWorksList({
         q: debouncedQ || undefined,
-        page: 1,
+        page,
         order: 'release',
         sort: 'desc',
       }),
@@ -30,6 +37,7 @@ export default function MetadataOverride() {
   });
 
   const works = worksQuery.data?.works ?? [];
+  const pagination = worksQuery.data?.pagination;
 
   return (
     <DashboardPage title='元数据覆盖'>
@@ -51,25 +59,33 @@ export default function MetadataOverride() {
       ) : works.length === 0 ? (
         <div className='py-8 text-center opacity-60'>无匹配作品</div>
       ) : (
-        <ul className='m-0 flex list-none flex-col gap-1 p-0'>
+        <M3eActionList
+          style={
+            {
+              '--m3e-list-item-container-shape': 'calc(infinity * 1px)',
+              '--m3e-list-item-hover-container-shape': 'calc(infinity * 1px)',
+            } as React.CSSProperties
+          }
+        >
           {works.map((w) => (
-            <li key={w.id}>
-              <M3eButton variant='text' onClick={() => setSelected(w.id)}>
-                <span className='text-left'>
-                  {w.title}
-                  <span className='ml-2 text-xs opacity-60'>
-                    {w.circle.name} · {w.id}
-                    {w.overriddenFields && w.overriddenFields.length > 0 && (
-                      <span className='ml-1'>
-                        （已覆盖：{w.overriddenFields.join('/')}）
-                      </span>
-                    )}
-                  </span>
-                </span>
-              </M3eButton>
-            </li>
+            <M3eListAction key={w.id} onClick={() => setSelected(w.id)}>
+              <span className='line-clamp-1'>{w.title}</span>
+            </M3eListAction>
           ))}
-        </ul>
+        </M3eActionList>
+      )}
+
+      {/* 分页（有结果时显示；翻页请求进行中禁用，同 Works.tsx 用法） */}
+      {!worksQuery.isLoading && pagination && pagination.totalCount > 0 && (
+        <div className='mt-3 flex items-center justify-center gap-2'>
+          <Paginator
+            length={pagination.totalCount}
+            pageSize={pagination.pageSize}
+            pageIndex={page - 1}
+            disabled={worksQuery.isFetching}
+            onPage={(index) => setPage(index + 1)}
+          />
+        </div>
       )}
 
       <MetadataEditDialog
