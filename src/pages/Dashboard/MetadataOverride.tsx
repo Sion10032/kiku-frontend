@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eActionList, M3eListAction } from '@m3e/react/list';
 import { getWorksList } from '../../api/works';
@@ -19,10 +19,14 @@ export default function MetadataOverride() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string | null>(null);
 
-  // 搜索词变化（防抖后）时回到第 1 页
-  useEffect(() => {
+  // 搜索词变化（防抖后）时回到第 1 页。
+  // 渲染期比较调整（react-hooks/set-state-in-effect：effect 内同步
+  // setState 会级联渲染，不适用于这种「外部值变化重置 state」场景）
+  const [prevDebouncedQ, setPrevDebouncedQ] = useState(debouncedQ);
+  if (debouncedQ !== prevDebouncedQ) {
+    setPrevDebouncedQ(debouncedQ);
     setPage(1);
-  }, [debouncedQ]);
+  }
 
   const worksQuery = useQuery({
     queryKey: ['works', { adminSearch: debouncedQ, page }],

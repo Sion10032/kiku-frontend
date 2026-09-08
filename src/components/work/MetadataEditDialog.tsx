@@ -95,10 +95,14 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
     enabled: open,
   });
 
-  // 载入完成（或重新打开后重新拉取）时用生效值重置草稿，动作列表随之清零
-  useEffect(() => {
+  // 载入完成（或重新打开后重新拉取）时用生效值重置草稿，动作列表随之清零。
+  // 渲染期比较调整：detail（查询数据）变化重置 state 属于渲染期逻辑，
+  // 放 effect 里同步 setState 会级联渲染（react-hooks/set-state-in-effect）
+  const [prevDetail, setPrevDetail] = useState(detail);
+  if (detail !== prevDetail) {
+    setPrevDetail(detail);
     if (detail) setDraft(toDraft(detail));
-  }, [detail]);
+  }
 
   // 对话框高度：用官方变量 --m3e-dialog-max-height 限高（2.7.11 起默认
   // min(560px, 100% - 48px)），内容超出时由 dialog 内置的 m3e-scroll-container
@@ -471,7 +475,10 @@ function ChipSetSync(props: {
   // autocomplete 的 query 事件：按输入更新候选（空输入 = 默认前缀，见
   // computeChipOptions）。candidates 存 ref 避免监听器随派生数组每渲染重挂。
   const candidatesRef = useRef(props.candidates);
-  candidatesRef.current = props.candidates;
+  // 最新 candidates 给事件监听器（渲染期禁写 ref，改在 effect 同步）
+  useEffect(() => {
+    candidatesRef.current = props.candidates;
+  }, [props.candidates]);
   const termRef = useRef('');
   useEffect(() => {
     const el = autocompleteRef.current;
@@ -487,7 +494,6 @@ function ChipSetSync(props: {
   // 候选数据异步到达/变化时按当前词重算，避免面板停留在空快照
   useEffect(() => {
     setOptions(computeChipOptions(props.candidates, termRef.current));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.candidates]);
 
   // 下拉面板挂载：@m3e/web 2.7.11 起 autocomplete 会优先把面板挂到
@@ -558,7 +564,10 @@ function SingleAutocomplete(props: {
   const [options, setOptions] = useState<string[]>([]);
 
   const candidatesRef = useRef(props.candidates);
-  candidatesRef.current = props.candidates;
+  // 最新 candidates 给事件监听器（渲染期禁写 ref，改在 effect 同步）
+  useEffect(() => {
+    candidatesRef.current = props.candidates;
+  }, [props.candidates]);
   const termRef = useRef('');
 
   // query 事件：按输入更新候选 + 清除 option 选中态（重选同项需能再次
@@ -595,7 +604,6 @@ function SingleAutocomplete(props: {
   // 候选数据异步到达/变化时按当前词重算，避免面板停留在空快照
   useEffect(() => {
     setOptions(computeChipOptions(props.candidates, termRef.current));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.candidates]);
 
   return (
