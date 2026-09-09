@@ -4,6 +4,7 @@ import { M3eFormField } from '@m3e/react/form-field';
 import { M3eActionList, M3eListAction } from '@m3e/react/list';
 import { getWorksList } from '../../api/works';
 import DashboardPage from '../../components/dashboard/DashboardPage';
+import TitleSanitize from '../../components/dashboard/TitleSanitize';
 import Paginator from '../../components/common/Paginator';
 import MetadataEditDialog from '../../components/work/MetadataEditDialog';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -45,9 +46,12 @@ export default function MetadataOverride() {
 
   return (
     <DashboardPage title='元数据覆盖'>
+      <TitleSanitize />
+
       <M3eFormField variant='outlined' className='w-full'>
         <label slot='label' htmlFor='metadata-admin-search'>
-          搜索作品（LQL：标题/社团/标签/声优/裸词）
+          搜索作品（LQL：标题/社团/标签/声优/裸词；overridden:title
+          过滤覆盖状态）
         </label>
         <input
           id='metadata-admin-search'
