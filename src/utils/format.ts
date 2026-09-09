@@ -23,21 +23,34 @@ export function formatDuration(seconds: number | null | undefined): string {
  *
  * 与 formatDuration 的 h:mm:ss 播放器格式不同：这里面向浏览场景，
  * ≥ 1 小时取一位小数小时，不足 1 小时取整分钟。
+ * 单位词经 Intl.NumberFormat(style: 'unit') 按语言本地化，复数内建
+ * （zh-CN「5.4小时」/ en「5.4 hours」「45 minutes」）。
  *
  * @param seconds 秒数；null/undefined/非有限值/<=0 视为未知，返回 null（调用方不渲染）
+ * @param locale BCP-47 语言标签；缺省取当前界面语言（i18next.language）
  */
 export function formatTotalDuration(
   seconds: number | null | undefined,
+  locale: string = i18next.language,
 ): string | null {
   if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) {
     return null;
   }
   if (seconds >= 3600) {
-    return i18next.t('works.duration-hours', {
-      n: (seconds / 3600).toFixed(1),
-    });
+    return new Intl.NumberFormat(locale, {
+      style: 'unit',
+      unit: 'hour',
+      unitDisplay: 'long',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(seconds / 3600);
   }
-  return i18next.t('works.duration-minutes', { n: Math.round(seconds / 60) });
+  return new Intl.NumberFormat(locale, {
+    style: 'unit',
+    unit: 'minute',
+    unitDisplay: 'long',
+    maximumFractionDigits: 0,
+  }).format(seconds / 60);
 }
 
 /**

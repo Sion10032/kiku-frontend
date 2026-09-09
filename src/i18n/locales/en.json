@@ -288,8 +288,6 @@
   "works.price-jpy": "{{price}} JPY",
   "works.dl-count_one": "{{count}} sold",
   "works.dl-count_other": "{{count}} sold",
-  "works.duration-hours": "{{n}} hr",
-  "works.duration-minutes": "{{n}} min",
   "works.now-listening": "Listening",
   "works.admin.updating-metadata": "Updating metadata…",
   "works.admin.metadata-updated": "Metadata updated: \"{{title}}\"",

@@ -275,8 +275,6 @@
   "works.age-rating-r18": "R-18",
   "works.price-jpy": "{{price}} 日元",
   "works.dl-count_other": "售出 {{count}}",
-  "works.duration-hours": "{{n}} 小时",
-  "works.duration-minutes": "{{n}} 分钟",
   "works.now-listening": "正在听",
   "works.admin.updating-metadata": "正在更新元数据…",
   "works.admin.metadata-updated": "元数据已更新：《{{title}}》",

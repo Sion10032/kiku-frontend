@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { M3eIconButton } from '@m3e/react/icon-button';
@@ -96,7 +97,7 @@ export function TextPreview({ file }: PreviewerProps) {
             {state.result.text.length > MAX_CHARS && (
               <span className='mt-4 block text-xs opacity-60'>
                 {t('works.preview.truncated', {
-                  max: MAX_CHARS.toLocaleString(),
+                  max: MAX_CHARS.toLocaleString(i18next.language),
                 })}
               </span>
             )}

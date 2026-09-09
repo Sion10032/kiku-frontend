@@ -6,7 +6,8 @@ import {
   formatRemaining,
   formatTotalDuration,
 } from './format';
-// format 内部用 i18next.t 翻译；断言 zh-CN 文案，需先初始化并固定语言
+// formatTotalDuration 缺省 locale 与 formatProgress 的 t() 均取 i18next.language；
+// 断言 zh-CN 文案需先初始化并固定语言
 // （node 测试环境 navigator.languages 为 en-US，init 默认会解析到 en）
 import '../i18n';
 import type { UserWorkProgress } from '../types';
@@ -60,14 +61,21 @@ describe('formatRemaining', () => {
 });
 
 describe('formatTotalDuration', () => {
-  it('一小时以上为一位小数小时', () => {
-    expect(formatTotalDuration(19440)).toBe('5.4 小时');
-    expect(formatTotalDuration(3600)).toBe('1.0 小时');
+  it('一小时以上为一位小数小时（缺省 locale 取界面语言，beforeAll 固定 zh-CN）', () => {
+    expect(formatTotalDuration(19440)).toBe('5.4小时');
+    expect(formatTotalDuration(3600)).toBe('1.0小时');
   });
 
   it('不足一小时为整分钟', () => {
-    expect(formatTotalDuration(2700)).toBe('45 分钟');
-    expect(formatTotalDuration(3599)).toBe('60 分钟');
+    expect(formatTotalDuration(2700)).toBe('45分钟');
+    expect(formatTotalDuration(3599)).toBe('60分钟');
+  });
+
+  it('单位词随 locale 本地化（Intl 复数内建）', () => {
+    expect(formatTotalDuration(19440, 'en')).toBe('5.4 hours');
+    expect(formatTotalDuration(3600, 'en')).toBe('1.0 hours');
+    expect(formatTotalDuration(2700, 'en')).toBe('45 minutes');
+    expect(formatTotalDuration(3599, 'en')).toBe('60 minutes');
   });
 
   it('无效输入返回 null（调用方不渲染）', () => {

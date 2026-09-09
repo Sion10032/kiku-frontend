@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { M3eListItem } from '@m3e/react/list';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/star';
@@ -16,6 +17,7 @@ interface ReviewListItemProps {
  */
 export default function ReviewListItem({ work, review }: ReviewListItemProps) {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const openWork = () => navigate({ to: '/work/$id', params: { id: work.id } });
   const rating = review.rating ?? 0;
 
@@ -61,7 +63,7 @@ export default function ReviewListItem({ work, review }: ReviewListItemProps) {
 
       {review.updatedAt && (
         <span slot='trailing' className='text-xs opacity-60'>
-          {new Date(review.updatedAt).toLocaleDateString('zh-CN')}
+          {new Date(review.updatedAt).toLocaleDateString(i18n.language)}
         </span>
       )}
     </M3eListItem>
