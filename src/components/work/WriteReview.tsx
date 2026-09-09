@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eButton } from '@m3e/react/button';
 import { M3eFormField } from '@m3e/react/form-field';
@@ -30,6 +31,7 @@ interface WriteReviewProps {
  *   invalidate works/work/reviews 并关闭对话框。
  */
 export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
+  const { t } = useTranslation();
   const name = useUserStore((s) => s.name);
   const reviewMutation = useReviewMutation();
   const deleteMutation = useDeleteReviewMutation();
@@ -62,11 +64,11 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
         rating: rating > 0 ? rating : undefined,
         review_text: reviewText.trim() ? reviewText.trim() : undefined,
       });
-      M3eSnackbar.open('评价已保存');
+      M3eSnackbar.open(t('works.review.saved'));
       onClose();
     } catch (err) {
       M3eSnackbar.open(
-        err instanceof Error ? err.message : '保存失败，请稍后重试',
+        err instanceof Error ? err.message : t('works.review.save-failed'),
       );
     }
   }
@@ -75,30 +77,35 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
     if (loading) return;
     try {
       await deleteMutation.mutateAsync(work.id);
-      M3eSnackbar.open('评价已删除');
+      M3eSnackbar.open(t('works.review.deleted'));
       onClose();
     } catch (err) {
       M3eSnackbar.open(
-        err instanceof Error ? err.message : '删除失败，请稍后重试',
+        err instanceof Error ? err.message : t('works.review.delete-failed'),
       );
     }
   }
 
   return (
-    <M3eDialog open={open} onClosed={onClose} dismissible closeLabel='关闭'>
-      <span slot='header'>我的评价</span>
+    <M3eDialog
+      open={open}
+      onClosed={onClose}
+      dismissible
+      closeLabel={t('common.close')}
+    >
+      <span slot='header'>{t('works.my-rating')}</span>
 
       <div className='flex flex-col gap-4 py-2'>
         {/* 星级 */}
         <div className='flex items-center justify-between gap-3'>
-          <span className='text-sm opacity-70'>评分</span>
+          <span className='text-sm opacity-70'>{t('works.review.rating')}</span>
           <StarRating value={rating} onChange={setRating} size='2rem' />
         </div>
 
         {/* 短评 */}
         <M3eFormField variant='outlined'>
           <label slot='label' htmlFor='review-text'>
-            短评（可选）
+            {t('works.review.comment-optional')}
           </label>
           <textarea
             id='review-text'
@@ -121,16 +128,20 @@ export default function WriteReview({ work, open, onClose }: WriteReviewProps) {
               disabled={loading}
               onClick={onDelete}
             >
-              {deleteMutation.isPending ? '删除中…' : '删除评价'}
+              {deleteMutation.isPending
+                ? t('works.review.deleting')
+                : t('works.review.delete')}
             </M3eButton>
           )}
         </div>
         <div className='flex gap-2'>
           <M3eButton variant='text' disabled={loading} onClick={onClose}>
-            取消
+            {t('common.cancel')}
           </M3eButton>
           <M3eButton variant='filled' disabled={loading} onClick={onSubmit}>
-            {reviewMutation.isPending ? '保存中…' : '确定'}
+            {reviewMutation.isPending
+              ? t('works.meta.saving')
+              : t('works.review.ok')}
           </M3eButton>
         </div>
       </div>

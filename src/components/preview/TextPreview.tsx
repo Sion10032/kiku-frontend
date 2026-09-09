@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
@@ -28,6 +29,7 @@ type LoadState =
  * - 超过 MAX_CHARS 字符截断渲染并提示下载查看全文
  */
 export function TextPreview({ file }: PreviewerProps) {
+  const { t } = useTranslation();
   const fontSize = useSettingsStore((s) => s.preview.textFontSize);
   const wordWrap = useSettingsStore((s) => s.preview.textWordWrap);
   const setPreviewSettings = useSettingsStore((s) => s.setPreview);
@@ -66,9 +68,11 @@ export function TextPreview({ file }: PreviewerProps) {
         )}
         {state.status === 'error' && (
           <div className='flex min-h-full flex-col items-center justify-center gap-3 opacity-70'>
-            <span>加载失败：{state.message}</span>
+            <span>
+              {t('works.preview.load-failed', { message: state.message })}
+            </span>
             <M3eIconButton
-              aria-label='重试'
+              aria-label={t('works.preview.retry')}
               onClick={() => {
                 setState({ status: 'loading' });
                 setAttempt((a) => a + 1);
@@ -91,8 +95,9 @@ export function TextPreview({ file }: PreviewerProps) {
             {state.result.text.slice(0, MAX_CHARS)}
             {state.result.text.length > MAX_CHARS && (
               <span className='mt-4 block text-xs opacity-60'>
-                （文件过大，仅显示前 {MAX_CHARS.toLocaleString()}{' '}
-                字符，完整内容请下载查看）
+                {t('works.preview.truncated', {
+                  max: MAX_CHARS.toLocaleString(),
+                })}
               </span>
             )}
           </div>
@@ -102,7 +107,7 @@ export function TextPreview({ file }: PreviewerProps) {
       {/* 工具条（卡片外，底部） */}
       <div className='flex flex-none items-center gap-1 pt-2'>
         <M3eIconButton
-          aria-label='减小字号'
+          aria-label={t('works.preview.font-decrease')}
           disabled={fontSize <= 12}
           onClick={() =>
             setPreviewSettings({ textFontSize: Math.max(12, fontSize - 2) })
@@ -114,7 +119,7 @@ export function TextPreview({ file }: PreviewerProps) {
           {fontSize}px
         </span>
         <M3eIconButton
-          aria-label='增大字号'
+          aria-label={t('works.preview.font-increase')}
           disabled={fontSize >= 32}
           onClick={() =>
             setPreviewSettings({ textFontSize: Math.min(32, fontSize + 2) })
@@ -123,7 +128,11 @@ export function TextPreview({ file }: PreviewerProps) {
           <M3eIcon name='text_increase' />
         </M3eIconButton>
         <M3eIconButton
-          aria-label={wordWrap ? '关闭自动换行' : '开启自动换行'}
+          aria-label={
+            wordWrap
+              ? t('works.preview.word-wrap-off')
+              : t('works.preview.word-wrap-on')
+          }
           onClick={() => setPreviewSettings({ textWordWrap: !wordWrap })}
         >
           <M3eIcon name='wrap_text' />

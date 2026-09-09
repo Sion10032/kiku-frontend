@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eList } from '@m3e/react/list';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { useUserStore } from '../stores/userStore';
@@ -12,6 +13,7 @@ import type { Review, Work } from '../types';
  * ['work', id] 缓存避免 N+1）→ join 后成行。
  */
 export default function MyReviews() {
+  const { t } = useTranslation();
   const name = useUserStore((s) => s.name);
   const reviewsQuery = useReviewsByUser(name || undefined);
   const reviews = useMemo(() => reviewsQuery.data ?? [], [reviewsQuery.data]);
@@ -36,7 +38,7 @@ export default function MyReviews() {
 
   return (
     <div className='mx-auto max-w-3xl'>
-      <h1 className='m-0 mb-4 text-xl'>我的评价</h1>
+      <h1 className='m-0 mb-4 text-xl'>{t('works.my-reviews.title')}</h1>
 
       {loading && (
         <div className='flex justify-center py-12'>
@@ -45,7 +47,9 @@ export default function MyReviews() {
       )}
 
       {!loading && isError && (
-        <div className='py-16 text-center opacity-60'>加载失败，请稍后重试</div>
+        <div className='py-16 text-center opacity-60'>
+          {t('works.load-failed-retry')}
+        </div>
       )}
 
       {!loading && !isError && rows.length > 0 && (
@@ -58,7 +62,7 @@ export default function MyReviews() {
 
       {!loading && !isError && rows.length === 0 && (
         <div className='py-16 text-center opacity-60'>
-          在作品详情页点击「写评价」，你的评分和短评会出现在这里
+          {t('works.my-reviews.empty')}
         </div>
       )}
     </div>

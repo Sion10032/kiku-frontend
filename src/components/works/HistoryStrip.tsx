@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
@@ -16,6 +17,7 @@ import type { Work } from '../../types';
  * - 加载中/空数据返回 null（React Query 缓存使回访瞬时）
  */
 export default function HistoryStrip() {
+  const { t } = useTranslation();
   const { data } = useRecentHistory();
   const works = data?.works ?? [];
   if (works.length === 0) return null;
@@ -23,8 +25,8 @@ export default function HistoryStrip() {
   return (
     <section className='mb-6'>
       <div className='mb-4 flex items-center justify-between'>
-        <h1 className='m-0 text-xl'>最近收听</h1>
-        <Link to='/history' aria-label='查看全部收听历史'>
+        <h1 className='m-0 text-xl'>{t('works.recent-listens')}</h1>
+        <Link to='/history' aria-label={t('works.view-all-history')}>
           <M3eIconButton>
             <M3eIcon name='arrow_forward' />
           </M3eIconButton>

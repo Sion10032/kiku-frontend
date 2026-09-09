@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eButton } from '@m3e/react/button';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
@@ -32,6 +33,7 @@ interface WorkResumeProps {
  *   防止正在播放的该作品被下个上报窗口重建记录,并失效 works/work 查询
  */
 export default function WorkResume({ work, tree }: WorkResumeProps) {
+  const { t } = useTranslation();
   const progress = work.userProgress;
   const setQueue = usePlayerStore((s) => s.setQueue);
   const deleteMutation = useDeleteProgressMutation();
@@ -74,16 +76,17 @@ export default function WorkResume({ work, tree }: WorkResumeProps) {
       >
         {/* 轨名随可用宽度自适应压缩(组件 .label 自带 ellipsis),不折行 */}
         <M3eIcon slot='icon' name='play_arrow' />
-        {progress.trackTitle ?? '继续播放'} ·{formatDuration(progress.position)}
+        {progress.trackTitle ?? t('works.resume.play')} ·
+        {formatDuration(progress.position)}
       </M3eButton>
 
       <span className='shrink-0 text-sm opacity-70'>
-        已听 {progress.listenedCount} 轨
+        {t('works.resume.listened', { count: progress.listenedCount })}
       </span>
 
       <M3eIconButton
-        aria-label='删除播放记录'
-        title='删除播放记录'
+        aria-label={t('works.resume.delete-record')}
+        title={t('works.resume.delete-record')}
         disabled={deleteMutation.isPending}
         onClick={() => setConfirmOpen(true)}
       >
@@ -94,26 +97,27 @@ export default function WorkResume({ work, tree }: WorkResumeProps) {
         open={confirmOpen}
         onClosed={() => setConfirmOpen(false)}
         dismissible
-        closeLabel='关闭'
+        closeLabel={t('common.close')}
       >
-        <span slot='header'>删除播放记录?</span>
+        <span slot='header'>{t('works.resume.delete-title')}</span>
 
         <div className='flex flex-col gap-4 py-2'>
           <p className='m-0'>
-            将清除「{work.title}」的全部收听进度(已听
-            {progress.listenedCount}
-            轨)，删除后无法恢复,该作品将回到未读状态。
+            {t('works.resume.delete-confirm', {
+              title: work.title,
+              count: progress.listenedCount,
+            })}
           </p>
           <div className='flex justify-end gap-2'>
             <M3eButton variant='text' onClick={() => setConfirmOpen(false)}>
-              取消
+              {t('common.cancel')}
             </M3eButton>
             <M3eButton
               variant='text'
               disabled={deleteMutation.isPending}
               onClick={onDeleteConfirm}
             >
-              删除
+              {t('works.delete')}
             </M3eButton>
           </div>
         </div>

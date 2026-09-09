@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eDialog } from '@m3e/react/dialog';
 import type { M3eDialogElement } from '@m3e/react/dialog';
 import { M3eIconButton } from '@m3e/react/icon-button';
@@ -35,6 +36,7 @@ export function FilePreviewDialog({
   onIndexChange,
   onClose,
 }: FilePreviewDialogProps) {
+  const { t } = useTranslation();
   const file = files[index];
   const previewer = file ? findPreviewer(file) : undefined;
   const hasGallery = files.length > 1;
@@ -96,7 +98,7 @@ export function FilePreviewDialog({
         open={open}
         onClosed={onClose}
         dismissible
-        closeLabel='关闭'
+        closeLabel={t('common.close')}
       >
         <span slot='header' className='flex min-w-0 flex-1 items-center gap-1'>
           <span className='truncate'>{file?.title}</span>
@@ -106,10 +108,16 @@ export function FilePreviewDialog({
             </span>
           )}
           <span className='ms-auto flex flex-none items-center'>
-            <M3eIconButton aria-label='在新标签页打开' onClick={openInNewTab}>
+            <M3eIconButton
+              aria-label={t('works.preview.open-in-new-tab')}
+              onClick={openInNewTab}
+            >
               <M3eIcon name='open_in_new' />
             </M3eIconButton>
-            <M3eIconButton aria-label='下载文件' onClick={download}>
+            <M3eIconButton
+              aria-label={t('works.download-file')}
+              onClick={download}
+            >
               <M3eIcon name='download' />
             </M3eIconButton>
           </span>
@@ -121,12 +129,18 @@ export function FilePreviewDialog({
           {hasGallery && (
             <>
               <div className='absolute inset-y-1/2 left-1 z-10 flex items-center'>
-                <M3eIconButton aria-label='上一个' onClick={() => go(-1)}>
+                <M3eIconButton
+                  aria-label={t('works.preview.prev')}
+                  onClick={() => go(-1)}
+                >
                   <M3eIcon name='chevron_left' />
                 </M3eIconButton>
               </div>
               <div className='absolute inset-y-1/2 right-1 z-10 flex items-center'>
-                <M3eIconButton aria-label='下一个' onClick={() => go(1)}>
+                <M3eIconButton
+                  aria-label={t('works.preview.next')}
+                  onClick={() => go(1)}
+                >
                   <M3eIcon name='chevron_right' />
                 </M3eIconButton>
               </div>

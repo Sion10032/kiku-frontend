@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { M3eListAction } from '@m3e/react/list';
 import type { Work } from '../../types';
@@ -23,6 +24,7 @@ export default function WorkListItem({
   work,
   showLabel = true,
 }: WorkListItemProps) {
+  const { t } = useTranslation();
   const ref = useM3eListActionStyle({
     buttonStyle: {
       'slot[name="leading"]': {
@@ -81,7 +83,7 @@ export default function WorkListItem({
               search={{ q: fieldQuery('va', va.name) }}
               className={clsx('no-underline', va.overridden && 'opacity-80')}
               style={{ color: 'var(--m3e-primary)' }}
-              title={va.overridden ? '管理员覆盖新增' : undefined}
+              title={va.overridden ? t('works.overridden-added') : undefined}
             >
               {va.name}
             </Link>
@@ -96,7 +98,7 @@ export default function WorkListItem({
                 to='/works'
                 search={{ q: fieldQuery('tag', tag.name) }}
                 className={clsx('no-underline', tag.overridden && 'opacity-80')}
-                title={tag.overridden ? '管理员覆盖新增' : undefined}
+                title={tag.overridden ? t('works.overridden-added') : undefined}
               >
                 {tag.name}
               </Link>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
@@ -23,6 +24,7 @@ const SCALE_STEP = 1.25;
  * 壳以 file.hash 为 key 重挂组件，翻页时状态天然重置。
  */
 export function ImagePreview({ file }: PreviewerProps) {
+  const { t } = useTranslation();
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -111,9 +113,9 @@ export function ImagePreview({ file }: PreviewerProps) {
           )}
           {status === 'error' && (
             <div className='absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-70'>
-              <span>图片加载失败</span>
+              <span>{t('works.preview.image-load-failed')}</span>
               <M3eIconButton
-                aria-label='重试'
+                aria-label={t('works.preview.retry')}
                 onClick={() => {
                   reset();
                   setStatus('loading');
@@ -147,22 +149,31 @@ export function ImagePreview({ file }: PreviewerProps) {
 
       {/* 工具条 */}
       <div className='flex items-center gap-1 pt-2'>
-        <M3eIconButton aria-label='缩小' onClick={() => zoomBy(1 / SCALE_STEP)}>
+        <M3eIconButton
+          aria-label={t('works.preview.zoom-out')}
+          onClick={() => zoomBy(1 / SCALE_STEP)}
+        >
           <M3eIcon name='zoom_out' />
         </M3eIconButton>
         <span className='w-12 text-center text-xs tabular-nums opacity-60'>
           {Math.round(scale * 100)}%
         </span>
-        <M3eIconButton aria-label='放大' onClick={() => zoomBy(SCALE_STEP)}>
+        <M3eIconButton
+          aria-label={t('works.preview.zoom-in')}
+          onClick={() => zoomBy(SCALE_STEP)}
+        >
           <M3eIcon name='zoom_in' />
         </M3eIconButton>
         <M3eIconButton
-          aria-label='顺时针旋转 90°'
+          aria-label={t('works.preview.rotate-cw')}
           onClick={() => setRotation((r) => r + 90)}
         >
           <M3eIcon name='rotate_right' />
         </M3eIconButton>
-        <M3eIconButton aria-label='重置视图' onClick={reset}>
+        <M3eIconButton
+          aria-label={t('works.preview.reset-view')}
+          onClick={reset}
+        >
           <M3eIcon name='fit_screen' />
         </M3eIconButton>
       </div>

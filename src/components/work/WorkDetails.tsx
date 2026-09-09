@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eCard } from '@m3e/react/card';
 import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
@@ -48,6 +49,7 @@ interface WorkDetailsProps {
  * 管理员另见操作行最右 ⋮ 菜单：更新元数据 / 更新音轨时长 / 删除（软删）。
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
+  const { t } = useTranslation();
   // 写评价对话框开关
   const [reviewOpen, setReviewOpen] = useState(false);
   // 收藏对话框开关
@@ -124,7 +126,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             {work.overriddenFields?.includes('title') && (
               <span
                 className='ml-2 align-middle text-xs opacity-60'
-                title='该字段已被管理员覆盖，与 DLsite 原始数据不同'
+                title={t('works.field-overridden')}
               >
                 *
               </span>
@@ -169,11 +171,17 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {/* 我的评价 + 收藏 + 已读切换 + 管理菜单（操作行并排；管理菜单推到最右） */}
           <div className='mt-1 flex items-center gap-2'>
             <M3eIconButton
-              aria-label={work.userRating != null ? '我的评价' : '写评价'}
+              aria-label={
+                work.userRating != null
+                  ? t('works.my-rating')
+                  : t('works.write-review')
+              }
               title={
                 work.userRating != null
-                  ? `我的评价：${'★'.repeat(work.userRating)}`
-                  : '写评价'
+                  ? t('works.my-rating-stars', {
+                      stars: '★'.repeat(work.userRating),
+                    })
+                  : t('works.write-review')
               }
               onClick={() => setReviewOpen(true)}
             >
@@ -188,7 +196,10 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
               />
             </M3eIconButton>
             {auth && (
-              <M3eIconButton aria-label='收藏' onClick={() => setFavOpen(true)}>
+              <M3eIconButton
+                aria-label={t('works.favourite')}
+                onClick={() => setFavOpen(true)}
+              >
                 <M3eIcon
                   name='favorite'
                   filled={workFav.data?.[work.id] === true}
@@ -202,8 +213,12 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             )}
             {auth && (
               <M3eIconButton
-                aria-label={work.read ? '标记未读' : '标记已读'}
-                title={work.read ? '标记未读' : '标记已读'}
+                aria-label={
+                  work.read ? t('works.mark-unread') : t('works.mark-read')
+                }
+                title={
+                  work.read ? t('works.mark-unread') : t('works.mark-read')
+                }
                 disabled={readMutation.isPending}
                 onClick={() =>
                   readMutation.mutate({ workId: work.id, read: !work.read })
@@ -220,8 +235,8 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             )}
             {isAdmin && (
               <M3eIconButton
-                aria-label='管理操作'
-                title='管理操作'
+                aria-label={t('works.admin-actions')}
+                title={t('works.admin-actions')}
                 className='ml-auto'
                 onClick={(e) =>
                   setMenu({ anchor: e.currentTarget as HTMLElement })
@@ -269,7 +284,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             <span slot='icon'>
               <M3eIcon name='sync' />
             </span>
-            更新元数据
+            {t('works.menu-refresh-metadata')}
           </M3eMenuItem>
           <M3eMenuItem
             disabled={syncTracksMutation.isPending}
@@ -278,19 +293,19 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             <span slot='icon'>
               <M3eIcon name='av_timer' />
             </span>
-            更新音轨时长
+            {t('works.menu-sync-tracks')}
           </M3eMenuItem>
           <M3eMenuItem onClick={() => setEditOpen(true)}>
             <span slot='icon'>
               <M3eIcon name='edit' />
             </span>
-            编辑元数据
+            {t('works.menu-edit-metadata')}
           </M3eMenuItem>
           <M3eMenuItem onClick={() => setDeleteOpen(true)}>
             <span slot='icon'>
               <M3eIcon name='delete' />
             </span>
-            删除
+            {t('works.delete')}
           </M3eMenuItem>
         </M3eMenu>
       )}
@@ -304,18 +319,19 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           open={deleteOpen}
           onClosed={() => setDeleteOpen(false)}
           dismissible
-          closeLabel='关闭'
+          closeLabel={t('common.close')}
         >
-          <span slot='header'>删除作品</span>
+          <span slot='header'>{t('works.delete-work-title')}</span>
           <div className='flex flex-col gap-4 py-2'>
             <p className='m-0 text-sm'>
-              确定删除《{work.title}》（{work.id}
-              ）？删除后作品将立即从库中隐藏；
-              若磁盘上文件仍在，重新扫描时会恢复。
+              {t('works.delete-work-confirm', {
+                title: work.title,
+                id: work.id,
+              })}
             </p>
             <div className='flex justify-end gap-2'>
               <M3eButton variant='text' onClick={() => setDeleteOpen(false)}>
-                取消
+                {t('common.cancel')}
               </M3eButton>
               <M3eButton
                 variant='filled'
@@ -329,7 +345,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                   })
                 }
               >
-                删除
+                {t('works.delete')}
               </M3eButton>
             </div>
           </div>

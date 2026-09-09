@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { useHistoryPage } from '../queries/useHistoryQuery';
@@ -15,6 +16,7 @@ import WorkCard from '../components/works/WorkCard';
  * - title 同步页码
  */
 export default function History() {
+  const { t } = useTranslation();
   const search = historyRoute.useSearch();
   const navigate = historyRoute.useNavigate();
   const page = search.page ?? 1;
@@ -39,23 +41,25 @@ export default function History() {
   useEffect(() => {
     document.title =
       pagination && page > 1
-        ? `收听历史 · 第 ${page}/${totalPages} 页 · Kiku`
-        : '收听历史 · Kiku';
+        ? t('works.history.doc-title-page', { page, totalPages })
+        : t('works.history.doc-title');
     return () => {
       document.title = 'Kiku';
     };
-  }, [page, pagination, totalPages]);
+  }, [page, pagination, totalPages, t]);
 
   // 未登录提示
   if (!authed) {
     return (
       <div className='mx-auto max-w-[1680px] py-16 text-center'>
-        <p className='text-base opacity-60'>登录后可查看收听历史</p>
+        <p className='text-base opacity-60'>
+          {t('works.history.login-required')}
+        </p>
         <Link
           to='/login'
           className='mt-4 inline-block text-m3-primary no-underline'
         >
-          前往登录
+          {t('works.history.go-login')}
         </Link>
       </div>
     );
@@ -75,7 +79,7 @@ export default function History() {
       {/* 标题 */}
       <div className='mb-4 flex items-center gap-3'>
         <h1 className='m-0 text-xl'>
-          收听历史
+          {t('works.history.title')}
           {totalCount != null && (
             <span className='ml-2 text-base opacity-60'>({totalCount})</span>
           )}
@@ -91,7 +95,9 @@ export default function History() {
 
       {/* 空状态 */}
       {!isLoading && works.length === 0 && (
-        <div className='py-16 text-center opacity-60'>暂无收听记录</div>
+        <div className='py-16 text-center opacity-60'>
+          {t('works.history.empty')}
+        </div>
       )}
 
       {/* 分页器 */}

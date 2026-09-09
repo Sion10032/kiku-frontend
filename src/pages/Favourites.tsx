@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { M3eTabs, M3eTab } from '@m3e/react/tabs';
 import { M3eActionList, M3eListAction } from '@m3e/react/list';
@@ -16,12 +17,19 @@ import { isEntityTarget, type FavouriteTargetType } from '../types';
 
 export type FavouritesTab = 'works' | 'series' | 'vas' | 'circles';
 
-/** 顶部 Tab：值即 /favourites/$tab 路由参数。 */
-const TABS: { value: FavouritesTab; label: string }[] = [
-  { value: 'works', label: '作品' },
-  { value: 'series', label: '系列' },
-  { value: 'vas', label: '声优' },
-  { value: 'circles', label: '社团' },
+/** 顶部 Tab：值即 /favourites/$tab 路由参数；label 为 i18n key（渲染处 t()）。 */
+const TABS: {
+  value: FavouritesTab;
+  label:
+    | 'works.fav-tab-works'
+    | 'works.fav-tab-series'
+    | 'works.fav-tab-vas'
+    | 'works.fav-tab-circles';
+}[] = [
+  { value: 'works', label: 'works.fav-tab-works' },
+  { value: 'series', label: 'works.fav-tab-series' },
+  { value: 'vas', label: 'works.fav-tab-vas' },
+  { value: 'circles', label: 'works.fav-tab-circles' },
 ];
 
 const TAB_TO_TYPE: Record<FavouritesTab, FavouriteTargetType> = {
@@ -102,24 +110,28 @@ function FavRow({
  * 实体行点击按名称筛选作品库。
  */
 export default function Favourites({ tab }: { tab: FavouritesTab }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useFavourites(TAB_TO_TYPE[tab]);
   const items = query.data?.favourites ?? [];
 
   return (
     <div className='mx-auto max-w-3xl'>
-      <h1 className='m-0 mb-4 text-xl'>收藏</h1>
+      <h1 className='m-0 mb-4 text-xl'>{t('works.favourites.title')}</h1>
 
       <M3eTabs stretch className='mb-4'>
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <M3eTab
-            key={t.value}
-            selected={tab === t.value}
+            key={item.value}
+            selected={tab === item.value}
             onClick={() =>
-              navigate({ to: '/favourites/$tab', params: { tab: t.value } })
+              navigate({
+                to: '/favourites/$tab',
+                params: { tab: item.value },
+              })
             }
           >
-            {t.label}
+            {t(item.label)}
           </M3eTab>
         ))}
       </M3eTabs>
@@ -131,7 +143,9 @@ export default function Favourites({ tab }: { tab: FavouritesTab }) {
       )}
 
       {!query.isPending && query.isError && (
-        <div className='py-16 text-center opacity-60'>加载失败，请稍后重试</div>
+        <div className='py-16 text-center opacity-60'>
+          {t('works.load-failed-retry')}
+        </div>
       )}
 
       {!query.isPending && !query.isError && items.length > 0 && (
@@ -166,7 +180,7 @@ export default function Favourites({ tab }: { tab: FavouritesTab }) {
                   key={`${item.targetType}:${item.targetId}`}
                   icon={ENTITY_ICONS[tab]}
                   title={name}
-                  subtitle={`${workCount} 部作品`}
+                  subtitle={t('works.fav-work-count', { count: workCount })}
                   onClick={() =>
                     navigate({
                       to: '/works',
@@ -185,7 +199,7 @@ export default function Favourites({ tab }: { tab: FavouritesTab }) {
 
       {!query.isPending && !query.isError && items.length === 0 && (
         <div className='py-16 text-center opacity-60'>
-          还没有收藏。在作品、系列、声优、社团页面点击 ♡ 即可收藏
+          {t('works.favourites.empty')}
         </div>
       )}
     </div>

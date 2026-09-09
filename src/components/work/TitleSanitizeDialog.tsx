@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eButton } from '@m3e/react/button';
 import { M3eDialog, type M3eDialogElement } from '@m3e/react/dialog';
 import { M3eFormField } from '@m3e/react/form-field';
@@ -27,6 +28,7 @@ interface Props {
  * onClosed（关闭动画完成后）重置全部本地状态，等效「关闭即卸载」。
  */
 export default function TitleSanitizeDialog({ open, q, onClose }: Props) {
+  const { t } = useTranslation();
   const [pattern, setPattern] = useState('');
   const [replacement, setReplacement] = useState('');
   const sanitize = useSanitizeTitlesMutation();
@@ -89,24 +91,26 @@ export default function TitleSanitizeDialog({ open, q, onClose }: Props) {
           setResult(null);
         }}
         dismissible
-        closeLabel='关闭'
+        closeLabel={t('common.close')}
       >
-        <span slot='header'>标题净化（批量正则替换）</span>
+        <span slot='header'>{t('works.sanitize.title')}</span>
         <div className='flex flex-col gap-4'>
           {/* 范围：只读套用页面搜索框当前条件 */}
           <div className='flex flex-col gap-1'>
             <div className='flex items-baseline gap-2 text-sm'>
-              <span className='shrink-0 opacity-70'>范围</span>
+              <span className='shrink-0 opacity-70'>
+                {t('works.sanitize.scope')}
+              </span>
               {q?.trim() ? (
                 <code className='break-all rounded bg-black/5 px-1 py-0.5 font-mono text-xs dark:bg-white/10'>
                   {q}
                 </code>
               ) : (
-                <span>全库（搜索框当前无条件）</span>
+                <span>{t('works.sanitize.scope-all')}</span>
               )}
             </div>
             <p className='m-0 text-xs opacity-60'>
-              范围来自上方搜索框当前条件，如需变更请修改搜索后重新打开。
+              {t('works.sanitize.scope-hint')}
             </p>
           </div>
 
@@ -116,7 +120,7 @@ export default function TitleSanitizeDialog({ open, q, onClose }: Props) {
               className='w-full [--m3e-form-field-width:100%]'
             >
               <label slot='label' htmlFor='sanitize-pattern'>
-                正则（JS RegExp，匹配原始标题）
+                {t('works.sanitize.pattern')}
               </label>
               <input
                 id='sanitize-pattern'
@@ -131,7 +135,7 @@ export default function TitleSanitizeDialog({ open, q, onClose }: Props) {
               className='w-full [--m3e-form-field-width:100%]'
             >
               <label slot='label' htmlFor='sanitize-replacement'>
-                替换为（留空 = 移除）
+                {t('works.sanitize.replacement')}
               </label>
               <input
                 id='sanitize-replacement'
@@ -144,10 +148,14 @@ export default function TitleSanitizeDialog({ open, q, onClose }: Props) {
           </div>
 
           {sanitize.isPending && (
-            <div className='py-2 text-sm opacity-60'>处理中…</div>
+            <div className='py-2 text-sm opacity-60'>
+              {t('works.sanitize.processing')}
+            </div>
           )}
           {samples !== undefined && samples.length === 0 && (
-            <div className='py-2 text-sm opacity-60'>无匹配作品</div>
+            <div className='py-2 text-sm opacity-60'>
+              {t('works.sanitize.no-match')}
+            </div>
           )}
           {samples !== undefined && samples.length > 0 && (
             <div className='overflow-x-auto'>
@@ -155,8 +163,12 @@ export default function TitleSanitizeDialog({ open, q, onClose }: Props) {
                 <thead>
                   <tr className='text-left opacity-60'>
                     <th className='py-1 pr-3 font-normal'>ID</th>
-                    <th className='py-1 pr-3 font-normal'>原标题</th>
-                    <th className='py-1 pr-3 font-normal'>净化后</th>
+                    <th className='py-1 pr-3 font-normal'>
+                      {t('works.sanitize.col-before')}
+                    </th>
+                    <th className='py-1 pr-3 font-normal'>
+                      {t('works.sanitize.col-after')}
+                    </th>
                     <th className='py-1 font-normal' />
                   </tr>
                 </thead>
@@ -167,32 +179,35 @@ export default function TitleSanitizeDialog({ open, q, onClose }: Props) {
                       <td className='py-1 pr-3 break-all'>{s.before}</td>
                       <td className='py-1 pr-3 break-all'>{s.after}</td>
                       <td className='py-1 text-xs opacity-70'>
-                        {s.overridden ? '将覆盖已有 title 覆盖' : ''}
+                        {s.overridden ? t('works.sanitize.will-override') : ''}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <p className='mt-1 text-xs opacity-60'>
-                将净化 {result?.matched ?? 0} 件（其中 {result?.overridden ?? 0}{' '}
-                件已有 title 覆盖，将被覆盖）；预览仅显示前 {samples.length} 条
+                {t('works.sanitize.summary', {
+                  count: result?.matched ?? 0,
+                  overridden: result?.overridden ?? 0,
+                  samples: samples.length,
+                })}
               </p>
             </div>
           )}
         </div>
         <div slot='actions' className='flex justify-end gap-2'>
           <M3eButton variant='text' onClick={onClose}>
-            取消
+            {t('common.cancel')}
           </M3eButton>
           <M3eButton
             variant='outlined'
             disabled={!canSubmit}
             onClick={() => run(true)}
           >
-            预览
+            {t('works.sanitize.preview')}
           </M3eButton>
           <M3eButton disabled={!canExecute} onClick={() => run(false)}>
-            执行
+            {t('works.sanitize.execute')}
           </M3eButton>
         </div>
       </M3eDialog>

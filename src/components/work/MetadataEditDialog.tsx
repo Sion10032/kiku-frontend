@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   M3eAutocomplete,
   type AutocompleteQueryEventDetail,
@@ -66,6 +67,7 @@ function toDraft(detail: MetadataOverrideDetail): Draft {
 }
 
 export default function MetadataEditDialog({ workId, open, onClose }: Props) {
+  const { t } = useTranslation();
   const detailQuery = useMetadataOverride(workId, open);
   const detail = detailQuery.data ?? null;
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -224,34 +226,36 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
       open={open}
       onClosed={onClose}
       dismissible
-      closeLabel='关闭'
+      closeLabel={t('common.close')}
     >
-      <span slot='header'>编辑元数据</span>
+      <span slot='header'>{t('works.meta.title')}</span>
       <div className='flex flex-col gap-4'>
         {detailQuery.isLoading || !detail || !draft ? (
-          <div className='py-8 text-center opacity-60'>加载中…</div>
+          <div className='py-8 text-center opacity-60'>
+            {t('works.meta.loading')}
+          </div>
         ) : (
           <>
             <FieldRow
-              label='标题'
+              label={t('works.meta.field-title')}
               overridden={overridden.has('title')}
               onReset={() => resetMutation.mutate('title')}
             >
               <SettingsInput
-                label='标题'
+                label={t('works.meta.field-title')}
                 value={draft.title}
                 onChange={(title) => setDraft({ ...draft, title })}
               />
             </FieldRow>
 
             <FieldRow
-              label='社团'
+              label={t('works.meta.field-circle')}
               overridden={overridden.has('circle')}
               onReset={() => resetMutation.mutate('circle')}
             >
               <SingleAutocomplete
-                label='社团'
-                placeholder='输入过滤，或从下拉选择'
+                label={t('works.meta.field-circle')}
+                placeholder={t('works.meta.filter-placeholder')}
                 value={draft.circleName}
                 candidates={circlesQuery.data?.map((c) => c.name) ?? []}
                 onChange={(circleName) => setDraft({ ...draft, circleName })}
@@ -259,13 +263,13 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
             </FieldRow>
 
             <FieldRow
-              label='系列'
+              label={t('works.meta.field-series')}
               overridden={overridden.has('series')}
               onReset={() => resetMutation.mutate('series')}
             >
               <SingleAutocomplete
-                label='系列'
-                placeholder='输入过滤，或从下拉选择'
+                label={t('works.meta.field-series')}
+                placeholder={t('works.meta.filter-placeholder')}
                 value={draft.seriesName}
                 candidates={seriesQuery.data?.map((s) => s.name) ?? []}
                 onChange={(seriesName) => setDraft({ ...draft, seriesName })}
@@ -273,14 +277,14 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
             </FieldRow>
 
             <FieldRow
-              label='年龄分级'
+              label={t('works.meta.field-age-rating')}
               overridden={overridden.has('ageRating')}
               onReset={() => resetMutation.mutate('ageRating')}
             >
               {/* 组 value 为 getter-only：受控靠每段 checked（同 SettingRows.SegmentedRow） */}
               <M3eSegmentedButton
                 className={SETTING_CONTROL_FILL}
-                aria-label='年龄分级'
+                aria-label={t('works.meta.field-age-rating')}
                 onInput={(e) =>
                   setDraft({
                     ...draft,
@@ -302,7 +306,7 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
             </FieldRow>
 
             <FieldRow
-              label='标签'
+              label={t('works.meta.field-tags')}
               overridden={overridden.has('tags')}
               onReset={() => resetMutation.mutate('tags')}
             >
@@ -315,8 +319,8 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
                   version={detail}
                   items={detail.effective.tags.map((t) => t.name)}
                   candidates={tagsQuery.data?.map((t) => t.name) ?? []}
-                  ariaLabel='标签'
-                  placeholder='新增标签，回车确认'
+                  ariaLabel={t('works.meta.field-tags')}
+                  placeholder={t('works.meta.tags-placeholder')}
                   onAdd={addTagByName}
                   onRemove={removeTagByName}
                 />
@@ -324,7 +328,7 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
             </FieldRow>
 
             <FieldRow
-              label='声优'
+              label={t('works.meta.field-vas')}
               overridden={overridden.has('vas')}
               onReset={() => resetMutation.mutate('vas')}
             >
@@ -337,23 +341,21 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
                   version={detail}
                   items={detail.effective.vas.map((v) => v.name)}
                   candidates={vasQuery.data?.map((v) => v.name) ?? []}
-                  ariaLabel='声优'
-                  placeholder='新增声优，回车确认'
+                  ariaLabel={t('works.meta.field-vas')}
+                  placeholder={t('works.meta.vas-placeholder')}
                   onAdd={addVaByName}
                   onRemove={removeVaByName}
                 />
               </M3eFormField>
             </FieldRow>
 
-            <p className='text-xs opacity-60'>
-              保存只提交有改动的字段；标签/声优为增量动作，之后重新扫描新增的原始标签会自动出现在未编辑的作品上。
-            </p>
+            <p className='text-xs opacity-60'>{t('works.meta.hint')}</p>
           </>
         )}
       </div>
       <div slot='actions' className='flex justify-end gap-2'>
         <M3eButton variant='text' onClick={onClose}>
-          取消
+          {t('common.cancel')}
         </M3eButton>
         <M3eButton
           variant='filled'
@@ -363,7 +365,9 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
             if (input) saveMutation.mutate(input, { onSuccess: onClose });
           }}
         >
-          {saveMutation.isPending ? '保存中…' : '保存'}
+          {saveMutation.isPending
+            ? t('works.meta.saving')
+            : t('works.meta.save')}
         </M3eButton>
       </div>
     </M3eDialog>
@@ -418,6 +422,7 @@ function ChipSetSync(props: {
   onAdd: (name: string) => void;
   onRemove: (name: string) => void;
 }) {
+  const { t } = useTranslation();
   const ref = useRef<M3eInputChipSetElement>(null);
   const autocompleteRef = useRef<M3eAutocompleteElement>(null);
   const [inputId] = useState(() => `metadata-chip-input-${++chipInputIdSeed}`);
@@ -521,7 +526,7 @@ function ChipSetSync(props: {
         ref={autocompleteRef}
         htmlFor={inputId}
         panelClass='metadata-autocomplete-panel'
-        noDataLabel='无匹配项'
+        noDataLabel={t('works.meta.no-match')}
       >
         {options.map((name) => (
           <M3eOption key={name} value={name}>
@@ -556,6 +561,7 @@ function SingleAutocomplete(props: {
   candidates: string[];
   onChange: (value: string) => void;
 }) {
+  const { t } = useTranslation();
   const autocompleteRef = useRef<M3eAutocompleteElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputId] = useState(
@@ -626,7 +632,7 @@ function SingleAutocomplete(props: {
         ref={autocompleteRef}
         htmlFor={inputId}
         panelClass='metadata-autocomplete-panel'
-        noDataLabel='无匹配项'
+        noDataLabel={t('works.meta.no-match')}
       >
         {options.map((name) => (
           <M3eOption key={name} value={name}>
@@ -671,6 +677,7 @@ function FieldRow(props: {
   onReset: () => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className='flex flex-col gap-1'>
       <div className='flex items-center gap-2'>
@@ -679,16 +686,16 @@ function FieldRow(props: {
           <>
             <span
               className='rounded bg-black/10 px-1 text-xs dark:bg-white/20'
-              title='该字段已被管理员覆盖，与 DLsite 原始数据不同'
+              title={t('works.field-overridden')}
             >
-              已覆盖
+              {t('works.meta.overridden')}
             </span>
             <button
               type='button'
               className='ml-auto text-xs underline opacity-70'
               onClick={props.onReset}
             >
-              恢复原始
+              {t('works.meta.reset')}
             </button>
           </>
         )}

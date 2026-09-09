@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { M3eSearchBar } from '@m3e/react/search';
 import { M3eIcon } from '@m3e/react/icon';
@@ -23,11 +24,18 @@ import type { FavouriteTargetType } from '../types';
 
 export type ListType = 'circles' | 'tags' | 'vas' | 'series';
 
-const LABELS: Record<ListType, string> = {
-  circles: '社团',
-  tags: '标签',
-  vas: '声优',
-  series: '系列',
+/** 列表类型 → i18n label key（works.list-*，渲染处 t()）。 */
+const LABELS: Record<
+  ListType,
+  | 'works.list-circles'
+  | 'works.list-tags'
+  | 'works.list-vas'
+  | 'works.list-series'
+> = {
+  circles: 'works.list-circles',
+  tags: 'works.list-tags',
+  vas: 'works.list-vas',
+  series: 'works.list-series',
 };
 
 const LEADING_ICONS: Record<ListType, string> = {
@@ -57,8 +65,9 @@ interface Entry {
  * 因此导航用 onClick + useNavigate 而非把 slot 元素包进 <Link>。
  */
 export default function List({ type }: { type: ListType }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const label = LABELS[type];
+  const label = t(LABELS[type]);
   const [keyword, setKeyword] = useState('');
 
   const circles = useCirclesQuery();
@@ -168,7 +177,7 @@ export default function List({ type }: { type: ListType }) {
         <input
           slot='input'
           type='text'
-          placeholder={`搜索${label}…`}
+          placeholder={t('works.list-search-placeholder', { label })}
           value={keyword}
           onInput={(e) => setKeyword((e.target as HTMLInputElement).value)}
         />
@@ -183,7 +192,9 @@ export default function List({ type }: { type: ListType }) {
 
       {/* 加载失败 */}
       {!loading && isError && (
-        <div className='py-16 text-center opacity-60'>加载失败，请稍后重试</div>
+        <div className='py-16 text-center opacity-60'>
+          {t('works.load-failed-retry')}
+        </div>
       )}
 
       {/* 列表 */}
@@ -230,7 +241,9 @@ export default function List({ type }: { type: ListType }) {
       {/* 空状态 */}
       {!loading && !isError && entries.length === 0 && (
         <div className='py-16 text-center opacity-60'>
-          {keyword ? `没有匹配的${label}` : `暂无${label}`}
+          {keyword
+            ? t('works.list-empty-match', { label })
+            : t('works.list-empty', { label })}
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
@@ -38,6 +39,7 @@ const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'
  * - 网格 / 列表切换，排序与视图模式持久化到 localStorage
  */
 export default function Works() {
+  const { t } = useTranslation();
   const search = worksRoute.useSearch();
   const navigate = worksRoute.useNavigate();
 
@@ -116,7 +118,9 @@ export default function Works() {
   const loading = isPaginated ? paged.isLoading : infinite.isLoading;
 
   // 筛选条件名称（title 显示用），来自 q 查询文本
-  const filterName = search.q ? `「${search.q}」` : undefined;
+  const filterName = search.q
+    ? t('works.filter-name', { query: search.q })
+    : undefined;
 
   // 无限滚动（仅无限模式；分页模式 hasMore 恒 false）
   const sentinelRef = useInfiniteScroll({
@@ -189,18 +193,25 @@ export default function Works() {
 
   // title 同步筛选名与页码（分页模式）；卸载/切模式时恢复默认
   useEffect(() => {
-    const base = filterName ? `${filterName} · 作品库` : '作品库';
     const totalPages = pagination
       ? Math.max(1, Math.ceil(pagination.totalCount / pagination.pageSize))
       : 1;
     document.title =
       isPaginated && pagination && page > 1
-        ? `${base} · 第 ${page}/${totalPages} 页 · Kiku`
-        : `${base} · Kiku`;
+        ? filterName
+          ? t('works.doc-title-filtered-page', {
+              name: filterName,
+              page,
+              totalPages,
+            })
+          : t('works.doc-title-page', { page, totalPages })
+        : filterName
+          ? t('works.doc-title-filtered', { name: filterName })
+          : t('works.doc-title');
     return () => {
       document.title = 'Kiku';
     };
-  }, [isPaginated, page, filterName, pagination]);
+  }, [isPaginated, page, filterName, pagination, t]);
 
   return (
     <div className='mx-auto max-w-[1680px]'>
@@ -210,7 +221,7 @@ export default function Works() {
       {/* 顶部工具栏 */}
       <div className='mb-4 flex flex-wrap items-center gap-3'>
         <h1 className='m-0 text-xl'>
-          作品库
+          {t('works.title')}
           {totalCount != null && (
             <span className='ml-2 text-base opacity-60'>({totalCount})</span>
           )}
@@ -231,14 +242,17 @@ export default function Works() {
                     value={v}
                     selected={v === `${sortOption.order}:${sortOption.sort}`}
                   >
-                    {o.label}
+                    {t(o.label)}
                   </M3eOption>
                 );
               })}
             </M3eSelect>
           </M3eFormField>
 
-          <M3eIconButton onClick={toggleView} aria-label='切换视图'>
+          <M3eIconButton
+            onClick={toggleView}
+            aria-label={t('works.view-toggle')}
+          >
             <M3eIcon name={viewMode === 'grid' ? 'view_list' : 'apps'} />
           </M3eIconButton>
         </div>
@@ -247,9 +261,11 @@ export default function Works() {
       {/* 筛选状态提示 */}
       {isFiltered && (
         <div className='mb-3 flex items-center gap-2 text-sm opacity-70'>
-          <span className='truncate'>筛选中：{search.q}</span>
+          <span className='truncate'>
+            {t('works.filtering', { query: search.q })}
+          </span>
           <Link to='/works' className='no-underline'>
-            清除
+            {t('works.clear-filter')}
           </Link>
         </div>
       )}
@@ -286,7 +302,9 @@ export default function Works() {
       {/* 空状态 */}
       {!loading && works.length === 0 && (
         <div className='py-16 text-center opacity-60'>
-          {search.q ? `未找到与「${search.q}」相关的作品` : '暂无作品'}
+          {search.q
+            ? t('works.empty-filtered', { query: search.q })
+            : t('works.empty')}
         </div>
       )}
 

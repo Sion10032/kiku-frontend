@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   M3eListOption,
   M3eSelectionList,
@@ -64,6 +65,7 @@ export default function WorkTree({
   tree,
   loading = false,
 }: WorkTreeProps) {
+  const { t } = useTranslation();
   // 面包屑路径（文件夹标题数组）
   const [path, setPath] = useState<string[]>([]);
   const [menu, setMenu] = useState<MenuState | null>(null);
@@ -249,7 +251,9 @@ export default function WorkTree({
 
         {!loading && fatherFolder.length === 0 && (
           <div className='py-16 text-center opacity-60'>
-            {tree.length === 0 ? '该作品暂无文件' : '目录为空'}
+            {tree.length === 0
+              ? t('works.tree-no-files')
+              : t('works.tree-empty-folder')}
           </div>
         )}
 
@@ -287,7 +291,7 @@ export default function WorkTree({
             <span slot='icon'>
               <M3eIcon name='visibility' />
             </span>
-            预览
+            {t('works.menu-preview')}
           </M3eMenuItem>
         )}
         {menu && menu.node.type === 'audio' && (
@@ -296,13 +300,13 @@ export default function WorkTree({
               <span slot='icon'>
                 <M3eIcon name='play_arrow' />
               </span>
-              添加到队列
+              {t('works.menu-add-to-queue')}
             </M3eMenuItem>
             <M3eMenuItem onClick={() => playNext(toTrack(work, menu.node))}>
               <span slot='icon'>
                 <M3eIcon name='queue_music' />
               </span>
-              下一首播放
+              {t('works.menu-play-next')}
             </M3eMenuItem>
           </>
         )}
@@ -311,7 +315,7 @@ export default function WorkTree({
             <span slot='icon'>
               <M3eIcon name='open_in_new' />
             </span>
-            打开文件
+            {t('works.menu-open-file')}
           </M3eMenuItem>
         )}
         {menu && (
@@ -319,7 +323,7 @@ export default function WorkTree({
             <span slot='icon'>
               <M3eIcon name='download' />
             </span>
-            下载文件
+            {t('works.download-file')}
           </M3eMenuItem>
         )}
       </M3eMenu>
@@ -371,6 +375,7 @@ function TrackFolderListItem({
   node: TrackFolder;
   onEnter: () => void;
 }) {
+  const { t } = useTranslation();
   const ref = useM3eStyle<M3eListOptionElement>({
     style: contentStyle,
   });
@@ -386,7 +391,7 @@ function TrackFolderListItem({
       </span>
       <span className='min-w-0 flex-1 truncate'>{node.title}</span>
       <span slot='supporting-text' className='truncate text-xs opacity-60'>
-        {node.children.length} 个项目
+        {t('works.item-count', { count: node.children.length })}
       </span>
     </M3eListOption>
   );
@@ -410,6 +415,7 @@ function TrackLeafListItem({
   onLeafClick,
   onOpenMenu,
 }: TrackLeafListItemProps) {
+  const { t } = useTranslation();
   const ref = useM3eStyle<M3eListOptionElement>({
     style: contentStyle,
   });
@@ -435,7 +441,7 @@ function TrackLeafListItem({
       )}
       <M3eIconButton
         slot='trailing'
-        aria-label='更多操作'
+        aria-label={t('works.more-actions')}
         onClick={(e) => {
           e.stopPropagation();
           onOpenMenu(node, e.currentTarget as HTMLElement);

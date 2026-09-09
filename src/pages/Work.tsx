@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { workRoute } from '../routes/work';
 import { useWorkQuery, useTracksQuery } from '../queries/useWorksQuery';
 import { useWorkProgressQuery } from '../queries/useProgressQuery';
@@ -14,6 +15,7 @@ import WorkResume from '../components/work/WorkResume';
  * - 左侧 WorkDetails 信息卡，右侧 WorkTree 文件树
  */
 export default function Work() {
+  const { t } = useTranslation();
   const { id } = workRoute.useParams();
   const workQuery = useWorkQuery(id);
   const tracksQuery = useTracksQuery(id);
@@ -29,7 +31,9 @@ export default function Work() {
 
   if (workQuery.isError || !workQuery.data) {
     return (
-      <div className='py-16 text-center opacity-60'>作品不存在或加载失败</div>
+      <div className='py-16 text-center opacity-60'>
+        {t('works.load-failed')}
+      </div>
     );
   }
 
