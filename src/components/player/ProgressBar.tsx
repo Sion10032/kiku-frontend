@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePlayerStore } from '../../stores/playerStore';
 import { seekTo } from '../../hooks/usePlayer';
 import { formatDuration } from '../../utils/format';
@@ -9,6 +10,7 @@ import { formatDuration } from '../../utils/format';
  * hover 显示对应时间气泡。所有事件 stopPropagation 防止冒泡到展开热区。
  */
 export default function ProgressBar() {
+  const { t } = useTranslation();
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
   const barRef = useRef<HTMLDivElement>(null);
@@ -29,7 +31,7 @@ export default function ProgressBar() {
     <div
       ref={barRef}
       role='slider'
-      aria-label='播放进度'
+      aria-label={t('player.progress')}
       aria-valuemin={0}
       aria-valuemax={Math.floor(duration)}
       aria-valuenow={Math.floor(currentTime)}

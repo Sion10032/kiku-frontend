@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -41,6 +42,7 @@ function stopAnd(fn: () => void) {
  * - 内部渲染 LyricsBar（悬浮于播放条上方的浮动歌词）
  */
 export default function PlayerBar() {
+  const { t } = useTranslation();
   const track = usePlayerStore(selectCurrentTrack);
   const playing = usePlayerStore((s) => s.playing);
   const currentTime = usePlayerStore((s) => s.currentTime);
@@ -80,7 +82,7 @@ export default function PlayerBar() {
         <div
           role='button'
           tabIndex={0}
-          aria-label='展开播放器'
+          aria-label={t('player.expand')}
           onClick={toggleHide}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -122,20 +124,20 @@ export default function PlayerBar() {
           {/* 核心组：窄屏保留 ▶/⏸ + ☰，其余 lg: 起显示 */}
           <M3eIconButton
             className='hidden lg:inline-flex'
-            aria-label='上一首'
+            aria-label={t('player.previous-track')}
             onClick={stopAnd(previousTrack)}
           >
             <M3eIcon name='skip_previous' />
           </M3eIconButton>
           <M3eIconButton
-            aria-label={playing ? '暂停' : '播放'}
+            aria-label={playing ? t('player.pause') : t('player.play')}
             onClick={stopAnd(togglePlaying)}
           >
             <M3eIcon name={playing ? 'pause' : 'play_arrow'} />
           </M3eIconButton>
           <M3eIconButton
             className='hidden lg:inline-flex'
-            aria-label='下一首'
+            aria-label={t('player.next-track')}
             onClick={stopAnd(nextTrack)}
           >
             <M3eIcon name='skip_next' />
@@ -146,14 +148,16 @@ export default function PlayerBar() {
           {/* 次要组：全部 lg: 起显示 */}
           <M3eIconButton
             className='hidden lg:inline-flex'
-            aria-label={`播放模式：${PLAY_MODE_LABEL[playMode]}`}
+            aria-label={t('player.play-mode', {
+              mode: t(PLAY_MODE_LABEL[playMode]),
+            })}
             onClick={stopAnd(changePlayMode)}
           >
             <M3eIcon name={PLAY_MODE_ICON[playMode]} />
           </M3eIconButton>
           <VolumeControl className='hidden lg:block' />
           <M3eIconButton
-            aria-label='播放列表'
+            aria-label={t('player.queue')}
             onClick={stopAnd(() => setQueueOpen(true))}
           >
             <M3eIcon name='queue_music' />
@@ -170,6 +174,7 @@ export default function PlayerBar() {
  * 音量按钮：点击静音；悬停于上方弹出横向滑条（纯 CSS group-hover）。
  */
 function VolumeControl({ className = '' }: { className?: string }) {
+  const { t } = useTranslation();
   const volume = usePlayerStore((s) => s.volume);
   const muted = usePlayerStore((s) => s.muted);
   const toggleMuted = usePlayerStore((s) => s.toggleMuted);
@@ -184,7 +189,7 @@ function VolumeControl({ className = '' }: { className?: string }) {
   return (
     <div className={clsx('group/vol relative', className)}>
       <M3eIconButton
-        aria-label={muted ? '取消静音' : '静音'}
+        aria-label={muted ? t('player.unmute') : t('player.mute')}
         onClick={(e) => {
           e.stopPropagation();
           toggleMuted();

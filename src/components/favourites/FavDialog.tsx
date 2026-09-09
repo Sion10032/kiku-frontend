@@ -1,5 +1,6 @@
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eButton } from '@m3e/react/button';
+import { useTranslation } from 'react-i18next';
 import FavButton from './FavButton';
 import { useFavouriteStatus } from '../../queries/useFavouritesQuery';
 import type { Work } from '../../types';
@@ -25,6 +26,7 @@ interface FavDialogProps {
  * - 行不可点击、无跳转，纯切换用途
  */
 export default function FavDialog({ open, onClose, work }: FavDialogProps) {
+  const { t } = useTranslation();
   // 社团 id 后端为 number，收藏接口统一用 string
   const circleId = String(work.circle.id);
 
@@ -45,15 +47,15 @@ export default function FavDialog({ open, onClose, work }: FavDialogProps) {
       open={open}
       onClosed={onClose}
       dismissible
-      closeLabel='关闭'
+      closeLabel={t('common.close')}
       className='[--m3e-dialog-max-width:min(560px,calc(100vw-2rem))] [--m3e-dialog-min-width:min(280px,calc(100vw-2rem))]'
     >
-      <span slot='header'>收藏</span>
+      <span slot='header'>{t('works.favourites.title')}</span>
 
       <div className='flex flex-col gap-4 py-2'>
         {/* 作品：仅标题行（按需求不放封面缩略图 / RJ 号） */}
         <section className='flex flex-col gap-1'>
-          <span className='text-xs opacity-60'>作品</span>
+          <span className='text-xs opacity-60'>{t('works.fav-tab-works')}</span>
           <div className='flex items-center justify-between gap-3'>
             <span className='min-w-0 truncate text-sm'>{work.title}</span>
             <FavButton
@@ -68,7 +70,9 @@ export default function FavDialog({ open, onClose, work }: FavDialogProps) {
         {/* 系列（单值归属，无系列时不渲染该节） */}
         {work.series && (
           <section className='flex flex-col gap-1'>
-            <span className='text-xs opacity-60'>系列</span>
+            <span className='text-xs opacity-60'>
+              {t('works.fav-tab-series')}
+            </span>
             <div className='flex items-center justify-between gap-3'>
               <span className='min-w-0 truncate text-sm'>
                 {work.series.name}
@@ -85,7 +89,9 @@ export default function FavDialog({ open, onClose, work }: FavDialogProps) {
 
         {/* 社团 */}
         <section className='flex flex-col gap-1'>
-          <span className='text-xs opacity-60'>社团</span>
+          <span className='text-xs opacity-60'>
+            {t('works.fav-tab-circles')}
+          </span>
           <div className='flex items-center justify-between gap-3'>
             <span className='min-w-0 truncate text-sm'>{work.circle.name}</span>
             <FavButton
@@ -100,7 +106,7 @@ export default function FavDialog({ open, onClose, work }: FavDialogProps) {
         {/* 声优（每个声优一行） */}
         {work.vas.length > 0 && (
           <section className='flex flex-col gap-1'>
-            <span className='text-xs opacity-60'>声优</span>
+            <span className='text-xs opacity-60'>{t('works.fav-tab-vas')}</span>
             {work.vas.map((va) => (
               <div
                 key={va.id}
@@ -122,7 +128,7 @@ export default function FavDialog({ open, onClose, work }: FavDialogProps) {
       {/* 底部操作：状态切换即时生效，仅保留取消（关闭） */}
       <div slot='actions' className='flex justify-end'>
         <M3eButton variant='text' onClick={onClose}>
-          取消
+          {t('common.cancel')}
         </M3eButton>
       </div>
     </M3eDialog>

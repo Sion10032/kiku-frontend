@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eButton } from '@m3e/react/button';
 import { M3eFormField } from '@m3e/react/form-field';
+import { useTranslation } from 'react-i18next';
 import { usePlayerStore } from '../../stores/playerStore';
 
 interface SleepModeProps {
@@ -17,6 +18,7 @@ interface SleepModeProps {
  * - 使用 playerStore.setSleepTimer / clearSleepMode。
  */
 export default function SleepMode({ open, onClose }: SleepModeProps) {
+  const { t } = useTranslation();
   const sleepTime = usePlayerStore((s) => s.sleepTime);
   const sleepMode = usePlayerStore((s) => s.sleepMode);
   const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
@@ -44,13 +46,18 @@ export default function SleepMode({ open, onClose }: SleepModeProps) {
   }
 
   return (
-    <M3eDialog open={open} onClosed={onClose} dismissible closeLabel='关闭'>
-      <span slot='header'>睡眠定时器</span>
+    <M3eDialog
+      open={open}
+      onClosed={onClose}
+      dismissible
+      closeLabel={t('common.close')}
+    >
+      <span slot='header'>{t('player.sleep-timer')}</span>
 
       <div className='flex flex-col gap-4 py-2'>
         <M3eFormField variant='outlined'>
           <label slot='label' htmlFor='sleep-time'>
-            停止播放时间
+            {t('player.sleep-stop-at')}
           </label>
           <input
             id='sleep-time'
@@ -63,7 +70,7 @@ export default function SleepMode({ open, onClose }: SleepModeProps) {
 
         {sleepMode && sleepTime && (
           <p className='m-0 text-sm opacity-70'>
-            当前定时：将于 {sleepTime} 停止播放
+            {t('player.sleep-active', { time: sleepTime })}
           </p>
         )}
       </div>
@@ -71,15 +78,15 @@ export default function SleepMode({ open, onClose }: SleepModeProps) {
       <div slot='actions' className='flex items-center justify-between'>
         <div>
           <M3eButton variant='text' disabled={!sleepMode} onClick={handleClear}>
-            取消定时
+            {t('player.sleep-cancel')}
           </M3eButton>
         </div>
         <div className='flex gap-2'>
           <M3eButton variant='text' onClick={onClose}>
-            取消
+            {t('common.cancel')}
           </M3eButton>
           <M3eButton variant='filled' onClick={handleSet}>
-            确定
+            {t('common.ok')}
           </M3eButton>
         </div>
       </div>

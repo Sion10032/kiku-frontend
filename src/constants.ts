@@ -9,11 +9,17 @@ export const PLAY_MODE_ICON: Record<PlayMode, string> = {
 };
 
 /** 播放模式 → 中文名（aria-label / 提示用）。 */
-export const PLAY_MODE_LABEL: Record<PlayMode, string> = {
-  order: '顺序播放',
-  allRepeat: '列表循环',
-  repeatOne: '单曲循环',
-  shuffle: '随机播放',
+export const PLAY_MODE_LABEL: Record<
+  PlayMode,
+  | 'player.play-mode-order'
+  | 'player.play-mode-all-repeat'
+  | 'player.play-mode-repeat-one'
+  | 'player.play-mode-shuffle'
+> = {
+  order: 'player.play-mode-order',
+  allRepeat: 'player.play-mode-all-repeat',
+  repeatOne: 'player.play-mode-repeat-one',
+  shuffle: 'player.play-mode-shuffle',
 };
 
 /**

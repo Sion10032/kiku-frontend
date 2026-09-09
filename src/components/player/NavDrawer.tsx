@@ -17,6 +17,7 @@ import '@m3e/icons/outlined/admin_panel_settings';
 import '@m3e/icons/outlined/settings';
 import '@m3e/icons/outlined/person';
 import '@m3e/icons/outlined/logout';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 
 /**
@@ -35,6 +36,7 @@ import { useAuth } from '../../hooks/useAuth';
  * 列表类路由（/list/*、/admin）用 exact 避免子路由误高亮。
  */
 export default function NavDrawer() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { name, auth, isAdmin, logout } = useAuth();
 
@@ -58,7 +60,7 @@ export default function NavDrawer() {
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
                 <M3eIcon slot='icon' name='library_music' />
-                <span slot='label'>作品库</span>
+                <span slot='label'>{t('works.title')}</span>
               </M3eNavMenuItem>
             )}
           </Link>
@@ -68,7 +70,7 @@ export default function NavDrawer() {
               {({ isActive }) => (
                 <M3eNavMenuItem selected={isActive}>
                   <M3eIcon slot='icon' name='favorite' />
-                  <span slot='label'>收藏</span>
+                  <span slot='label'>{t('works.favourites.title')}</span>
                 </M3eNavMenuItem>
               )}
             </Link>
@@ -79,7 +81,7 @@ export default function NavDrawer() {
               {({ isActive }) => (
                 <M3eNavMenuItem selected={isActive}>
                   <M3eIcon slot='icon' name='star' />
-                  <span slot='label'>我的评价</span>
+                  <span slot='label'>{t('works.my-reviews.title')}</span>
                 </M3eNavMenuItem>
               )}
             </Link>
@@ -88,7 +90,7 @@ export default function NavDrawer() {
 
         {/* 浏览 */}
         <M3eNavMenuItemGroup>
-          <span slot='label'>浏览</span>
+          <span slot='label'>{t('common.browse')}</span>
           <Link
             to='/list/$type'
             params={{ type: 'circles' }}
@@ -98,7 +100,7 @@ export default function NavDrawer() {
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
                 <M3eIcon slot='icon' name='groups' />
-                <span slot='label'>社团</span>
+                <span slot='label'>{t('works.list-circles')}</span>
               </M3eNavMenuItem>
             )}
           </Link>
@@ -111,7 +113,7 @@ export default function NavDrawer() {
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
                 <M3eIcon slot='icon' name='tag' />
-                <span slot='label'>标签</span>
+                <span slot='label'>{t('works.list-tags')}</span>
               </M3eNavMenuItem>
             )}
           </Link>
@@ -124,7 +126,7 @@ export default function NavDrawer() {
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
                 <M3eIcon slot='icon' name='record_voice_over' />
-                <span slot='label'>声优</span>
+                <span slot='label'>{t('works.list-vas')}</span>
               </M3eNavMenuItem>
             )}
           </Link>
@@ -137,7 +139,7 @@ export default function NavDrawer() {
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
                 <M3eIcon slot='icon' name='library_books' />
-                <span slot='label'>系列</span>
+                <span slot='label'>{t('works.list-series')}</span>
               </M3eNavMenuItem>
             )}
           </Link>
@@ -146,7 +148,7 @@ export default function NavDrawer() {
         {/* 管理（仅管理员可见） */}
         {isAdmin && (
           <M3eNavMenuItemGroup>
-            <span slot='label'>管理</span>
+            <span slot='label'>{t('common.admin')}</span>
             <Link
               to='/admin'
               className='block no-underline text-inherit'
@@ -155,7 +157,7 @@ export default function NavDrawer() {
               {({ isActive }) => (
                 <M3eNavMenuItem selected={isActive}>
                   <M3eIcon slot='icon' name='admin_panel_settings' />
-                  <span slot='label'>管理后台</span>
+                  <span slot='label'>{t('common.admin-console')}</span>
                 </M3eNavMenuItem>
               )}
             </Link>
@@ -174,7 +176,7 @@ export default function NavDrawer() {
             {({ isActive }) => (
               <M3eNavMenuItem selected={isActive}>
                 <M3eIcon slot='icon' name='settings' />
-                <span slot='label'>设置</span>
+                <span slot='label'>{t('settings.title')}</span>
               </M3eNavMenuItem>
             )}
           </Link>
@@ -189,8 +191,8 @@ export default function NavDrawer() {
           </span>
           <span className='min-w-0 flex-1 truncate'>{name}</span>
           <M3eIconButton
-            aria-label='退出登录'
-            title='退出登录'
+            aria-label={t('common.logout')}
+            title={t('common.logout')}
             onClick={handleLogout}
           >
             <M3eIcon name='logout' />
@@ -205,7 +207,7 @@ export default function NavDrawer() {
             <span className='flex size-9 shrink-0 items-center justify-center rounded-full bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container)'>
               <M3eIcon name='person' />
             </span>
-            <span className='flex-1'>登录</span>
+            <span className='flex-1'>{t('auth.login')}</span>
           </Link>
         </div>
       )}

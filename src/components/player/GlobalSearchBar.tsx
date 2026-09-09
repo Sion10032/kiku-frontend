@@ -7,6 +7,7 @@ import { M3eList, M3eListItem } from '@m3e/react/list';
 import type { M3eListItemElement } from '@m3e/react/list';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
+import { useTranslation } from 'react-i18next';
 import '@m3e/icons/outlined/close';
 import '@m3e/icons/outlined/history';
 import clsx from 'clsx';
@@ -55,6 +56,7 @@ interface SuggestionGroup {
  *   （默认 56px），需一并设为 48px。
  */
 export default function GlobalSearchBar() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const urlQ = useRouterState({
     select: (s) =>
@@ -238,7 +240,7 @@ export default function GlobalSearchBar() {
           slot='input'
           type='text'
           className='w-full'
-          placeholder='搜索作品、标签、社团、声优…'
+          placeholder={t('search.placeholder')}
           value={term}
           onKeyDown={handleInputKeyDown}
           // term 双保险同步：原生 input 监听为主（IME 组合期可靠，见上方
@@ -294,6 +296,7 @@ function SearchPanel({
   onPick,
   onRemoveHistory,
 }: SearchPanelProps) {
+  const { t } = useTranslation();
   const tags = useTagsQuery();
   const circles = useCirclesQuery();
   const vas = useVasQuery();
@@ -316,11 +319,11 @@ function SearchPanel({
           q: fieldQuery(field, x.name),
         }));
     return [
-      { title: '标签', items: take(tags.data, 'tag') },
-      { title: '社团', items: take(circles.data, 'circle') },
-      { title: '声优', items: take(vas.data, 'va') },
+      { title: t('search.group-tags'), items: take(tags.data, 'tag') },
+      { title: t('search.group-circles'), items: take(circles.data, 'circle') },
+      { title: t('search.group-vas'), items: take(vas.data, 'va') },
     ].filter((g) => g.items.length > 0);
-  }, [term, tags.data, circles.data, vas.data]);
+  }, [term, tags.data, circles.data, vas.data, t]);
 
   // 扁平可选项序列：输入态为建议项，默认态为历史项。
   // commit 期写入 ref 供父组件 keydown 读取：React 在派发下一个离散事件前会
@@ -386,7 +389,7 @@ function SearchPanel({
             onClick={() => onPick(term.trim())}
             className='cursor-pointer px-4 py-3 text-sm text-(--md-sys-color-on-surface-variant) hover:bg-(--md-sys-color-surface-container-high)'
           >
-            Enter 查看全部结果 →
+            {t('search.view-all-results')}
           </div>
         </>
       ) : (
@@ -409,7 +412,9 @@ function SearchPanel({
                   <span className='block truncate'>{item.name}</span>
                   <span slot='trailing'>
                     <M3eIconButton
-                      aria-label={`删除历史记录 ${item.name}`}
+                      aria-label={t('search.remove-history', {
+                        name: item.name,
+                      })}
                       onClick={(e) => {
                         e.stopPropagation();
                         onRemoveHistory(item.name);
@@ -424,7 +429,7 @@ function SearchPanel({
           )}
           {/* 底部行：LQL 语法提示 */}
           <div className='px-4 py-3 text-xs text-(--md-sys-color-on-surface-variant)'>
-            支持 tag:xxx、circle:xxx、va:xxx、series:xxx，-tag:yyy 排除
+            {t('search.lql-hint')}
           </div>
         </>
       )}

@@ -16,6 +16,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eIcon } from '@m3e/react/icon';
+import { useTranslation } from 'react-i18next';
 import '@m3e/icons/outlined/drag_indicator';
 import clsx from 'clsx';
 import { usePlayerStore, type QueuedTrack } from '../../stores/playerStore';
@@ -31,6 +32,7 @@ export default function QueueDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const queue = usePlayerStore((s) => s.queue);
   const currentUid = usePlayerStore((s) => s.currentUid);
   const playFromQueue = usePlayerStore((s) => s.playFromQueue);
@@ -59,10 +61,10 @@ export default function QueueDialog({
       open={open}
       onClosed={onClose}
       dismissible
-      closeLabel='关闭'
+      closeLabel={t('common.close')}
       className='[--m3e-dialog-max-width:min(560px,calc(100vw-2rem))] [--m3e-dialog-min-width:min(280px,calc(100vw-2rem))]'
     >
-      <span slot='header'>播放列表（{queue.length}）</span>
+      <span slot='header'>{t('player.queue-title', { n: queue.length })}</span>
 
       <div className='max-h-[60vh] overflow-y-auto'>
         <DndContext

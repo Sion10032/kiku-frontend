@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -44,6 +45,7 @@ import { formatDuration, formatRemaining } from '../../utils/format';
  * - 首挂载自底部滑入；hide 时滑回底部但不卸载（translate 过渡 + inert）
  */
 export default function AudioPlayer() {
+  const { t } = useTranslation();
   const hide = usePlayerStore((s) => s.hide);
   const currentUid = usePlayerStore((s) => s.currentUid);
   const track = usePlayerStore(selectCurrentTrack);
@@ -108,7 +110,7 @@ export default function AudioPlayer() {
     >
       {/* 顶栏：仅折叠（播放列表/睡眠定时移至底部辅助行） */}
       <div className='flex items-center p-4'>
-        <M3eIconButton aria-label='折叠播放器' onClick={toggleHide}>
+        <M3eIconButton aria-label={t('player.collapse')} onClick={toggleHide}>
           <M3eIcon name='keyboard_arrow_down' />
         </M3eIconButton>
       </div>
@@ -121,7 +123,7 @@ export default function AudioPlayer() {
         <div
           role={hasLyrics ? 'button' : undefined}
           tabIndex={hasLyrics ? 0 : undefined}
-          aria-label={hasLyrics ? '查看歌词' : undefined}
+          aria-label={hasLyrics ? t('player.show-lyrics') : undefined}
           onClick={hasLyrics ? () => setShowLyrics(true) : undefined}
           onKeyDown={
             hasLyrics
@@ -205,28 +207,34 @@ export default function AudioPlayer() {
               scale 2/3 拉齐视觉宽度（盒尺寸不变） */}
           <M3eIconButton
             className='[&>m3e-icon]:scale-2/3'
-            aria-label={`快退 ${rewindSeekTime} 秒`}
+            aria-label={t('player.rewind', { count: rewindSeekTime })}
             onClick={triggerRewind}
           >
             <M3eIcon name='fast_rewind' />
           </M3eIconButton>
-          <M3eIconButton aria-label='上一首' onClick={previousTrack}>
+          <M3eIconButton
+            aria-label={t('player.previous-track')}
+            onClick={previousTrack}
+          >
             <M3eIcon name='skip_previous' />
           </M3eIconButton>
           <M3eIconButton
             variant='filled'
-            aria-label={playing ? '暂停' : '播放'}
+            aria-label={playing ? t('player.pause') : t('player.play')}
             onClick={togglePlaying}
             size='medium'
           >
             <M3eIcon name={playing ? 'pause' : 'play_arrow'} />
           </M3eIconButton>
-          <M3eIconButton aria-label='下一首' onClick={nextTrack}>
+          <M3eIconButton
+            aria-label={t('player.next-track')}
+            onClick={nextTrack}
+          >
             <M3eIcon name='skip_next' />
           </M3eIconButton>
           <M3eIconButton
             className='[&>m3e-icon]:scale-2/3'
-            aria-label={`快进 ${forwardSeekTime} 秒`}
+            aria-label={t('player.forward', { count: forwardSeekTime })}
             onClick={triggerForward}
           >
             <M3eIcon name='fast_forward' />
@@ -236,19 +244,21 @@ export default function AudioPlayer() {
         {/* 辅助开关：播放模式 / 播放列表 / 睡眠定时 */}
         <div className='flex items-center gap-4'>
           <M3eIconButton
-            aria-label={`播放模式：${PLAY_MODE_LABEL[playMode]}`}
+            aria-label={t('player.play-mode', {
+              mode: t(PLAY_MODE_LABEL[playMode]),
+            })}
             onClick={changePlayMode}
           >
             <M3eIcon name={PLAY_MODE_ICON[playMode]} />
           </M3eIconButton>
           <M3eIconButton
-            aria-label='播放列表'
+            aria-label={t('player.queue')}
             onClick={() => setQueueOpen(true)}
           >
             <M3eIcon name='queue_music' />
           </M3eIconButton>
           <M3eIconButton
-            aria-label='睡眠定时器'
+            aria-label={t('player.sleep-timer')}
             onClick={() => setSleepOpen(true)}
           >
             <M3eIcon name='bedtime' />
@@ -258,7 +268,7 @@ export default function AudioPlayer() {
         {/* 音量 */}
         <div className='flex w-full max-w-sm items-center gap-3'>
           <M3eIconButton
-            aria-label={muted ? '取消静音' : '静音'}
+            aria-label={muted ? t('player.unmute') : t('player.mute')}
             onClick={toggleMuted}
           >
             <M3eIcon

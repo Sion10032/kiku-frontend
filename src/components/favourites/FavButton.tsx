@@ -1,5 +1,6 @@
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eIconButton } from '@m3e/react/icon-button';
+import { useTranslation } from 'react-i18next';
 import '@m3e/icons/outlined/favorite';
 import { useFavouriteMutation } from '../../queries/useFavouritesQuery';
 import type { FavouriteTargetType } from '../../types';
@@ -26,12 +27,13 @@ export default function FavButton({
   favourited,
   size = 'md',
 }: FavButtonProps) {
+  const { t } = useTranslation();
   const mutation = useFavouriteMutation();
   if (favourited === undefined) return null;
 
   return (
     <M3eIconButton
-      aria-label={favourited ? '取消收藏' : '收藏'}
+      aria-label={favourited ? t('common.unfavourite') : t('works.favourite')}
       disabled={mutation.isPending}
       className={size === 'sm' ? 'text-sm' : ''}
       onClick={(e: Event) => {
