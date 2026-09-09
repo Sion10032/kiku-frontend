@@ -2,6 +2,8 @@ import type {
   MetadataField,
   MetadataOverrideDetail,
   SaveMetadataOverrideInput,
+  SanitizeTitlesInput,
+  SanitizeTitlesResponse,
 } from '../types';
 import { apiFetch } from './client';
 
@@ -30,5 +32,15 @@ export function resetMetadataField(
 ): Promise<{ success: boolean }> {
   return apiFetch<{ success: boolean }>(`work/${workId}/metadata/${field}`, {
     method: 'DELETE',
+  });
+}
+
+/** 标题净化：dryRun=true 预览（含 samples，上限 50），false 执行。 */
+export function sanitizeTitles(
+  input: SanitizeTitlesInput,
+): Promise<SanitizeTitlesResponse> {
+  return apiFetch<SanitizeTitlesResponse>('work/metadata/sanitize-titles', {
+    method: 'POST',
+    json: input,
   });
 }

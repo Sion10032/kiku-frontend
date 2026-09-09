@@ -467,3 +467,27 @@ export interface SaveMetadataOverrideInput {
   addVas?: Array<{ id?: string; name: string }>;
   removeVaIds?: string[];
 }
+
+// ---------- 标题净化 ----------
+
+export interface SanitizeTitlesSample {
+  id: string;
+  before: string;
+  after: string;
+  overridden: boolean;
+}
+
+/** dryRun=true → 含 samples；false → success + 计数。 */
+export interface SanitizeTitlesResponse {
+  success?: boolean;
+  matched: number;
+  overridden: number;
+  samples?: SanitizeTitlesSample[];
+}
+
+export interface SanitizeTitlesInput {
+  pattern: string;
+  replacement: string;
+  q?: string;
+  dryRun: boolean;
+}

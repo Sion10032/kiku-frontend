@@ -3,9 +3,14 @@ import { M3eSnackbar } from '@m3e/react/snackbar';
 import {
   getMetadataOverride,
   resetMetadataField,
+  sanitizeTitles,
   saveMetadataOverride,
 } from '../api/metadata';
-import type { MetadataField, SaveMetadataOverrideInput } from '../types';
+import type {
+  MetadataField,
+  SaveMetadataOverrideInput,
+  SanitizeTitlesInput,
+} from '../types';
 
 /** 提取给用户看的错误消息（apiFetch 已把后端 error 字段转成 ApiError.message）。 */
 function apiErrorMessage(err: unknown): string {
@@ -64,6 +69,28 @@ export function useResetMetadataFieldMutation(workId: string) {
     },
     onError: (err) => {
       M3eSnackbar.open(`恢复失败：${apiErrorMessage(err)}`);
+    },
+  });
+}
+
+/**
+ * 标题净化：dryRun=true 预览静默（结果由组件读 data 渲染）；
+ * false 执行成功后失效作品缓存并弹完成提示（含覆盖已有覆盖的计数）。
+ */
+export function useSanitizeTitlesMutation() {
+  const invalidate = useInvalidateOverriddenWorks();
+  return useMutation({
+    mutationFn: (input: SanitizeTitlesInput) => sanitizeTitles(input),
+    onSuccess: (data, variables) => {
+      if (!variables.dryRun) {
+        invalidate();
+        M3eSnackbar.open(
+          `标题净化完成：修改 ${data.matched} 件（其中 ${data.overridden} 件为覆盖已有覆盖）`,
+        );
+      }
+    },
+    onError: (err) => {
+      M3eSnackbar.open(`标题净化失败：${apiErrorMessage(err)}`);
     },
   });
 }
