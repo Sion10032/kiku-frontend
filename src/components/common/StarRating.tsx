@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/star';
 
@@ -31,6 +32,7 @@ export default function StarRating({
   size = '1.5rem',
   disabled = false,
 }: StarRatingProps) {
+  const { t } = useTranslation();
   const [hover, setHover] = useState(0);
   // 悬停预览优先于已选值
   const active = hover > 0 ? hover : value;
@@ -38,7 +40,7 @@ export default function StarRating({
   return (
     <div
       role='radiogroup'
-      aria-label='评分'
+      aria-label={t('common.rating')}
       className='flex items-center'
       onMouseLeave={() => setHover(0)}
     >
@@ -48,7 +50,7 @@ export default function StarRating({
           type='button'
           role='radio'
           aria-checked={value === n}
-          aria-label={`${n} 星`}
+          aria-label={t('common.n-stars', { count: n })}
           disabled={disabled}
           onClick={() => onChange(n)}
           onMouseEnter={() => setHover(n)}

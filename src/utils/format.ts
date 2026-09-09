@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import type { UserWorkProgress } from '../types';
 
 /**
@@ -32,9 +33,11 @@ export function formatTotalDuration(
     return null;
   }
   if (seconds >= 3600) {
-    return `${(seconds / 3600).toFixed(1)} 小时`;
+    return i18next.t('works.duration-hours', {
+      n: (seconds / 3600).toFixed(1),
+    });
   }
-  return `${Math.round(seconds / 60)} 分钟`;
+  return i18next.t('works.duration-minutes', { n: Math.round(seconds / 60) });
 }
 
 /**
@@ -55,7 +58,7 @@ export function formatProgress(
     const percent = Math.min(100, Math.round((position / duration) * 100));
     return `${percent}%`;
   }
-  return '正在听';
+  return i18next.t('works.now-listening');
 }
 
 /**

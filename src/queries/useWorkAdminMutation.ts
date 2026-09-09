@@ -1,10 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { M3eSnackbar } from '@m3e/react/snackbar';
+import i18next from 'i18next';
 import * as api from '../api/works';
 
 /** 提取给用户看的错误消息（apiFetch 已把后端 error 字段转成 ApiError.message）。 */
 function apiErrorMessage(err: unknown): string {
-  return err instanceof Error && err.message ? err.message : '未知错误';
+  return err instanceof Error && err.message
+    ? err.message
+    : i18next.t('common.unknown-error');
 }
 
 /**
@@ -22,15 +25,21 @@ export function useRefreshWorkMetadataMutation() {
   return useMutation({
     mutationFn: (workId: string) => api.refreshWorkMetadata(workId),
     onMutate: () => {
-      M3eSnackbar.open('正在更新元数据…');
+      M3eSnackbar.open(i18next.t('works.admin.updating-metadata'));
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['work'] });
       queryClient.invalidateQueries({ queryKey: ['works'] });
-      M3eSnackbar.open(`元数据已更新：《${data.title}》`);
+      M3eSnackbar.open(
+        i18next.t('works.admin.metadata-updated', { title: data.title }),
+      );
     },
     onError: (err) => {
-      M3eSnackbar.open(`更新元数据失败：${apiErrorMessage(err)}`);
+      M3eSnackbar.open(
+        i18next.t('works.admin.update-metadata-failed', {
+          message: apiErrorMessage(err),
+        }),
+      );
     },
   });
 }
@@ -40,15 +49,19 @@ export function useSyncWorkTracksMutation() {
   return useMutation({
     mutationFn: (workId: string) => api.syncWorkTracks(workId),
     onMutate: () => {
-      M3eSnackbar.open('正在同步音轨时长…');
+      M3eSnackbar.open(i18next.t('works.admin.syncing-tracks'));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work'] });
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
-      M3eSnackbar.open('音轨时长已同步');
+      M3eSnackbar.open(i18next.t('works.admin.tracks-synced'));
     },
     onError: (err) => {
-      M3eSnackbar.open(`同步音轨时长失败：${apiErrorMessage(err)}`);
+      M3eSnackbar.open(
+        i18next.t('works.admin.sync-tracks-failed', {
+          message: apiErrorMessage(err),
+        }),
+      );
     },
   });
 }
@@ -58,16 +71,20 @@ export function useSoftDeleteWorkMutation() {
   return useMutation({
     mutationFn: (workId: string) => api.softDeleteWork(workId),
     onMutate: () => {
-      M3eSnackbar.open('正在删除作品…');
+      M3eSnackbar.open(i18next.t('works.admin.deleting-work'));
     },
     onSettled: (_data, error) => {
       if (error) {
-        M3eSnackbar.open(`删除失败：${apiErrorMessage(error)}`);
+        M3eSnackbar.open(
+          i18next.t('works.admin.delete-failed', {
+            message: apiErrorMessage(error),
+          }),
+        );
         return;
       }
       queryClient.invalidateQueries({ queryKey: ['works'] });
       queryClient.invalidateQueries({ queryKey: ['favourites'] });
-      M3eSnackbar.open('作品已删除');
+      M3eSnackbar.open(i18next.t('works.admin.work-deleted'));
     },
   });
 }

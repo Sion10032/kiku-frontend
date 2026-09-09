@@ -1,8 +1,7 @@
+import i18next from 'i18next';
+
 /** localStorage 存储键（自定义设备名） */
 const DEVICE_NAME_KEY = 'kiku-device-name';
-
-/** UA 推断不出任何信息时的默认设备名 */
-const FALLBACK_DEVICE_NAME = '我的设备';
 
 /** 从 userAgent 推断 OS 名；未知返回空串。 */
 function inferOs(userAgent: string): string {
@@ -40,11 +39,14 @@ export function inferDeviceName(userAgent: string): string {
     .join(' · ');
 }
 
-/** 当前设备名：localStorage 自定义名优先；否则 UA 推断，仍为空则兜底。 */
+/** 当前设备名：localStorage 自定义名优先；否则 UA 推断，仍为空则兜底（展示时按界面语言翻译）。 */
 export function getDeviceName(): string {
   const custom = localStorage.getItem(DEVICE_NAME_KEY)?.trim();
   if (custom) return custom;
-  return inferDeviceName(navigator.userAgent) || FALLBACK_DEVICE_NAME;
+  return (
+    inferDeviceName(navigator.userAgent)
+    || i18next.t('common.default-device-name')
+  );
 }
 
 /** 保存自定义设备名（trim 后为空串 = 清除，回落 UA 推断）。 */

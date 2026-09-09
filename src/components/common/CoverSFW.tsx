@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { mediaUrl } from '../../api/client';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { formatProgress, formatTotalDuration } from '../../utils/format';
@@ -45,6 +46,7 @@ export default function CoverSFW({
   duration,
   read = false,
 }: CoverSFWProps) {
+  const { t } = useTranslation();
   const [hovering, setHovering] = useState(false);
   const [failed, setFailed] = useState(false);
   const blurMode = useSettingsStore((s) => s.coverBlurMode);
@@ -54,7 +56,7 @@ export default function CoverSFW({
   // 右下角三分支（D9）：已读 → 「已读 · 总时长」（read=听完/手动，取代百分比）；
   // 未读维持「进度 · 总时长」（两项/一项/不显示，视数据而定）
   const cornerText = read
-    ? ['已读', durationText].filter(Boolean).join(' · ')
+    ? [t('common.read'), durationText].filter(Boolean).join(' · ')
     : [progressText, durationText].filter(Boolean).join(' · ');
 
   const shouldBlur =

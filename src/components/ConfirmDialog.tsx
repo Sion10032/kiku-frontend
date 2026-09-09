@@ -1,12 +1,13 @@
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eButton } from '@m3e/react/button';
+import { useTranslation } from 'react-i18next';
 
 /** 通用确认对话框（M3eDialog 封装）：危险操作二次确认。 */
 export default function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = '确认',
+  confirmLabel,
   destructive = false,
   onConfirm,
   onCancel,
@@ -19,13 +20,20 @@ export default function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
+  const confirmText = confirmLabel ?? t('common.confirm');
   return (
-    <M3eDialog open={open} dismissible closeLabel='关闭' onClosed={onCancel}>
+    <M3eDialog
+      open={open}
+      dismissible
+      closeLabel={t('common.close')}
+      onClosed={onCancel}
+    >
       <span slot='header'>{title}</span>
       <p className='m-0 text-sm'>{message}</p>
       <div slot='actions' className='flex justify-end gap-2'>
         <M3eButton variant='text' onClick={onCancel}>
-          取消
+          {t('common.cancel')}
         </M3eButton>
         <M3eButton
           variant='text'
@@ -36,7 +44,7 @@ export default function ConfirmDialog({
           }
           onClick={onConfirm}
         >
-          {confirmLabel}
+          {confirmText}
         </M3eButton>
       </div>
     </M3eDialog>

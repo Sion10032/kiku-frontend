@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/first_page';
@@ -42,6 +43,7 @@ export default function Paginator({
   disabled = false,
   onPage,
 }: PaginatorProps) {
+  const { t } = useTranslation();
   // 页数与边界判断，语义对齐 m3e-paginator 的 pageCount / hasPreviousPage / hasNextPage
   const pageCount = pageSize > 0 ? Math.ceil(length / pageSize) : 0;
   const hasPrevious = pageIndex >= 1;
@@ -67,10 +69,10 @@ export default function Paginator({
     <>
       <span
         className='mx-2 flex items-center gap-1 whitespace-nowrap text-sm'
-        title={`共 ${length} 条`}
+        title={t('common.total-items', { count: length })}
       >
         <input
-          aria-label='当前页码，输入后回车跳页'
+          aria-label={t('common.page-input-label')}
           inputMode='numeric'
           // leading 显式等于 content-box 高（h-6 24px − 上下 border 2px）：
           // 输入框文字垂直居中的跨浏览器保底，避免依赖 UA 默认行为
@@ -91,32 +93,32 @@ export default function Paginator({
         <span className='opacity-70'>/ {Math.max(pageCount, 1)}</span>
       </span>
       <M3eIconButton
-        aria-label='第一页'
-        title='第一页'
+        aria-label={t('common.first-page')}
+        title={t('common.first-page')}
         disabled={disabled || !hasPrevious}
         onClick={() => onPage(0)}
       >
         <M3eIcon name='first_page' />
       </M3eIconButton>
       <M3eIconButton
-        aria-label='上一页'
-        title='上一页'
+        aria-label={t('common.prev-page')}
+        title={t('common.prev-page')}
         disabled={disabled || !hasPrevious}
         onClick={() => onPage(pageIndex - 1)}
       >
         <M3eIcon name='chevron_left' />
       </M3eIconButton>
       <M3eIconButton
-        aria-label='下一页'
-        title='下一页'
+        aria-label={t('common.next-page')}
+        title={t('common.next-page')}
         disabled={disabled || !hasNext}
         onClick={() => onPage(pageIndex + 1)}
       >
         <M3eIcon name='chevron_right' />
       </M3eIconButton>
       <M3eIconButton
-        aria-label='最后一页'
-        title='最后一页'
+        aria-label={t('common.last-page')}
+        title={t('common.last-page')}
         disabled={disabled || !hasNext}
         onClick={() => onPage(pageCount - 1)}
       >

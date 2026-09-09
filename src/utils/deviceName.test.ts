@@ -1,5 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import i18next from 'i18next';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { getDeviceName, inferDeviceName, setDeviceName } from './deviceName';
+// getDeviceName 兕底走 i18next.t 翻译；断言 zh-CN 文案，需先初始化并固定语言
+// （node 测试环境 navigator.languages 为 en-US，init 默认会解析到 en）
+import '../i18n';
+
+beforeAll(async () => {
+  await i18next.changeLanguage('zh-CN');
+});
 
 const UA_WINDOWS_CHROME =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';

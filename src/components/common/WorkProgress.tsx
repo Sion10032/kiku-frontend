@@ -6,23 +6,26 @@
  * - 已读：存在播放记录 → 主题色点（--m3e-primary）
  */
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 const DOT_CLASS =
   'absolute right-2 top-2 z-10 size-3.5 rounded-full border-2 border-(--md-sys-color-outline-variant)/50';
 
 export function UnreadDot() {
+  const { t } = useTranslation();
   return (
     <span
-      title='未读'
+      title={t('common.unread')}
       className={clsx(DOT_CLASS, 'bg-(--md-sys-color-error)')}
     />
   );
 }
 
 export function ReadDot() {
+  const { t } = useTranslation();
   return (
     <span
-      title='已读'
+      title={t('common.read')}
       className={clsx(DOT_CLASS, 'bg-(--md-sys-color-primary)')}
     />
   );

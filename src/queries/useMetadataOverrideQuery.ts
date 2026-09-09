@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { M3eSnackbar } from '@m3e/react/snackbar';
+import i18next from 'i18next';
 import {
   getMetadataOverride,
   resetMetadataField,
@@ -14,7 +15,9 @@ import type {
 
 /** 提取给用户看的错误消息（apiFetch 已把后端 error 字段转成 ApiError.message）。 */
 function apiErrorMessage(err: unknown): string {
-  return err instanceof Error && err.message ? err.message : '未知错误';
+  return err instanceof Error && err.message
+    ? err.message
+    : i18next.t('common.unknown-error');
 }
 
 export function metadataOverrideKey(workId: string) {
@@ -49,10 +52,14 @@ export function useSaveMetadataOverrideMutation(workId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: metadataOverrideKey(workId) });
       invalidate();
-      M3eSnackbar.open('元数据覆盖已保存');
+      M3eSnackbar.open(i18next.t('works.meta.override-saved'));
     },
     onError: (err) => {
-      M3eSnackbar.open(`保存失败：${apiErrorMessage(err)}`);
+      M3eSnackbar.open(
+        i18next.t('works.meta.override-save-failed', {
+          message: apiErrorMessage(err),
+        }),
+      );
     },
   });
 }
@@ -65,10 +72,14 @@ export function useResetMetadataFieldMutation(workId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: metadataOverrideKey(workId) });
       invalidate();
-      M3eSnackbar.open('已恢复原始值');
+      M3eSnackbar.open(i18next.t('works.meta.reset-success'));
     },
     onError: (err) => {
-      M3eSnackbar.open(`恢复失败：${apiErrorMessage(err)}`);
+      M3eSnackbar.open(
+        i18next.t('works.meta.reset-failed', {
+          message: apiErrorMessage(err),
+        }),
+      );
     },
   });
 }
@@ -85,12 +96,19 @@ export function useSanitizeTitlesMutation() {
       if (!variables.dryRun) {
         invalidate();
         M3eSnackbar.open(
-          `标题净化完成：修改 ${data.matched} 件（其中 ${data.overridden} 件为覆盖已有覆盖）`,
+          i18next.t('works.sanitize.done', {
+            matched: data.matched,
+            overridden: data.overridden,
+          }),
         );
       }
     },
     onError: (err) => {
-      M3eSnackbar.open(`标题净化失败：${apiErrorMessage(err)}`);
+      M3eSnackbar.open(
+        i18next.t('works.sanitize.failed', {
+          message: apiErrorMessage(err),
+        }),
+      );
     },
   });
 }

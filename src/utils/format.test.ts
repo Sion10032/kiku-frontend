@@ -1,11 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import i18next from 'i18next';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   formatDuration,
   formatProgress,
   formatRemaining,
   formatTotalDuration,
 } from './format';
+// format 内部用 i18next.t 翻译；断言 zh-CN 文案，需先初始化并固定语言
+// （node 测试环境 navigator.languages 为 en-US，init 默认会解析到 en）
+import '../i18n';
 import type { UserWorkProgress } from '../types';
+
+beforeAll(async () => {
+  await i18next.changeLanguage('zh-CN');
+});
 
 /** 构造最小合法进度记录（测试用） */
 function makeProgress(

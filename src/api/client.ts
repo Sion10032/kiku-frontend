@@ -67,7 +67,7 @@ function extractErrorMessage(data: unknown, status: number): string {
     if (typeof error === 'string') return error;
     if (typeof message === 'string') return message;
   }
-  return `请求失败 (${status})`;
+  return i18next.t('common.request-failed', { status });
 }
 
 /**
