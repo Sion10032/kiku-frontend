@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eButton } from '@m3e/react/button';
@@ -45,6 +46,7 @@ import type { InstanceMode } from '../types';
 /** 向导提交阶段：idle 可点击；migrating 后台迁移中；finishing 正在写入初始化配置 */
 type SetupPhase = 'idle' | 'migrating' | 'finishing';
 export default function Setup() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setUser = useUserStore((s) => s.setUser);
   const setAuth = useUserStore((s) => s.setAuth);
@@ -94,11 +96,11 @@ export default function Setup() {
       setAuth(true);
       markSetupDone();
       await refreshSharedConfig();
-      M3eSnackbar.open('初始化完成');
+      M3eSnackbar.open(t('auth.setup.success'));
       navigate({ to: '/works' });
     } catch (err) {
       const msg =
-        err instanceof ApiError ? err.message : '初始化失败，请检查网络';
+        err instanceof ApiError ? err.message : t('auth.setup.failed');
       M3eSnackbar.open(msg);
       goPhase('idle');
       // 置空迁移状态触发重新拉取：迁移已完成时（migrated=true）重试将
@@ -116,7 +118,7 @@ export default function Setup() {
   function failMigration(error?: string | null): void {
     if (phaseRef.current !== 'migrating') return;
     goPhase('idle');
-    M3eSnackbar.open(error ?? '迁移失败');
+    M3eSnackbar.open(error ?? t('auth.setup.migration-failed'));
   }
 
   async function onSubmit(): Promise<void> {
@@ -134,7 +136,9 @@ export default function Setup() {
       if (!(err instanceof ApiError && err.status === 409)) {
         goPhase('idle');
         M3eSnackbar.open(
-          err instanceof ApiError ? err.message : '迁移启动失败，请检查网络',
+          err instanceof ApiError
+            ? err.message
+            : t('auth.setup.migration-start-failed'),
         );
       }
     }
@@ -172,22 +176,30 @@ export default function Setup() {
       <div className='flex w-full max-w-md flex-col gap-5 rounded-3xl p-8 shadow-lg'>
         <div className='mb-2 flex flex-col items-center gap-2'>
           <M3eIcon name='library_music' className='text-4xl' />
-          <h1 className='m-0 text-2xl font-medium'>Kiku 初始化</h1>
+          <h1 className='m-0 text-2xl font-medium'>{t('auth.setup.title')}</h1>
         </div>
 
         <M3eStepper orientation='vertical'>
           {/* 第 1 步：管理员账号（form 校验门控下一步） */}
           {/* for 是 React 保留属性名，用 attr:for 前缀设置为 attribute */}
-          <M3eStep htmlFor='setup-step-account'>管理员账号</M3eStep>
-          <M3eStep htmlFor='setup-step-migrate'>迁移旧数据</M3eStep>
-          <M3eStep htmlFor='setup-step-mode'>实例模式</M3eStep>
-          <M3eStep htmlFor='setup-step-register'>注册开关</M3eStep>
+          <M3eStep htmlFor='setup-step-account'>
+            {t('auth.setup.step-account')}
+          </M3eStep>
+          <M3eStep htmlFor='setup-step-migrate'>
+            {t('auth.setup.step-migrate')}
+          </M3eStep>
+          <M3eStep htmlFor='setup-step-mode'>
+            {t('auth.setup.step-mode')}
+          </M3eStep>
+          <M3eStep htmlFor='setup-step-register'>
+            {t('auth.setup.step-register')}
+          </M3eStep>
 
           <M3eStepPanel id='setup-step-account'>
             <form className='flex flex-col gap-5'>
               <M3eFormField variant='outlined' className='w-full'>
                 <label slot='label' htmlFor='setup-name'>
-                  管理员用户名
+                  {t('auth.setup.admin-username')}
                 </label>
                 <M3eIcon slot='prefix' name='person' />
                 <input
@@ -203,7 +215,7 @@ export default function Setup() {
               </M3eFormField>
               <M3eFormField variant='outlined' className='w-full'>
                 <label slot='label' htmlFor='setup-password'>
-                  密码
+                  {t('auth.password')}
                 </label>
                 <M3eIcon slot='prefix' name='lock' />
                 <input
@@ -220,7 +232,7 @@ export default function Setup() {
             </form>
             <div slot='actions'>
               <M3eButton>
-                <M3eStepperNext>下一步</M3eStepperNext>
+                <M3eStepperNext>{t('auth.setup.next')}</M3eStepperNext>
               </M3eButton>
             </div>
           </M3eStepPanel>
@@ -228,36 +240,55 @@ export default function Setup() {
           {/* 第 2 步：迁移旧数据（探测数量展示 + 是否迁移的选择，迁移推迟到提交时执行） */}
           <M3eStepPanel id='setup-step-migrate'>
             {migLoading && !migStatus && (
-              <p className='m-0 text-sm opacity-70'>检测中…</p>
+              <p className='m-0 text-sm opacity-70'>
+                {t('auth.setup.detecting')}
+              </p>
             )}
 
             {!migStatus?.available && !migLoading && (
               <p className='m-0 text-sm opacity-70'>
-                未检测到旧数据（old-data 目录）。可跳过此步，之后无法自动迁移。
+                {t('auth.setup.no-old-data')}
               </p>
             )}
 
             {migStatus?.available && (
               <div className='flex flex-col gap-3'>
                 <p className='m-0 text-sm opacity-70'>
-                  检测到
                   {migStatus.flavor === 'number178-fork'
-                    ? ' Number178 fork 版（kikoeru number17）'
-                    : ' kikoeru 原版'}
-                  旧数据：
+                    ? t('auth.setup.detected-number178')
+                    : t('auth.setup.detected-kikoeru')}
                 </p>
                 <ul className='m-0 list-inside list-disc text-sm'>
-                  <li>作品 {migStatus.stats?.works ?? 0} 部</li>
-                  <li>用户 {migStatus.stats?.users ?? 0} 个（含密码）</li>
-                  <li>评论 {migStatus.stats?.reviews ?? 0} 条</li>
                   <li>
-                    播放历史 {migStatus.stats?.playHistory ?? 0}{' '}
-                    条（迁为已读标记）
+                    {t('auth.setup.stat-works', {
+                      count: migStatus.stats?.works ?? 0,
+                    })}
                   </li>
-                  <li>封面 {migStatus.stats?.covers ?? 0} 张</li>
+                  <li>
+                    {t('auth.setup.stat-users', {
+                      count: migStatus.stats?.users ?? 0,
+                    })}
+                  </li>
+                  <li>
+                    {t('auth.setup.stat-reviews', {
+                      count: migStatus.stats?.reviews ?? 0,
+                    })}
+                  </li>
+                  <li>
+                    {t('auth.setup.stat-play-history', {
+                      count: migStatus.stats?.playHistory ?? 0,
+                    })}
+                  </li>
+                  <li>
+                    {t('auth.setup.stat-covers', {
+                      count: migStatus.stats?.covers ?? 0,
+                    })}
+                  </li>
                 </ul>
                 <label className='mt-2 flex items-center justify-between gap-3'>
-                  <span className='text-sm'>迁移旧数据</span>
+                  <span className='text-sm'>
+                    {t('auth.setup.step-migrate')}
+                  </span>
                   <M3eSwitch
                     checked={migEnabled}
                     onInput={(e) =>
@@ -266,28 +297,29 @@ export default function Setup() {
                   />
                 </label>
                 <p className='m-0 text-xs opacity-60'>
-                  将在完成初始化时一并迁移；关闭则跳过，之后无法自动迁移。
+                  {t('auth.setup.migrate-switch-desc')}
                 </p>
                 <p className='m-0 text-xs opacity-60'>
-                  迁移后请在设置中把 rootFolder
-                  路径改为当前环境实际路径，再执行扫描。
+                  {t('auth.setup.root-folder-hint')}
                 </p>
               </div>
             )}
 
             <div slot='actions'>
               <M3eButton>
-                <M3eStepperPrevious>上一步</M3eStepperPrevious>
+                <M3eStepperPrevious>
+                  {t('auth.setup.previous')}
+                </M3eStepperPrevious>
               </M3eButton>
               <M3eButton>
-                <M3eStepperNext>下一步</M3eStepperNext>
+                <M3eStepperNext>{t('auth.setup.next')}</M3eStepperNext>
               </M3eButton>
             </div>
           </M3eStepPanel>
 
           <M3eStepPanel id='setup-step-mode'>
             <p className='m-0 text-sm opacity-70'>
-              私有模式需要登录；公开模式匿名可浏览（只读）。
+              {t('auth.setup.mode-desc')}
             </p>
             <form className='mt-4 flex flex-col gap-3'>
               <label className='flex cursor-pointer items-center gap-3'>
@@ -296,7 +328,7 @@ export default function Setup() {
                   checked={instanceMode === 'private'}
                   onChange={() => setInstanceMode('private')}
                 />
-                <span className='text-sm'>私有（需要登录）</span>
+                <span className='text-sm'>{t('auth.setup.mode-private')}</span>
               </label>
               <label className='flex cursor-pointer items-center gap-3'>
                 <M3eRadio
@@ -304,25 +336,29 @@ export default function Setup() {
                   checked={instanceMode === 'public'}
                   onChange={() => setInstanceMode('public')}
                 />
-                <span className='text-sm'>公开（匿名只读浏览）</span>
+                <span className='text-sm'>{t('auth.setup.mode-public')}</span>
               </label>
             </form>
             <div slot='actions'>
               <M3eButton>
-                <M3eStepperPrevious>上一步</M3eStepperPrevious>
+                <M3eStepperPrevious>
+                  {t('auth.setup.previous')}
+                </M3eStepperPrevious>
               </M3eButton>
               <M3eButton>
-                <M3eStepperNext>下一步</M3eStepperNext>
+                <M3eStepperNext>{t('auth.setup.next')}</M3eStepperNext>
               </M3eButton>
             </div>
           </M3eStepPanel>
 
           <M3eStepPanel id='setup-step-register'>
             <p className='m-0 text-sm opacity-70'>
-              是否允许用户自行注册（注册用户默认 user 权限，可随时在后台修改）。
+              {t('auth.setup.register-desc')}
             </p>
             <label className='mt-4 flex items-center justify-between gap-3'>
-              <span className='text-sm'>允许注册</span>
+              <span className='text-sm'>
+                {t('auth.setup.allow-registration')}
+              </span>
               <M3eSwitch
                 checked={allowRegistration}
                 onInput={(e) =>
@@ -335,7 +371,10 @@ export default function Setup() {
                 {phase === 'migrating' ? (
                   <>
                     <span className='text-sm opacity-70'>
-                      正在迁移旧数据… {mig.imported}/{mig.total} 张封面
+                      {t('auth.setup.migrating', {
+                        imported: mig.imported,
+                        total: mig.total,
+                      })}
                     </span>
                     <progress
                       className='w-full'
@@ -345,21 +384,23 @@ export default function Setup() {
                   </>
                 ) : (
                   <span className='text-sm opacity-70'>
-                    迁移完成，正在写入初始化配置…
+                    {t('auth.setup.finalizing')}
                   </span>
                 )}
               </div>
             )}
             <div slot='actions'>
               <M3eButton>
-                <M3eStepperPrevious>上一步</M3eStepperPrevious>
+                <M3eStepperPrevious>
+                  {t('auth.setup.previous')}
+                </M3eStepperPrevious>
               </M3eButton>
               <M3eButton disabled={phase !== 'idle'} onClick={onSubmit}>
                 {phase === 'migrating'
-                  ? '迁移中…'
+                  ? t('auth.setup.phase-migrating')
                   : phase === 'finishing'
-                    ? '初始化中…'
-                    : '完成初始化'}
+                    ? t('auth.setup.phase-finishing')
+                    : t('auth.setup.finish')}
               </M3eButton>
             </div>
           </M3eStepPanel>

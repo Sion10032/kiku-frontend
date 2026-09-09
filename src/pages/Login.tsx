@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from '@tanstack/react-router';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eButton } from '@m3e/react/button';
@@ -18,6 +19,7 @@ import { ApiError } from '../api/client';
  * 401 显示后端错误信息；其他错误统一提示。
  */
 export default function Login() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuth();
   const [name, setName] = useState('');
@@ -37,15 +39,15 @@ export default function Login() {
     setLoading(true);
     try {
       await login({ name, password });
-      M3eSnackbar.open('登录成功');
+      M3eSnackbar.open(t('auth.login-success'));
       navigate({ to: '/works' });
     } catch (err) {
       const msg =
         err instanceof ApiError
           ? err.status === 401
-            ? '用户名或密码错误'
+            ? t('auth.invalid-credentials')
             : err.message
-          : '登录失败，请检查网络';
+          : t('auth.login-failed');
       M3eSnackbar.open(msg);
     } finally {
       setLoading(false);
@@ -65,7 +67,7 @@ export default function Login() {
 
         <M3eFormField variant='outlined' className='w-full'>
           <label slot='label' htmlFor='login-name'>
-            用户名
+            {t('auth.username')}
           </label>
           <M3eIcon slot='prefix' name='person' />
           <input
@@ -83,7 +85,7 @@ export default function Login() {
 
         <M3eFormField variant='outlined' className='w-full'>
           <label slot='label' htmlFor='login-password'>
-            密码
+            {t('auth.password')}
           </label>
           <M3eIcon slot='prefix' name='lock' />
           <input
@@ -105,7 +107,7 @@ export default function Login() {
           className='mt-2 w-full'
           disabled={loading}
         >
-          {loading ? '登录中…' : '登录'}
+          {loading ? t('auth.logging-in') : t('auth.login')}
         </M3eButton>
 
         {getCachedSharedConfig()?.allowRegistration && (
@@ -113,7 +115,7 @@ export default function Login() {
             to='/register'
             className='text-center text-sm text-(--md-sys-color-primary) no-underline'
           >
-            没有账号？注册
+            {t('auth.no-account-register')}
           </Link>
         )}
       </form>

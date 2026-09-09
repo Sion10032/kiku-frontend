@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from '@tanstack/react-router';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eButton } from '@m3e/react/button';
@@ -18,6 +19,7 @@ import { ApiError } from '../api/client';
  * 重名（409）提示「用户名已存在」。
  */
 export default function Register() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setUser = useUserStore((s) => s.setUser);
   const setAuth = useUserStore((s) => s.setAuth);
@@ -34,15 +36,15 @@ export default function Register() {
       setToken(res.token);
       setUser(res.name, res.group);
       setAuth(true);
-      M3eSnackbar.open('注册成功');
+      M3eSnackbar.open(t('auth.register-success'));
       navigate({ to: '/works' });
     } catch (err) {
       const msg =
         err instanceof ApiError
           ? err.status === 409
-            ? '用户名已存在'
+            ? t('auth.name-exists')
             : err.message
-          : '注册失败，请检查网络';
+          : t('auth.register-failed');
       M3eSnackbar.open(msg);
     } finally {
       setLoading(false);
@@ -57,12 +59,14 @@ export default function Register() {
       >
         <div className='mb-2 flex flex-col items-center gap-2'>
           <M3eIcon name='library_music' className='text-4xl' />
-          <h1 className='m-0 text-2xl font-medium'>注册 Kiku</h1>
+          <h1 className='m-0 text-2xl font-medium'>
+            {t('auth.register-title')}
+          </h1>
         </div>
 
         <M3eFormField variant='outlined' className='w-full'>
           <label slot='label' htmlFor='register-name'>
-            用户名
+            {t('auth.username')}
           </label>
           <M3eIcon slot='prefix' name='person' />
           <input
@@ -79,7 +83,7 @@ export default function Register() {
 
         <M3eFormField variant='outlined' className='w-full'>
           <label slot='label' htmlFor='register-password'>
-            密码
+            {t('auth.password')}
           </label>
           <M3eIcon slot='prefix' name='lock' />
           <input
@@ -100,14 +104,14 @@ export default function Register() {
           className='mt-2 w-full'
           disabled={loading}
         >
-          {loading ? '注册中…' : '注册'}
+          {loading ? t('auth.registering') : t('auth.register')}
         </M3eButton>
 
         <Link
           to='/login'
           className='text-center text-sm text-(--md-sys-color-primary) no-underline'
         >
-          已有账号？返回登录
+          {t('auth.has-account-login')}
         </Link>
       </form>
     </div>
