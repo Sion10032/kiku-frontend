@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import ky, { HTTPError, type Options } from 'ky';
 import { getToken, clearToken } from './token';
 
@@ -7,7 +8,7 @@ const API_BASE = '/api';
 /**
  * 预配置的 ky 实例：
  * - prefix 统一前缀（请求 path 不要以 `/` 开头）
- * - beforeRequest 注入 JWT（Authorization header）
+ * - beforeRequest 注入 JWT（Authorization header）与界面语言（Accept-Language header）
  * - beforeError 拦截 401：清除 token 并跳转登录（避免登录页自身循环）
  * - 有限重试（仅网络/超时及幂等状态码）
  */
@@ -18,6 +19,8 @@ export const api = ky.create({
       ({ request }) => {
         const token = getToken();
         if (token) request.headers.set('Authorization', `Bearer ${token}`);
+        // 当前界面语言（src/i18n 初始化后有效），供后端错误消息本地化
+        request.headers.set('Accept-Language', i18next.language);
       },
     ],
     beforeError: [

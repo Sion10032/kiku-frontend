@@ -27,9 +27,11 @@
     "@tanstack/react-router": "^1.170.32",
     "clsx": "^2.1.1",
     "howler": "^2.2.4",
+    "i18next": "^26.4.2",
     "ky": "^2.0.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.13",
     "tailwindcss": "^4.3.3",
     "zod": "^4.4.3",
     "zustand": "^5.0.15"
