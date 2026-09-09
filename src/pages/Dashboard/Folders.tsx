@@ -3,6 +3,7 @@ import { M3eButton } from '@m3e/react/button';
 import { M3eCard } from '@m3e/react/card';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSnackbar } from '@m3e/react/snackbar';
+import { useTranslation } from 'react-i18next';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import DashboardPage from '../../components/dashboard/DashboardPage';
 import type { RootFolder } from '../../types';
@@ -19,6 +20,7 @@ import {
  * - RootFolder = { name: string; path: string }。
  */
 export default function Folders() {
+  const { t } = useTranslation();
   const { data: config, isPending } = useAdminConfig();
   const updateConfig = useUpdateAdminConfig();
   const folders = config?.rootFolders ?? [];
@@ -39,9 +41,9 @@ export default function Folders() {
   async function saveFolders(next: RootFolder[]) {
     try {
       await updateConfig.mutateAsync({ rootFolders: next });
-      M3eSnackbar.open('保存成功');
+      M3eSnackbar.open(t('common.save-success'));
     } catch (err) {
-      showApiError(err, '保存失败');
+      showApiError(err, t('common.save-failed'));
     }
   }
 
@@ -49,11 +51,11 @@ export default function Folders() {
     const name = newName.trim();
     const path = newPath.trim();
     if (!name || !path) {
-      M3eSnackbar.open('名称和路径不能为空');
+      M3eSnackbar.open(t('dashboard.folders.name-path-required'));
       return;
     }
     if (folders.some((f) => f.path === path)) {
-      M3eSnackbar.open('该路径已存在');
+      M3eSnackbar.open(t('dashboard.folders.path-exists'));
       return;
     }
     const next = [...folders, { name, path }];
@@ -85,7 +87,7 @@ export default function Folders() {
     const name = editName.trim();
     const path = editPath.trim();
     if (!name || !path) {
-      M3eSnackbar.open('名称和路径不能为空');
+      M3eSnackbar.open(t('dashboard.folders.name-path-required'));
       return;
     }
     const next = folders.map((f, i) => (i === editIndex ? { name, path } : f));
@@ -95,26 +97,32 @@ export default function Folders() {
 
   if (isPending) {
     return (
-      <DashboardPage title='文件夹'>
-        <p className='opacity-70'>加载中…</p>
+      <DashboardPage title={t('dashboard.folders.title')}>
+        <p className='opacity-70'>{t('common.loading')}</p>
       </DashboardPage>
     );
   }
   if (!config) {
     return (
-      <DashboardPage title='文件夹'>
-        <p className='text-[var(--md-sys-color-error)]'>无法加载配置</p>
+      <DashboardPage title={t('dashboard.folders.title')}>
+        <p className='text-[var(--md-sys-color-error)]'>
+          {t('dashboard.load-failed')}
+        </p>
       </DashboardPage>
     );
   }
 
   return (
-    <DashboardPage title='文件夹'>
-      <h2 className='m-0 text-lg font-normal'>根文件夹</h2>
+    <DashboardPage title={t('dashboard.folders.title')}>
+      <h2 className='m-0 text-lg font-normal'>
+        {t('dashboard.folders.root-folders')}
+      </h2>
       <M3eCard>
         <div slot='content'>
           {folders.length === 0 && (
-            <p className='m-0 text-sm opacity-50'>暂无根文件夹</p>
+            <p className='m-0 text-sm opacity-50'>
+              {t('dashboard.folders.empty')}
+            </p>
           )}
 
           <div className='flex flex-col gap-3'>
@@ -127,7 +135,7 @@ export default function Folders() {
                   <>
                     <M3eFormField variant='outlined' hideSubscript='always'>
                       <label slot='label' htmlFor={`edit-name-${index}`}>
-                        名称
+                        {t('dashboard.folders.name')}
                       </label>
                       <input
                         id={`edit-name-${index}`}
@@ -138,7 +146,7 @@ export default function Folders() {
                     </M3eFormField>
                     <M3eFormField variant='outlined' hideSubscript='always'>
                       <label slot='label' htmlFor={`edit-path-${index}`}>
-                        路径
+                        {t('dashboard.folders.path')}
                       </label>
                       <input
                         id={`edit-path-${index}`}
@@ -152,14 +160,14 @@ export default function Folders() {
                         variant='text'
                         onClick={() => setEditIndex(-1)}
                       >
-                        取消
+                        {t('common.cancel')}
                       </M3eButton>
                       <M3eButton
                         variant='filled'
                         disabled={saving}
                         onClick={handleEditSave}
                       >
-                        保存
+                        {t('common.save')}
                       </M3eButton>
                     </div>
                   </>
@@ -178,7 +186,7 @@ export default function Folders() {
                         variant='text'
                         onClick={() => startEdit(index)}
                       >
-                        编辑
+                        {t('dashboard.folders.edit')}
                       </M3eButton>
                       <M3eButton
                         variant='text'
@@ -186,7 +194,7 @@ export default function Folders() {
                         disabled={saving}
                         onClick={() => handleDelete(index)}
                       >
-                        删除
+                        {t('common.delete')}
                       </M3eButton>
                     </div>
                   </div>
@@ -198,7 +206,7 @@ export default function Folders() {
           {/* 新增文件夹（内联表单） */}
           <div
             role='group'
-            aria-label='添加根文件夹'
+            aria-label={t('dashboard.folders.add-root-folder')}
             className='mt-3 flex flex-wrap items-end gap-3 border-t border-[var(--md-sys-color-outline-variant)] pt-3'
           >
             <M3eFormField
@@ -207,13 +215,13 @@ export default function Folders() {
               className='min-w-40 flex-1 [--m3e-form-field-width:100%]'
             >
               <label slot='label' htmlFor='new-folder-name'>
-                名称
+                {t('dashboard.folders.name')}
               </label>
               <input
                 id='new-folder-name'
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder='如：主音声库'
+                placeholder={t('dashboard.folders.name-ph')}
                 className='w-full border-none bg-transparent py-2 text-sm outline-none'
               />
             </M3eFormField>
@@ -223,7 +231,7 @@ export default function Folders() {
               className='min-w-56 flex-[2] [--m3e-form-field-width:100%]'
             >
               <label slot='label' htmlFor='new-folder-path'>
-                路径
+                {t('dashboard.folders.path')}
               </label>
               <input
                 id='new-folder-path'
@@ -234,7 +242,7 @@ export default function Folders() {
               />
             </M3eFormField>
             <M3eButton variant='filled' disabled={saving} onClick={handleAdd}>
-              添加
+              {t('dashboard.folders.add')}
             </M3eButton>
           </div>
         </div>
@@ -242,13 +250,15 @@ export default function Folders() {
 
       <ConfirmDialog
         open={pendingDelete !== null}
-        title='删除根文件夹'
+        title={t('dashboard.folders.delete-root-title')}
         message={
           pendingDelete !== null
-            ? `确定删除「${folders[pendingDelete]?.name}」吗？已入库的作品记录不受影响。`
+            ? t('dashboard.folders.delete-root-confirm', {
+                name: folders[pendingDelete]?.name,
+              })
             : ''
         }
-        confirmLabel='删除'
+        confirmLabel={t('common.delete')}
         destructive
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}

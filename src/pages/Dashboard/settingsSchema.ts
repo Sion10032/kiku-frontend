@@ -1,4 +1,17 @@
+import type { TFunction } from 'i18next';
+import type zhCN from '../../i18n/locales/zh-CN.json';
 import type { AdminConfig } from '../../types';
+
+/**
+ * 表单文案的字典 key 集合（dashboard.settings.*）。
+ * label/description/placeholder/options[].label 等文案字段一律存 key，
+ * 渲染处（SettingsSection）经 t() 转换；集合直接取自 zh-CN 字典，
+ * key 漏配（含字典删除后残留）在编译期报错。
+ */
+type SettingsDictKey = Extract<
+  keyof typeof zhCN,
+  `dashboard.settings.${string}`
+>;
 
 /** AdminConfig 中 number 字段的 key。 */
 type NumberKeys = {
@@ -29,8 +42,8 @@ export type FieldDef =
   | {
       key: NumberKeys;
       type: 'number';
-      label: string;
-      description?: string;
+      label: SettingsDictKey;
+      description?: SettingsDictKey;
       min?: number;
       max?: number;
       placeholder?: number;
@@ -38,38 +51,39 @@ export type FieldDef =
   | {
       key: EditableTextKeys;
       type: 'text';
-      label: string;
-      description?: string;
-      placeholder?: string;
+      label: SettingsDictKey;
+      description?: SettingsDictKey;
+      placeholder?: SettingsDictKey;
     }
   | {
       key: EditableBoolKeys;
       type: 'bool';
-      label: string;
-      description?: string;
+      label: SettingsDictKey;
+      description?: SettingsDictKey;
     }
   | {
       key: 'instanceMode' | 'tagLanguage';
       type: 'select';
-      label: string;
-      description?: string;
-      options: Array<{ value: string; label: string }>;
+      label: SettingsDictKey;
+      description?: SettingsDictKey;
+      options: Array<{ value: string; label: SettingsDictKey }>;
     };
 
 export interface SettingsSectionDef {
-  title: string;
+  /** 分组标题的字典 key（渲染处经 t() 转换）。 */
+  title: SettingsDictKey;
   fields: FieldDef[];
 }
 
 export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
   {
-    title: '通用设置',
+    title: 'dashboard.settings.section-general',
     fields: [
       {
         key: 'pageSize',
         type: 'number',
-        label: '每页数量',
-        description: '作品列表每页显示的作品数',
+        label: 'dashboard.settings.page-size',
+        description: 'dashboard.settings.page-size-desc',
         min: 1,
         max: 100,
         placeholder: 20,
@@ -77,35 +91,45 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'tagLanguage',
         type: 'select',
-        label: '标签语言',
+        label: 'dashboard.settings.tag-language',
         options: [
-          { value: 'ja-jp', label: '日语' },
-          { value: 'zh-tw', label: '繁体中文' },
-          { value: 'zh-cn', label: '简体中文' },
+          { value: 'ja-jp', label: 'dashboard.settings.tag-lang-ja' },
+          { value: 'zh-tw', label: 'dashboard.settings.tag-lang-zh-tw' },
+          { value: 'zh-cn', label: 'dashboard.settings.tag-lang-zh-cn' },
         ],
       },
       {
         key: 'instanceMode',
         type: 'select',
-        label: '实例模式',
-        description: '公开模式下匿名用户可只读访问',
+        label: 'dashboard.settings.instance-mode',
+        description: 'dashboard.settings.instance-mode-desc',
         options: [
-          { value: 'private', label: '私有（需要登录）' },
-          { value: 'public', label: '公开（匿名只读）' },
+          {
+            value: 'private',
+            label: 'dashboard.settings.instance-mode-private',
+          },
+          {
+            value: 'public',
+            label: 'dashboard.settings.instance-mode-public',
+          },
         ],
       },
       {
         key: 'allowRegistration',
         type: 'bool',
-        label: '允许注册',
-        description: '是否允许新用户自助注册',
+        label: 'dashboard.settings.allow-registration',
+        description: 'dashboard.settings.allow-registration-desc',
       },
-      { key: 'enableGzip', type: 'bool', label: '启用 Gzip' },
+      {
+        key: 'enableGzip',
+        type: 'bool',
+        label: 'dashboard.settings.enable-gzip',
+      },
       {
         key: 'rewindSeekTime',
         type: 'number',
-        label: '快退秒数',
-        description: '播放器快退按钮的步长（秒）',
+        label: 'dashboard.settings.rewind-seek-time',
+        description: 'dashboard.settings.rewind-seek-time-desc',
         min: 0,
         max: 120,
         placeholder: 5,
@@ -113,24 +137,32 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'forwardSeekTime',
         type: 'number',
-        label: '快进秒数',
-        description: '播放器快进按钮的步长（秒）',
+        label: 'dashboard.settings.forward-seek-time',
+        description: 'dashboard.settings.forward-seek-time-desc',
         min: 0,
         max: 300,
         placeholder: 30,
       },
-      { key: 'checkUpdate', type: 'bool', label: '检查更新' },
-      { key: 'checkBetaUpdate', type: 'bool', label: '检查测试版更新' },
+      {
+        key: 'checkUpdate',
+        type: 'bool',
+        label: 'dashboard.settings.check-update',
+      },
+      {
+        key: 'checkBetaUpdate',
+        type: 'bool',
+        label: 'dashboard.settings.check-beta-update',
+      },
     ],
   },
   {
-    title: '扫描器设置',
+    title: 'dashboard.settings.section-scanner',
     fields: [
       {
         key: 'scannerMaxRecursionDepth',
         type: 'number',
-        label: '最大递归深度',
-        description: '扫描时递归进入子文件夹的层数',
+        label: 'dashboard.settings.max-recursion-depth',
+        description: 'dashboard.settings.max-recursion-depth-desc',
         min: 0,
         max: 16,
         placeholder: 3,
@@ -138,8 +170,8 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'retry',
         type: 'number',
-        label: '重试次数',
-        description: 'DLsite / HVDB 请求失败后的重试次数',
+        label: 'dashboard.settings.retry',
+        description: 'dashboard.settings.retry-desc',
         min: 0,
         max: 10,
         placeholder: 3,
@@ -147,8 +179,8 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'retryDelay',
         type: 'number',
-        label: '重试间隔(ms)',
-        description: '基础重试间隔，随重试次数线性递增',
+        label: 'dashboard.settings.retry-delay',
+        description: 'dashboard.settings.retry-delay-desc',
         min: 0,
         max: 600000,
         placeholder: 5000,
@@ -156,8 +188,8 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'dlsiteTimeout',
         type: 'number',
-        label: 'DLsite 超时(ms)',
-        description: '单个 DLsite 请求的超时时间',
+        label: 'dashboard.settings.dlsite-timeout',
+        description: 'dashboard.settings.dlsite-timeout-desc',
         min: 1000,
         max: 300000,
         placeholder: 30000,
@@ -165,8 +197,8 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'hvdbTimeout',
         type: 'number',
-        label: 'HVDB 超时(ms)',
-        description: '单个 HVDB 请求的超时时间',
+        label: 'dashboard.settings.hvdb-timeout',
+        description: 'dashboard.settings.hvdb-timeout-desc',
         min: 1000,
         max: 300000,
         placeholder: 30000,
@@ -174,12 +206,12 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
     ],
   },
   {
-    title: '服务器设置',
+    title: 'dashboard.settings.section-server',
     fields: [
       {
         key: 'listenPort',
         type: 'number',
-        label: '监听端口',
+        label: 'dashboard.settings.listen-port',
         min: 1,
         max: 65535,
         placeholder: 8888,
@@ -187,8 +219,8 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'dbBusyTimeout',
         type: 'number',
-        label: '数据库忙超时(ms)',
-        description: 'SQLite 写入冲突时的等待上限',
+        label: 'dashboard.settings.db-busy-timeout',
+        description: 'dashboard.settings.db-busy-timeout-desc',
         min: 0,
         max: 600000,
         placeholder: 5000,
@@ -196,8 +228,8 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'expiresIn',
         type: 'number',
-        label: 'JWT 有效期(s)',
-        description: '登录会话有效期，过期需重新登录',
+        label: 'dashboard.settings.expires-in',
+        description: 'dashboard.settings.expires-in-desc',
         min: 60,
         max: 2592000,
         placeholder: 86400,
@@ -205,40 +237,60 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
       {
         key: 'maxParallelism',
         type: 'number',
-        label: '最大并行数',
-        description: '扫描等并发任务的最大并行数',
+        label: 'dashboard.settings.max-parallelism',
+        description: 'dashboard.settings.max-parallelism-desc',
         min: 1,
         max: 32,
         placeholder: 2,
       },
-      { key: 'skipCleanup', type: 'bool', label: '跳过清理' },
-      { key: 'databaseFolderDir', type: 'text', label: '数据库文件夹' },
+      {
+        key: 'skipCleanup',
+        type: 'bool',
+        label: 'dashboard.settings.skip-cleanup',
+      },
+      {
+        key: 'databaseFolderDir',
+        type: 'text',
+        label: 'dashboard.settings.database-folder',
+      },
     ],
   },
   {
-    title: '网络 / 代理',
+    title: 'dashboard.settings.section-network',
     fields: [
       {
         key: 'httpProxyHost',
         type: 'text',
-        label: 'HTTP 代理主机',
-        placeholder: '如 127.0.0.1，留空禁用',
+        label: 'dashboard.settings.proxy-host',
+        placeholder: 'dashboard.settings.proxy-host-ph',
       },
       {
         key: 'httpProxyPort',
         type: 'number',
-        label: 'HTTP 代理端口',
+        label: 'dashboard.settings.proxy-port',
         min: 0,
         max: 65535,
         placeholder: 0,
       },
-      { key: 'blockRemoteConnection', type: 'bool', label: '禁止远程连接' },
-      { key: 'behindProxy', type: 'bool', label: '反向代理' },
-      { key: 'httpsEnabled', type: 'bool', label: 'HTTPS 启用' },
+      {
+        key: 'blockRemoteConnection',
+        type: 'bool',
+        label: 'dashboard.settings.block-remote',
+      },
+      {
+        key: 'behindProxy',
+        type: 'bool',
+        label: 'dashboard.settings.behind-proxy',
+      },
+      {
+        key: 'httpsEnabled',
+        type: 'bool',
+        label: 'dashboard.settings.https-enabled',
+      },
       {
         key: 'httpsPort',
         type: 'number',
-        label: 'HTTPS 端口',
+        label: 'dashboard.settings.https-port',
         min: 1,
         max: 65535,
         placeholder: 443,
@@ -246,20 +298,24 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
     ],
   },
   {
-    title: 'Offload 媒体',
+    title: 'dashboard.settings.section-offload',
     fields: [
-      { key: 'offloadMedia', type: 'bool', label: '启用 Offload' },
+      {
+        key: 'offloadMedia',
+        type: 'bool',
+        label: 'dashboard.settings.offload-media',
+      },
       {
         key: 'offloadStreamPath',
         type: 'text',
-        label: '流媒体路径',
-        placeholder: '留空使用默认',
+        label: 'dashboard.settings.offload-stream-path',
+        placeholder: 'dashboard.settings.offload-path-ph',
       },
       {
         key: 'offloadDownloadPath',
         type: 'text',
-        label: '下载路径',
-        placeholder: '留空使用默认',
+        label: 'dashboard.settings.offload-download-path',
+        placeholder: 'dashboard.settings.offload-path-ph',
       },
     ],
   },
@@ -279,18 +335,30 @@ export const NUMBER_FIELDS = new Map(
     .map((f) => [f.key, { min: f.min, max: f.max }]),
 );
 
-/** 数字字段校验：返回首个非法字段的错误文案，全部合法返回 null。 */
-export function validateNumbers(draft: AdminConfig): string | null {
+/** 数字字段校验：返回首个非法字段的错误文案（经 t 本地化），全部合法返回 null。 */
+export function validateNumbers(
+  draft: AdminConfig,
+  t: TFunction,
+): string | null {
   for (const section of SETTINGS_SECTIONS) {
     for (const field of section.fields) {
       if (field.type !== 'number') continue;
       const v = draft[field.key];
       const rule = NUMBER_FIELDS.get(field.key);
-      if (!Number.isFinite(v)) return `「${field.label}」不是有效数字`;
+      if (!Number.isFinite(v))
+        return t('dashboard.settings.error-invalid-number', {
+          label: t(field.label),
+        });
       if (rule?.min !== undefined && v < rule.min)
-        return `「${field.label}」不能小于 ${rule.min}`;
+        return t('dashboard.settings.error-min', {
+          label: t(field.label),
+          min: rule.min,
+        });
       if (rule?.max !== undefined && v > rule.max)
-        return `「${field.label}」不能大于 ${rule.max}`;
+        return t('dashboard.settings.error-max', {
+          label: t(field.label),
+          max: rule.max,
+        });
     }
   }
   return null;

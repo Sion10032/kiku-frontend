@@ -4,6 +4,7 @@ import { M3eCard } from '@m3e/react/card';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eSnackbar } from '@m3e/react/snackbar';
+import { useTranslation } from 'react-i18next';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import DashboardPage from '../../components/dashboard/DashboardPage';
 import { InputRow, SegmentedRow } from '../../components/dashboard/SettingRows';
@@ -24,6 +25,7 @@ import { showApiError } from '../../utils/apiError';
  * - 删除用户（deleteUsers）
  */
 export default function UserManage() {
+  const { t } = useTranslation();
   const { data: users = [], isPending } = useUsers();
   const createMutation = useCreateUser();
   const pwdMutation = useUpdatePassword();
@@ -49,15 +51,15 @@ export default function UserManage() {
     const name = newName.trim();
     const password = newPassword.trim();
     if (!name || !password) {
-      M3eSnackbar.open('用户名和密码不能为空');
+      M3eSnackbar.open(t('dashboard.users.name-required'));
       return;
     }
     if (name.length < 4) {
-      M3eSnackbar.open('用户名至少 4 个字符');
+      M3eSnackbar.open(t('dashboard.users.name-too-short'));
       return;
     }
     if (password.length < 5) {
-      M3eSnackbar.open('密码至少 5 个字符');
+      M3eSnackbar.open(t('dashboard.users.password-too-short'));
       return;
     }
     try {
@@ -65,9 +67,9 @@ export default function UserManage() {
       setNewName('');
       setNewPassword('');
       setNewGroup('user');
-      M3eSnackbar.open(`用户 ${name} 创建成功`);
+      M3eSnackbar.open(t('dashboard.users.create-success', { name }));
     } catch (err) {
-      showApiError(err, '创建失败');
+      showApiError(err, t('dashboard.users.create-failed'));
     }
   }
 
@@ -75,16 +77,16 @@ export default function UserManage() {
     if (!editingUser) return;
     const pwd = newPwd.trim();
     if (!pwd || pwd.length < 5) {
-      M3eSnackbar.open('密码至少 5 个字符');
+      M3eSnackbar.open(t('dashboard.users.password-too-short'));
       return;
     }
     try {
       await pwdMutation.mutateAsync({ name: editingUser, newPassword: pwd });
       setEditingUser(null);
       setNewPwd('');
-      M3eSnackbar.open(`用户 ${editingUser} 密码已更新`);
+      M3eSnackbar.open(t('dashboard.users.pwd-updated', { name: editingUser }));
     } catch (err) {
-      showApiError(err, '更新失败');
+      showApiError(err, t('dashboard.users.update-failed'));
     }
   }
 
@@ -98,28 +100,32 @@ export default function UserManage() {
     setPendingDelete(null);
     try {
       await deleteMutation.mutateAsync({ users: [{ name }] });
-      M3eSnackbar.open(`用户 ${name} 已删除`);
+      M3eSnackbar.open(t('dashboard.users.deleted', { name }));
     } catch (err) {
-      showApiError(err, '删除失败');
+      showApiError(err, t('dashboard.users.delete-failed'));
     }
   }
 
   if (isPending) {
     return (
-      <DashboardPage title='用户管理'>
-        <p className='opacity-70'>加载中…</p>
+      <DashboardPage title={t('dashboard.users.title')}>
+        <p className='opacity-70'>{t('common.loading')}</p>
       </DashboardPage>
     );
   }
 
   return (
-    <DashboardPage title='用户管理'>
+    <DashboardPage title={t('dashboard.users.title')}>
       {/* 用户列表 */}
-      <h2 className='m-0 text-lg font-normal'>用户列表 ({users.length})</h2>
+      <h2 className='m-0 text-lg font-normal'>
+        {t('dashboard.users.list', { n: users.length })}
+      </h2>
       <M3eCard>
         <div slot='content'>
           {users.length === 0 && (
-            <p className='m-0 text-sm opacity-50'>暂无用户</p>
+            <p className='m-0 text-sm opacity-50'>
+              {t('dashboard.users.empty')}
+            </p>
           )}
 
           <div className='flex flex-col gap-2'>
@@ -149,7 +155,7 @@ export default function UserManage() {
                       setNewPwd('');
                     }}
                   >
-                    改密
+                    {t('dashboard.users.change-pwd')}
                   </M3eButton>
                   <M3eButton
                     variant='text'
@@ -157,7 +163,7 @@ export default function UserManage() {
                     disabled={saving}
                     onClick={() => handleDelete(user.name)}
                   >
-                    删除
+                    {t('common.delete')}
                   </M3eButton>
                 </div>
               </div>
@@ -167,28 +173,28 @@ export default function UserManage() {
       </M3eCard>
 
       {/* 创建用户 */}
-      <h2 className='m-0 text-lg font-normal'>创建用户</h2>
+      <h2 className='m-0 text-lg font-normal'>{t('dashboard.users.create')}</h2>
       <M3eCard>
         <div slot='content' className='flex flex-col gap-6'>
           <InputRow
             id='new-user-name'
-            label='用户名'
-            description='至少 4 个字符'
-            placeholder='用户名'
+            label={t('dashboard.users.username')}
+            description={t('dashboard.users.username-desc')}
+            placeholder={t('dashboard.users.username')}
             value={newName}
             onChange={setNewName}
           />
           <InputRow
             id='new-user-pwd'
             type='password'
-            label='密码'
-            description='至少 5 个字符'
-            placeholder='密码'
+            label={t('dashboard.users.password')}
+            description={t('dashboard.users.password-desc')}
+            placeholder={t('dashboard.users.password')}
             value={newPassword}
             onChange={setNewPassword}
           />
           <SegmentedRow
-            label='用户组'
+            label={t('dashboard.users.group')}
             options={[
               { value: 'user', label: 'user' },
               { value: 'guest', label: 'guest' },
@@ -204,7 +210,9 @@ export default function UserManage() {
               disabled={saving}
               onClick={handleCreate}
             >
-              {saving ? '创建中…' : '创建用户'}
+              {saving
+                ? t('dashboard.users.creating')
+                : t('dashboard.users.create')}
             </M3eButton>
           </div>
         </div>
@@ -212,13 +220,13 @@ export default function UserManage() {
 
       <ConfirmDialog
         open={pendingDelete !== null}
-        title='删除用户'
+        title={t('dashboard.users.delete-title')}
         message={
           pendingDelete !== null
-            ? `确定删除用户「${pendingDelete}」吗？该操作不可恢复。`
+            ? t('dashboard.users.delete-confirm', { name: pendingDelete })
             : ''
         }
-        confirmLabel='删除'
+        confirmLabel={t('common.delete')}
         destructive
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
@@ -253,17 +261,22 @@ function PasswordDialog({
   onSave: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <M3eDialog
       open={user !== null}
       dismissible
-      closeLabel='关闭'
+      closeLabel={t('common.close')}
       onClosed={onClose}
     >
-      <span slot='header'>修改密码</span>
+      <span slot='header'>{t('dashboard.users.pwd-dialog-title')}</span>
       <div className='flex flex-col gap-4 py-2'>
-        <p className='m-0 text-sm opacity-70'>用户：{user}</p>
-        <p className='m-0 text-sm opacity-70'>新密码（至少 5 个字符）</p>
+        <p className='m-0 text-sm opacity-70'>
+          {t('dashboard.users.user-label', { name: user ?? '' })}
+        </p>
+        <p className='m-0 text-sm opacity-70'>
+          {t('dashboard.users.new-pwd-hint')}
+        </p>
         <M3eFormField
           variant='outlined'
           hideSubscript='always'
@@ -271,7 +284,7 @@ function PasswordDialog({
         >
           <input
             id='dlg-new-pwd'
-            aria-label='新密码'
+            aria-label={t('dashboard.users.new-pwd')}
             type='password'
             value={pwd}
             onChange={(e) => onPwdChange(e.target.value)}
@@ -281,10 +294,10 @@ function PasswordDialog({
       </div>
       <div slot='actions' className='flex justify-end gap-2'>
         <M3eButton variant='text' onClick={onClose}>
-          取消
+          {t('common.cancel')}
         </M3eButton>
         <M3eButton variant='filled' disabled={saving} onClick={onSave}>
-          保存
+          {t('common.save')}
         </M3eButton>
       </div>
     </M3eDialog>

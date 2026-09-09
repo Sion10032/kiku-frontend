@@ -1,4 +1,5 @@
 import { M3eCard } from '@m3e/react/card';
+import { useTranslation } from 'react-i18next';
 import type { AdminConfig } from '../../types';
 import type { SettingsSectionDef } from './settingsSchema';
 import {
@@ -12,6 +13,7 @@ import {
  * 卡片内容按 FieldDef.type 渲染行：
  * bool → SwitchRow；select → SegmentedRow；number/text → InputRow
  * （number 的原始文本期由父组件管理，save 前统一解析）。
+ * schema 的 title/label/description 等均为字典 key，此处统一 t() 转换。
  */
 export default function SettingsSection({
   section,
@@ -30,9 +32,10 @@ export default function SettingsSection({
   ) => void;
   onNumberTextChange: (key: string, text: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
-      <h2 className='m-0 text-lg font-normal'>{section.title}</h2>
+      <h2 className='m-0 text-lg font-normal'>{t(section.title)}</h2>
       <M3eCard>
         <div slot='content' className='flex flex-col gap-6'>
           {section.fields.map((field) => {
@@ -42,8 +45,12 @@ export default function SettingsSection({
                 <SwitchRow
                   key={field.key}
                   id={id}
-                  label={field.label}
-                  description={field.description}
+                  label={t(field.label)}
+                  description={
+                    field.description !== undefined
+                      ? t(field.description)
+                      : undefined
+                  }
                   checked={!!draft[field.key]}
                   onChecked={(on) => onChange(field.key, on)}
                 />
@@ -53,9 +60,16 @@ export default function SettingsSection({
               return (
                 <SegmentedRow
                   key={field.key}
-                  label={field.label}
-                  description={field.description}
-                  options={field.options}
+                  label={t(field.label)}
+                  description={
+                    field.description !== undefined
+                      ? t(field.description)
+                      : undefined
+                  }
+                  options={field.options.map((opt) => ({
+                    value: opt.value,
+                    label: t(opt.label),
+                  }))}
                   value={String(draft[field.key] ?? '')}
                   onChange={(value) => onChange(field.key, value)}
                 />
@@ -66,8 +80,12 @@ export default function SettingsSection({
                 <InputRow
                   key={field.key}
                   id={id}
-                  label={field.label}
-                  description={field.description}
+                  label={t(field.label)}
+                  description={
+                    field.description !== undefined
+                      ? t(field.description)
+                      : undefined
+                  }
                   type='number'
                   inputMode='numeric'
                   min={field.min}
@@ -88,10 +106,16 @@ export default function SettingsSection({
               <InputRow
                 key={field.key}
                 id={id}
-                label={field.label}
-                description={field.description}
+                label={t(field.label)}
+                description={
+                  field.description !== undefined
+                    ? t(field.description)
+                    : undefined
+                }
                 placeholder={
-                  'placeholder' in field ? field.placeholder : undefined
+                  field.placeholder !== undefined
+                    ? t(field.placeholder)
+                    : undefined
                 }
                 widthClassName='sm:w-72'
                 value={String(draft[field.key] ?? '')}

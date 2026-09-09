@@ -8,25 +8,38 @@ import { M3eAppBar } from '@m3e/react/app-bar';
 import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eTab, M3eTabs } from '@m3e/react/tabs';
+import { useTranslation } from 'react-i18next';
 import '@m3e/icons/outlined/document_scanner';
 import '@m3e/icons/outlined/edit';
 import '@m3e/icons/outlined/folder';
 import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/tune';
 
+/** 导航文案为字典 key（渲染处经 t() 转换），与管理页标题共用同一 key。 */
+type NavLabelKey =
+  | 'dashboard.folders.title'
+  | 'dashboard.scan.title'
+  | 'dashboard.advanced.title'
+  | 'dashboard.users.title'
+  | 'dashboard.metadata.title';
+
 interface NavEntry {
   to: string;
-  label: string;
+  label: NavLabelKey;
   /** M3 outlined 图标名（需配套 side-effect 导入 @m3e/icons/outlined/<name>） */
   icon: string;
 }
 
 const NAV_ENTRIES: NavEntry[] = [
-  { to: '/admin', label: '文件夹', icon: 'folder' },
-  { to: '/admin/scanner', label: '扫描器', icon: 'document_scanner' },
-  { to: '/admin/advanced', label: '高级', icon: 'tune' },
-  { to: '/admin/usermanage', label: '用户管理', icon: 'group' },
-  { to: '/admin/metadata', label: '元数据覆盖', icon: 'edit' },
+  { to: '/admin', label: 'dashboard.folders.title', icon: 'folder' },
+  {
+    to: '/admin/scanner',
+    label: 'dashboard.scan.title',
+    icon: 'document_scanner',
+  },
+  { to: '/admin/advanced', label: 'dashboard.advanced.title', icon: 'tune' },
+  { to: '/admin/usermanage', label: 'dashboard.users.title', icon: 'group' },
+  { to: '/admin/metadata', label: 'dashboard.metadata.title', icon: 'edit' },
 ];
 
 /**
@@ -48,6 +61,7 @@ function isActive(pathname: string, entry: NavEntry): boolean {
  * - 页面内容由 <Outlet/> 渲染，tabs 仅承担导航与指示器，不用 TabPanel。
  */
 export default function DashboardLayout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -56,11 +70,11 @@ export default function DashboardLayout() {
       <M3eAppBar>
         <span slot='leading'>
           <Link to='/works' className='no-underline'>
-            <M3eButton variant='text'>← 返回</M3eButton>
+            <M3eButton variant='text'>← {t('common.back')}</M3eButton>
           </Link>
         </span>
         <span slot='headline' className='text-xl font-medium'>
-          管理后台
+          {t('common.admin-console')}
         </span>
       </M3eAppBar>
 
@@ -72,12 +86,12 @@ export default function DashboardLayout() {
           <M3eTab
             key={entry.to}
             selected={isActive(pathname, entry)}
-            aria-label={entry.label}
+            aria-label={t(entry.label)}
             onClick={() => navigate({ to: entry.to })}
           >
             <M3eIcon slot='icon' name={entry.icon} />
             {/* 窄屏仅图标（文字隐藏后可访问名由 aria-label 保证），≥sm 恢复图标+文字 */}
-            <span className='hidden sm:inline'>{entry.label}</span>
+            <span className='hidden sm:inline'>{t(entry.label)}</span>
           </M3eTab>
         ))}
       </M3eTabs>

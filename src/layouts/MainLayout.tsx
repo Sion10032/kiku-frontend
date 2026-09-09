@@ -4,6 +4,7 @@ import { Outlet } from '@tanstack/react-router';
 import { M3eAppBar } from '@m3e/react/app-bar';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eIconButton } from '@m3e/react/icon-button';
+import { useTranslation } from 'react-i18next';
 import '@m3e/icons/outlined/menu';
 import GlobalSearchBar from '../components/player/GlobalSearchBar';
 import NavDrawer from '../components/player/NavDrawer';
@@ -49,6 +50,7 @@ function isNarrowViewport(): boolean {
  * 移动端正式适配在步骤 15 接入。
  */
 export default function MainLayout() {
+  const { t } = useTranslation();
   const navHidden = useUiStore((s) => s.navHidden);
   const toggleNavHidden = useUiStore((s) => s.toggleNavHidden);
   const isNarrow = useSyncExternalStore(
@@ -97,9 +99,19 @@ export default function MainLayout() {
             size='medium'
             className='density-2'
             aria-label={
-              isNarrow ? '打开导航' : navHidden ? '显示侧栏' : '隐藏侧栏'
+              isNarrow
+                ? t('common.open-nav')
+                : navHidden
+                  ? t('common.show-nav')
+                  : t('common.hide-nav')
             }
-            title={isNarrow ? '打开导航' : navHidden ? '显示侧栏' : '隐藏侧栏'}
+            title={
+              isNarrow
+                ? t('common.open-nav')
+                : navHidden
+                  ? t('common.show-nav')
+                  : t('common.hide-nav')
+            }
             onClick={() =>
               isNarrow ? setOverlayOpen(true) : toggleNavHidden()
             }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { M3eButton } from '@m3e/react/button';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eActionList, M3eListAction } from '@m3e/react/list';
+import { useTranslation } from 'react-i18next';
 import { getWorksList } from '../../api/works';
 import DashboardPage from '../../components/dashboard/DashboardPage';
 import Paginator from '../../components/common/Paginator';
@@ -17,6 +18,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
  * 搜索框旁挂标题净化快捷入口：弹窗内范围只读套用当前搜索条件。
  */
 export default function MetadataOverride() {
+  const { t } = useTranslation();
   const [q, setQ] = useState('');
   const debouncedQ = useDebouncedValue(q, 300);
   const [page, setPage] = useState(1);
@@ -48,7 +50,7 @@ export default function MetadataOverride() {
   const pagination = worksQuery.data?.pagination;
 
   return (
-    <DashboardPage title='元数据覆盖'>
+    <DashboardPage title={t('dashboard.metadata.title')}>
       {/* 搜索框 + 标题净化快捷入口（范围 = 本搜索框当前条件，见弹窗组件注释）。
           hideSubscript 去掉字段底部保留区，按钮与输入框垂直居中对齐 */}
       <div className='flex items-center gap-2'>
@@ -58,8 +60,7 @@ export default function MetadataOverride() {
           className='min-w-0 flex-1 [--m3e-form-field-width:100%] density-3'
         >
           <label slot='label' htmlFor='metadata-admin-search'>
-            搜索作品（LQL：标题/社团/标签/声优/裸词；overridden:title
-            过滤覆盖状态）
+            {t('dashboard.metadata.search-label')}
           </label>
           <input
             id='metadata-admin-search'
@@ -72,10 +73,10 @@ export default function MetadataOverride() {
         <M3eButton
           variant='outlined'
           className='shrink-0'
-          title='标题净化（批量正则替换）'
+          title={t('dashboard.metadata.sanitize-title')}
           onClick={() => setSanitizeOpen(true)}
         >
-          标题净化
+          {t('dashboard.metadata.sanitize')}
         </M3eButton>
       </div>
 
@@ -86,9 +87,11 @@ export default function MetadataOverride() {
       />
 
       {worksQuery.isLoading ? (
-        <div className='py-8 text-center opacity-60'>加载中…</div>
+        <div className='py-8 text-center opacity-60'>{t('common.loading')}</div>
       ) : works.length === 0 ? (
-        <div className='py-8 text-center opacity-60'>无匹配作品</div>
+        <div className='py-8 text-center opacity-60'>
+          {t('dashboard.metadata.no-results')}
+        </div>
       ) : (
         <M3eActionList
           style={

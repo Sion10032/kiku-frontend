@@ -4,6 +4,7 @@ import { M3eButton } from '@m3e/react/button';
 import { M3eCard } from '@m3e/react/card';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eSnackbar } from '@m3e/react/snackbar';
+import { useTranslation } from 'react-i18next';
 import type { AdminConfig } from '../../types';
 import { showApiError } from '../../utils/apiError';
 import {
@@ -21,6 +22,7 @@ import { InputRow } from '../../components/dashboard/SettingRows';
  * - md5secret 只写不回显。
  */
 export default function Advanced() {
+  const { t } = useTranslation();
   const { data: cfg, isPending } = useAdminConfig();
   const updateConfig = useUpdateAdminConfig();
 
@@ -32,14 +34,16 @@ export default function Advanced() {
 
   if (isPending)
     return (
-      <DashboardPage title='高级设置'>
-        <p className='opacity-70'>加载中…</p>
+      <DashboardPage title={t('dashboard.advanced.title')}>
+        <p className='opacity-70'>{t('common.loading')}</p>
       </DashboardPage>
     );
   if (!cfg)
     return (
-      <DashboardPage title='高级设置'>
-        <p className='text-[var(--md-sys-color-error)]'>无法加载配置</p>
+      <DashboardPage title={t('dashboard.advanced.title')}>
+        <p className='text-[var(--md-sys-color-error)]'>
+          {t('dashboard.load-failed')}
+        </p>
       </DashboardPage>
     );
 
@@ -79,10 +83,12 @@ export default function Advanced() {
         if (text === undefined) continue;
         const n = Number(text);
         if (text.trim() === '' || !Number.isFinite(n))
-          return `「${field.label}」不是有效数字`;
+          return t('dashboard.settings.error-invalid-number', {
+            label: t(field.label),
+          });
       }
     }
-    return validateNumbers(draft);
+    return validateNumbers(draft, t);
   };
 
   const handleSave = async () => {
@@ -93,7 +99,7 @@ export default function Advanced() {
     }
     // setField 已保证 delta 中每个键都 ≠ 服务器值，patch 直接取增量
     if (!isDirty) {
-      M3eSnackbar.open('没有需要保存的更改');
+      M3eSnackbar.open(t('dashboard.advanced.nothing-to-save'));
       return;
     }
     const patch: Partial<AdminConfig> = { ...delta };
@@ -103,14 +109,14 @@ export default function Advanced() {
       setDelta({});
       setNumberText({});
       setSecret('');
-      M3eSnackbar.open('保存成功');
+      M3eSnackbar.open(t('common.save-success'));
     } catch (e) {
-      showApiError(e, '保存失败');
+      showApiError(e, t('common.save-failed'));
     }
   };
 
   return (
-    <DashboardPage title='高级设置'>
+    <DashboardPage title={t('dashboard.advanced.title')}>
       {SETTINGS_SECTIONS.map((section) => (
         <SettingsSection
           key={section.title}
@@ -126,13 +132,19 @@ export default function Advanced() {
       <SecretCard secret={secret} onSecretChange={setSecret} />
 
       <div className='flex items-center justify-end gap-3'>
-        {isDirty && <span className='text-xs opacity-60'>有未保存的更改</span>}
+        {isDirty && (
+          <span className='text-xs opacity-60'>
+            {t('dashboard.advanced.unsaved')}
+          </span>
+        )}
         <M3eButton
           variant='filled'
           disabled={!isDirty || updateConfig.isPending}
           onClick={handleSave}
         >
-          {updateConfig.isPending ? '保存中…' : '保存所有设置'}
+          {updateConfig.isPending
+            ? t('dashboard.advanced.saving')
+            : t('dashboard.advanced.save-all')}
         </M3eButton>
       </div>
 
@@ -149,17 +161,20 @@ function SecretCard({
   secret: string;
   onSecretChange: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
-      <h2 className='m-0 text-lg font-normal'>安全设置</h2>
+      <h2 className='m-0 text-lg font-normal'>
+        {t('dashboard.advanced.secret-title')}
+      </h2>
       <M3eCard>
         <div slot='content' className='flex flex-col gap-6'>
           <InputRow
             id='md5secret'
-            label='MD5 Secret'
-            description='只写不回显，留空则不修改'
+            label={t('dashboard.advanced.secret-label')}
+            description={t('dashboard.advanced.secret-desc')}
             type='password'
-            placeholder='输入新 secret…'
+            placeholder={t('dashboard.advanced.secret-ph')}
             widthClassName='sm:w-72'
             value={secret}
             onChange={onSecretChange}
@@ -179,17 +194,18 @@ function LeaveGuard({ isDirty }: { isDirty: boolean }) {
   });
   // 常驻挂载 + open 控制
   const blocked = blocker.status === 'blocked';
+  const { t } = useTranslation();
   return (
     <M3eDialog
       open={blocked}
       dismissible
-      closeLabel='关闭'
+      closeLabel={t('common.close')}
       onClosed={() => {
         if (blocker.status === 'blocked') blocker.reset();
       }}
     >
-      <span slot='header'>有未保存的更改</span>
-      <p className='m-0 text-sm'>离开将丢弃当前修改，确定继续吗？</p>
+      <span slot='header'>{t('dashboard.advanced.unsaved')}</span>
+      <p className='m-0 text-sm'>{t('dashboard.advanced.leave-confirm')}</p>
       <div slot='actions' className='flex justify-end gap-2'>
         <M3eButton
           variant='text'
@@ -197,7 +213,7 @@ function LeaveGuard({ isDirty }: { isDirty: boolean }) {
             if (blocker.status === 'blocked') blocker.reset();
           }}
         >
-          留下
+          {t('dashboard.advanced.stay')}
         </M3eButton>
         <M3eButton
           variant='text'
@@ -206,7 +222,7 @@ function LeaveGuard({ isDirty }: { isDirty: boolean }) {
             if (blocker.status === 'blocked') blocker.proceed();
           }}
         >
-          离开
+          {t('dashboard.advanced.leave')}
         </M3eButton>
       </div>
     </M3eDialog>

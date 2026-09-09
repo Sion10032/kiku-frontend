@@ -17,8 +17,23 @@ import type {
 } from '../../types';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import { showApiError } from '../../utils/apiError';
+import { useTranslation } from 'react-i18next';
 
 type ScanState = 'idle' | 'running' | 'finished' | 'error';
+
+/**
+ * 扫描结果消息：存 key + 数值参数，渲染时经 t() 本地化
+ * （避免语言切换后残留旧语言文案，handleEvent 依赖数组也无需引入 t）。
+ */
+type ScanResultMessage = {
+  key:
+    | 'dashboard.scan.scan-ended'
+    | 'dashboard.scan.finish-scan'
+    | 'dashboard.scan.finish-update'
+    | 'dashboard.scan.finish-scan-short'
+    | 'dashboard.scan.finish-update-short';
+  values?: Record<string, number>;
+};
 
 /**
  * 扫描器页面。
@@ -28,12 +43,15 @@ type ScanState = 'idle' | 'running' | 'finished' | 'error';
  * - 进行中/失败任务面板。
  */
 export default function Scanner() {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<ScanTaskPayload[]>([]); // 仅 pending/scanning
   const [failedTasks, setFailedTasks] = useState<ScanTaskPayload[]>([]);
   const [mainLogs, setMainLogs] = useState<ScanLogPayload[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
   const [state, setState] = useState<ScanState>('idle');
-  const [resultMessage, setResultMessage] = useState('');
+  const [resultMessage, setResultMessage] = useState<ScanResultMessage | null>(
+    null,
+  );
   // SCAN_RESULTS 先于 SCAN_FINISHED 到达，用 ref 规避 useCallback 闭包陈旧
   const resultsRef = useRef<{
     added: number;
@@ -84,7 +102,7 @@ export default function Scanner() {
           // 重连时后端已不在扫描（SCAN_FINISHED 在断线期间错过），
           // 复位本地 running 状态，避免永远停留在「扫描进行中…」
           setState('finished');
-          setResultMessage('扫描已结束');
+          setResultMessage({ key: 'dashboard.scan.scan-ended' });
         }
         break;
       }
@@ -132,11 +150,22 @@ export default function Scanner() {
         setResultMessage(
           r
             ? modeRef.current === 'update'
-              ? `刷新完成：更新 ${r.updated}，失败 ${r.failed}`
-              : `扫描完成：新增 ${r.added}，更新 ${r.updated}，失败 ${r.failed}，跳过 ${r.skipped}`
+              ? {
+                  key: 'dashboard.scan.finish-update',
+                  values: { updated: r.updated, failed: r.failed },
+                }
+              : {
+                  key: 'dashboard.scan.finish-scan',
+                  values: {
+                    added: r.added,
+                    updated: r.updated,
+                    failed: r.failed,
+                    skipped: r.skipped,
+                  },
+                }
             : modeRef.current === 'update'
-              ? '刷新完成'
-              : '扫描完成',
+              ? { key: 'dashboard.scan.finish-update-short' }
+              : { key: 'dashboard.scan.finish-scan-short' },
         );
         break;
       }
@@ -155,30 +184,35 @@ export default function Scanner() {
     setFailedTasks([]);
     setMainLogs([]);
     setCompletedCount(0);
-    setResultMessage('');
+    setResultMessage(null);
     setState('running');
     resultsRef.current = null;
     try {
       await startScan(mode);
     } catch (err) {
       setState('error');
-      showApiError(err, mode === 'update' ? '刷新启动失败' : '扫描启动失败');
+      showApiError(
+        err,
+        mode === 'update'
+          ? t('dashboard.scan.start-update-failed')
+          : t('dashboard.scan.start-scan-failed'),
+      );
     }
   }
 
   async function handleKill() {
     try {
       await killScan();
-      M3eSnackbar.open('已发送终止信号');
+      M3eSnackbar.open(t('dashboard.scan.kill-sent'));
     } catch (err) {
-      showApiError(err, '终止失败');
+      showApiError(err, t('dashboard.scan.kill-failed'));
     }
   }
 
   const isRunning = state === 'running';
 
   return (
-    <DashboardPage title='扫描器'>
+    <DashboardPage title={t('dashboard.scan.title')}>
       {/* 操作按钮 */}
       <div className='flex flex-wrap gap-3'>
         <M3eButton
@@ -187,7 +221,7 @@ export default function Scanner() {
           onClick={() => handleStart('scan')}
         >
           <M3eIcon slot='leadingIcon' name='play_arrow' />
-          扫描本地音声库
+          {t('dashboard.scan.start-scan')}
         </M3eButton>
         <M3eButton
           variant='tonal'
@@ -195,7 +229,7 @@ export default function Scanner() {
           onClick={() => handleStart('update')}
         >
           <M3eIcon slot='leadingIcon' name='sync' />
-          刷新音声库信息
+          {t('dashboard.scan.start-update')}
         </M3eButton>
         <M3eButton
           variant='outlined'
@@ -204,7 +238,7 @@ export default function Scanner() {
           onClick={handleKill}
         >
           <M3eIcon slot='leadingIcon' name='stop' />
-          终止扫描进程
+          {t('dashboard.scan.kill')}
         </M3eButton>
       </div>
 
@@ -228,9 +262,12 @@ export default function Scanner() {
               />
             )}
             <span className='text-sm font-medium'>
-              {isRunning && '扫描进行中…'}
-              {state === 'finished' && (resultMessage || '扫描完成')}
-              {state === 'error' && '扫描出错'}
+              {isRunning && t('dashboard.scan.running')}
+              {state === 'finished'
+                && (resultMessage
+                  ? t(resultMessage.key, resultMessage.values)
+                  : t('dashboard.scan.finish-scan-short'))}
+              {state === 'error' && t('dashboard.scan.error')}
             </span>
           </div>
 
@@ -257,7 +294,9 @@ export default function Scanner() {
                 </div>
               ))}
               {mainLogs.length === 0 && (
-                <div className='opacity-50'>等待日志…</div>
+                <div className='opacity-50'>
+                  {t('dashboard.scan.waiting-logs')}
+                </div>
               )}
             </div>
           </div>
@@ -272,10 +311,12 @@ export default function Scanner() {
               name='play_arrow'
               className='text-[var(--md-sys-color-primary)]'
             />
-            <span className='text-sm font-medium'>处理中 ({tasks.length})</span>
+            <span className='text-sm font-medium'>
+              {t('dashboard.scan.in-progress', { n: tasks.length })}
+            </span>
             {completedCount > 0 && (
               <span className='text-xs opacity-60'>
-                已完成 {completedCount}
+                {t('dashboard.scan.completed', { n: completedCount })}
               </span>
             )}
           </div>
@@ -288,7 +329,9 @@ export default function Scanner() {
                 >
                   <span className='text-sm'>{task.title}</span>
                   <span className='ml-2 text-xs opacity-50'>
-                    {task.status === 'scanning' ? '处理中' : '等待'}
+                    {task.status === 'scanning'
+                      ? t('dashboard.scan.task-scanning')
+                      : t('dashboard.scan.task-waiting')}
                   </span>
                 </div>
               ))}
@@ -306,7 +349,7 @@ export default function Scanner() {
               className='text-[var(--md-sys-color-error)]'
             />
             <span className='text-sm font-medium'>
-              处理失败 ({failedTasks.length})
+              {t('dashboard.scan.failed-count', { n: failedTasks.length })}
             </span>
           </div>
           <div slot='content'>
