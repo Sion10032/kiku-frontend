@@ -37,6 +37,16 @@ a {
   --md-sys-density-scale: 0;
 }
 
+/* m3e dialog 2.7.11 起的 M3 Expressive 开关动画（容器高度生长、内容分级淡入）
+   过于明显，全部置为瞬时。组件动画时长均读取 --md-sys-motion-duration-* 变量。 */
+m3e-dialog {
+  --md-sys-motion-duration-long-2: 0s; /* 打开：面板位移/容器高度/遮罩 */
+  --md-sys-motion-duration-short-3: 0s; /* 关闭：同上 */
+  --md-sys-motion-duration-medium-1: 0s; /* header/content 淡入 */
+  --md-sys-motion-duration-medium-2: 0s; /* actions 淡入 */
+  --md-sys-motion-duration-short-2: 0s; /* header/content/actions 淡出 */
+}
+
 /* 歌词行切换淡入（LyricsBar 用 tailwind animate-[fade-in_...] 引用） */
 @keyframes fade-in {
   from {
