@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import i18next from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { M3eCard } from '@m3e/react/card';
 import { M3eSwitch } from '@m3e/react/switch';
 import { M3eButton } from '@m3e/react/button';
@@ -15,6 +17,7 @@ import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { SETTING_CONTROL_FILL, SETTING_ROW_LAYOUT } from '../constants';
+import { setLanguage, type Locale } from '../i18n';
 import {
   useBackupSettingsMutation,
   useDeleteSettingBackupMutation,
@@ -34,38 +37,49 @@ import {
 } from '../stores/settingsStore';
 import { useThemeStore, DEFAULT_SEED } from '../stores/themeStore';
 
-const COLOR_MODES: { value: ColorMode; label: string }[] = [
-  { value: 'auto', label: '跟随系统' },
-  { value: 'light', label: '浅色' },
-  { value: 'dark', label: '深色' },
+const COLOR_MODES: {
+  value: ColorMode;
+  label: `settings.color-mode-${ColorMode}`;
+}[] = [
+  { value: 'auto', label: 'settings.color-mode-auto' },
+  { value: 'light', label: 'settings.color-mode-light' },
+  { value: 'dark', label: 'settings.color-mode-dark' },
 ];
 
 const LYRIC_LINE_COUNTS = [1, 2, 3];
 
-const COVER_BLUR_MODES: { value: CoverBlurMode; label: string }[] = [
-  { value: 'always', label: '始终模糊' },
-  { value: 'hover', label: '悬浮显示' },
-  { value: 'never', label: '始终显示' },
+const COVER_BLUR_MODES: {
+  value: CoverBlurMode;
+  label: `settings.cover-blur-${CoverBlurMode}`;
+}[] = [
+  { value: 'always', label: 'settings.cover-blur-always' },
+  { value: 'hover', label: 'settings.cover-blur-hover' },
+  { value: 'never', label: 'settings.cover-blur-never' },
 ];
 
-const TIME_DISPLAY_MODES: { value: TimeDisplayMode; label: string }[] = [
-  { value: 'total', label: '总时长' },
-  { value: 'remaining', label: '剩余时间' },
+const TIME_DISPLAY_MODES: {
+  value: TimeDisplayMode;
+  label: `settings.time-display-${TimeDisplayMode}`;
+}[] = [
+  { value: 'total', label: 'settings.time-display-total' },
+  { value: 'remaining', label: 'settings.time-display-remaining' },
 ];
 
-const WORKS_PAGINATION_MODES: { value: WorksPaginationMode; label: string }[] =
-  [
-    { value: 'paginate', label: '分页' },
-    { value: 'infinite', label: '无限滚动' },
-  ];
+const WORKS_PAGINATION_MODES: {
+  value: WorksPaginationMode;
+  label: `settings.works-pagination-${WorksPaginationMode}`;
+}[] = [
+  { value: 'paginate', label: 'settings.works-pagination-paginate' },
+  { value: 'infinite', label: 'settings.works-pagination-infinite' },
+];
 
 const WORKS_PAGINATOR_POSITIONS: {
   value: WorksPaginatorPosition;
-  label: string;
+  label: `settings.paginator-position-${WorksPaginatorPosition}`;
 }[] = [
-  { value: 'top', label: '顶部' },
-  { value: 'bottom', label: '底部' },
-  { value: 'both', label: '顶部和底部' },
+  { value: 'top', label: 'settings.paginator-position-top' },
+  { value: 'bottom', label: 'settings.paginator-position-bottom' },
+  { value: 'both', label: 'settings.paginator-position-both' },
 ];
 
 /**
@@ -86,6 +100,7 @@ const WORKS_PAGINATOR_POSITIONS: {
  * - 悬浮歌词：LyricsBar 的字体大小 / 换行行数上限 / 背景透明度
  */
 export default function Settings() {
+  const { t } = useTranslation();
   const dynamicColor = useSettingsStore((s) => s.dynamicColor);
   const colorMode = useSettingsStore((s) => s.colorMode);
   const setDynamicColor = useSettingsStore((s) => s.setDynamicColor);
@@ -113,16 +128,44 @@ export default function Settings() {
   const uiScale = useSettingsStore((s) => s.uiScale);
   const setUiScale = useSettingsStore((s) => s.setUiScale);
 
+  // select.value 为 getter-only，经事件读取（同下方备份配置选择）
+  function onLanguageChange(e: Event) {
+    const value = (e.target as M3eSelectElement).value;
+    if (typeof value === 'string') setLanguage(value as Locale);
+  }
+
   return (
     <div className='mx-auto flex max-w-2xl flex-col gap-4'>
-      <h1 className='m-0 text-2xl font-normal'>设置</h1>
+      <h1 className='m-0 text-2xl font-normal'>{t('settings.title')}</h1>
       {/* 云端设置备份：登录可用，实现见文件底部 SettingsBackupCard */}
       <SettingsBackupCard />
       <M3eCard>
         <div slot='content' className='flex flex-col gap-6'>
+          {/* 语言 */}
+          <div className={SETTING_ROW_LAYOUT}>
+            <span className='flex flex-col'>
+              <span>{t('settings.language')}</span>
+              <span className='text-sm opacity-70'>
+                {t('settings.language-desc')}
+              </span>
+            </span>
+            <M3eSelect
+              className={SETTING_CONTROL_FILL}
+              onChange={onLanguageChange}
+            >
+              {/* 选项文案为语言自称，不随界面语言翻译 */}
+              <M3eOption value='zh-CN' selected={i18next.language === 'zh-CN'}>
+                简体中文
+              </M3eOption>
+              <M3eOption value='en' selected={i18next.language === 'en'}>
+                English
+              </M3eOption>
+            </M3eSelect>
+          </div>
+
           {/* 颜色模式：窄屏时标签与分段按钮上下堆叠，避免横向溢出 */}
           <div className={SETTING_ROW_LAYOUT}>
-            <span>颜色模式</span>
+            <span>{t('settings.color-mode')}</span>
             {/* 注意：组的 value 是 getter-only 派生属性（同 radio-group），
                 受控方式是给每个 M3eButtonSegment 传 checked */}
             <M3eSegmentedButton
@@ -137,7 +180,7 @@ export default function Settings() {
                   value={m.value}
                   checked={colorMode === m.value}
                 >
-                  {m.label}
+                  {t(m.label)}
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
@@ -148,7 +191,7 @@ export default function Settings() {
           <div className='flex flex-col gap-2'>
             <div className='flex items-center justify-between gap-4'>
               <span className='flex flex-col'>
-                <span>界面大小</span>
+                <span>{t('settings.ui-scale')}</span>
               </span>
               <span className='shrink-0 text-sm tabular-nums opacity-70'>
                 {uiScale}%
@@ -170,9 +213,9 @@ export default function Settings() {
           {/* 动态取色 */}
           <div className='flex cursor-pointer items-center justify-between gap-4'>
             <span className='flex flex-col'>
-              <span>动态取色</span>
+              <span>{t('settings.dynamic-color')}</span>
               <span className='text-sm opacity-70'>
-                进入作品详情时从封面提取主题色
+                {t('settings.dynamic-color-desc')}
               </span>
             </span>
             <M3eSwitch
@@ -189,9 +232,9 @@ export default function Settings() {
           {/* R-18 封面 */}
           <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
-              <span>R-18 封面</span>
+              <span>{t('settings.r18-cover')}</span>
               <span className='text-sm opacity-70'>
-                R-18 封面模糊：始终模糊 / 默认模糊悬浮显示 / 始终清晰显示
+                {t('settings.r18-cover-desc')}
               </span>
             </span>
             <M3eSegmentedButton
@@ -208,7 +251,7 @@ export default function Settings() {
                   value={m.value}
                   checked={coverBlurMode === m.value}
                 >
-                  {m.label}
+                  {t(m.label)}
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
@@ -217,9 +260,9 @@ export default function Settings() {
           {/* 时间显示模式 */}
           <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
-              <span>时间显示</span>
+              <span>{t('settings.time-display')}</span>
               <span className='text-sm opacity-70'>
-                播放器中显示总时长（22:33）或剩余时间（-1:39）
+                {t('settings.time-display-desc')}
               </span>
             </span>
             <M3eSegmentedButton
@@ -236,7 +279,7 @@ export default function Settings() {
                   value={m.value}
                   checked={timeDisplayMode === m.value}
                 >
-                  {m.label}
+                  {t(m.label)}
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
@@ -245,9 +288,9 @@ export default function Settings() {
           {/* 作品库翻页方式 */}
           <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
-              <span>作品库翻页方式</span>
+              <span>{t('settings.works-pagination')}</span>
               <span className='text-sm opacity-70'>
-                分页（可跳页，页码与筛选同步到地址栏和标题）或无限滚动
+                {t('settings.works-pagination-desc')}
               </span>
             </span>
             <M3eSegmentedButton
@@ -264,7 +307,7 @@ export default function Settings() {
                   value={m.value}
                   checked={worksPaginationMode === m.value}
                 >
-                  {m.label}
+                  {t(m.label)}
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
@@ -273,9 +316,9 @@ export default function Settings() {
           {/* 分页控件显示位置 */}
           <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
-              <span>分页控件显示位置</span>
+              <span>{t('settings.paginator-position')}</span>
               <span className='text-sm opacity-70'>
-                作品库分页控件显示在列表顶部、底部或两者
+                {t('settings.paginator-position-desc')}
               </span>
             </span>
             <M3eSegmentedButton
@@ -293,7 +336,7 @@ export default function Settings() {
                   value={p.value}
                   checked={worksPaginatorPosition === p.value}
                 >
-                  {p.label}
+                  {t(p.label)}
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
@@ -302,9 +345,9 @@ export default function Settings() {
           {/* 最近收听条 */}
           <div className='flex cursor-pointer items-center justify-between gap-4'>
             <span className='flex flex-col'>
-              <span>最近收听</span>
+              <span>{t('settings.recent-listens')}</span>
               <span className='text-sm opacity-70'>
-                在作品库首页顶部显示最近收听条
+                {t('settings.recent-listens-desc')}
               </span>
             </span>
             <M3eSwitch
@@ -318,9 +361,9 @@ export default function Settings() {
           {/* 媒体通知 */}
           <div className='flex cursor-pointer items-center justify-between gap-4'>
             <span className='flex flex-col'>
-              <span>媒体通知</span>
+              <span>{t('settings.media-notification')}</span>
               <span className='text-sm opacity-70'>
-                在系统媒体面板 / 锁屏显示播放控制
+                {t('settings.media-notification-desc')}
               </span>
             </span>
             <M3eSwitch
@@ -338,9 +381,9 @@ export default function Settings() {
         <div slot='content' className='flex flex-col gap-6'>
           <div className='flex cursor-pointer items-center justify-between gap-4'>
             <span className='flex flex-col'>
-              <span>显示悬浮歌词</span>
+              <span>{t('settings.floating-lyrics')}</span>
               <span className='text-sm opacity-70'>
-                播放时在播放条上方悬浮显示当前歌词
+                {t('settings.floating-lyrics-desc')}
               </span>
             </span>
             <M3eSwitch
@@ -357,7 +400,7 @@ export default function Settings() {
           <div className='flex flex-col gap-2'>
             <div className='flex items-center justify-between gap-4'>
               <span className={floatingLyrics.enabled ? '' : 'opacity-50'}>
-                字体大小
+                {t('settings.font-size')}
               </span>
               <span className='text-sm tabular-nums opacity-70'>
                 {floatingLyrics.fontSize} px
@@ -383,10 +426,10 @@ export default function Settings() {
           <div className={SETTING_ROW_LAYOUT}>
             <span className='flex flex-col'>
               <span className={floatingLyrics.enabled ? '' : 'opacity-50'}>
-                行数上限
+                {t('settings.lines-limit')}
               </span>
               <span className='text-sm opacity-70'>
-                歌词过长时换行显示，超出部分省略
+                {t('settings.lines-limit-desc')}
               </span>
             </span>
             <M3eSegmentedButton
@@ -404,7 +447,7 @@ export default function Settings() {
                   value={String(n)}
                   checked={floatingLyrics.lines === n}
                 >
-                  {n} 行
+                  {t('settings.line-count', { n })}
                 </M3eButtonSegment>
               ))}
             </M3eSegmentedButton>
@@ -414,7 +457,7 @@ export default function Settings() {
           <div className='flex flex-col gap-2'>
             <div className='flex items-center justify-between gap-4'>
               <span className={floatingLyrics.enabled ? '' : 'opacity-50'}>
-                背景透明度
+                {t('settings.background-opacity')}
               </span>
               <span className='text-sm tabular-nums opacity-70'>
                 {Math.round(floatingLyrics.opacity * 100)}%
@@ -468,6 +511,7 @@ function formatDate(iso: string): string {
  * - 全手动操作：无自动备份 / 自动还原逻辑
  */
 function SettingsBackupCard() {
+  const { t } = useTranslation();
   const auth = useUserStore((s) => s.auth);
   const backupsQuery = useSettingBackups();
   const backupMutation = useBackupSettingsMutation();
@@ -502,11 +546,11 @@ function SettingsBackupCard() {
   async function backupTo(name: string): Promise<boolean> {
     try {
       await backupMutation.mutateAsync(name);
-      M3eSnackbar.open('已备份');
+      M3eSnackbar.open(t('settings.backup-success'));
       return true;
     } catch (err) {
       // 409（超上限）等业务错误展示后端 message
-      showApiError(err, '备份失败');
+      showApiError(err, t('settings.backup-failed'));
       return false;
     }
   }
@@ -525,10 +569,10 @@ function SettingsBackupCard() {
     if (!selectedName || deleteMutation.isPending) return;
     try {
       await deleteMutation.mutateAsync(selectedName);
-      M3eSnackbar.open('已删除');
+      M3eSnackbar.open(t('settings.delete-success'));
       setSelectedName(''); // 删除的即当前选中项
     } catch (err) {
-      showApiError(err, '删除失败');
+      showApiError(err, t('settings.delete-failed'));
     }
   }
 
@@ -536,9 +580,9 @@ function SettingsBackupCard() {
     if (!selectedName || restoreMutation.isPending) return;
     try {
       await restoreMutation.mutateAsync(selectedName);
-      M3eSnackbar.open('已还原');
+      M3eSnackbar.open(t('settings.restore-success'));
     } catch (err) {
-      showApiError(err, '还原失败');
+      showApiError(err, t('settings.restore-failed'));
     } finally {
       setConfirmRestore(false);
     }
@@ -550,13 +594,17 @@ function SettingsBackupCard() {
         <div slot='content' className='flex flex-col gap-6'>
           {/* 标题行：设置备份 + n / 10 计数 */}
           <div className='flex items-center justify-between gap-4'>
-            <span>设置备份</span>
+            <span>{t('settings.backup-title')}</span>
             <span className='text-sm tabular-nums opacity-70'>
               {backups.length} / {BACKUP_LIMIT}
             </span>
           </div>
 
-          {!auth && <p className='m-0 text-sm opacity-70'>登录后可用</p>}
+          {!auth && (
+            <p className='m-0 text-sm opacity-70'>
+              {t('settings.requires-login')}
+            </p>
+          )}
 
           {/* 行 1：选择配置 + 新增 / 删除 */}
           <div className={SETTING_ROW_LAYOUT}>
@@ -566,7 +614,7 @@ function SettingsBackupCard() {
               className={`${SETTING_CONTROL_FILL} min-w-48 [--m3e-form-field-width:12rem]`}
             >
               <label slot='label' htmlFor='settings-backup-select'>
-                选择配置
+                {t('settings.select-config')}
               </label>
               <M3eSelect
                 id='settings-backup-select'
@@ -583,7 +631,9 @@ function SettingsBackupCard() {
                   >
                     {b.name}
                     <span className='opacity-60'>
-                      （{formatDate(b.updatedAt)}）
+                      {t('settings.option-date', {
+                        date: formatDate(b.updatedAt),
+                      })}
                     </span>
                   </M3eOption>
                 ))}
@@ -591,7 +641,7 @@ function SettingsBackupCard() {
             </M3eFormField>
             <div className='flex shrink-0 gap-2'>
               <M3eButton variant='filled' disabled={!auth} onClick={openAdd}>
-                新增
+                {t('settings.add')}
               </M3eButton>
               <M3eButton
                 variant='text'
@@ -599,7 +649,7 @@ function SettingsBackupCard() {
                 disabled={!auth || !selectedName || deleteMutation.isPending}
                 onClick={onDelete}
               >
-                删除
+                {t('settings.delete')}
               </M3eButton>
             </div>
           </div>
@@ -608,7 +658,10 @@ function SettingsBackupCard() {
           {selected && (
             <div className={SETTING_ROW_LAYOUT}>
               <span className='text-sm opacity-70'>
-                「{selected.name}」备份于 {formatDate(selected.updatedAt)}
+                {t('settings.backed-up-at', {
+                  name: selected.name,
+                  date: formatDate(selected.updatedAt),
+                })}
               </span>
               <div className='flex shrink-0 gap-2'>
                 <M3eButton
@@ -616,14 +669,14 @@ function SettingsBackupCard() {
                   disabled={backupMutation.isPending}
                   onClick={() => backupTo(selected.name)}
                 >
-                  备份到此配置
+                  {t('settings.backup-to-config')}
                 </M3eButton>
                 <M3eButton
                   variant='tonal'
                   disabled={restoreMutation.isPending}
                   onClick={() => setConfirmRestore(true)}
                 >
-                  还原
+                  {t('settings.restore')}
                 </M3eButton>
               </div>
             </div>
@@ -636,13 +689,13 @@ function SettingsBackupCard() {
         open={addOpen}
         onClosed={() => setAddOpen(false)}
         dismissible
-        closeLabel='关闭'
+        closeLabel={t('settings.close')}
       >
-        <span slot='header'>新增备份</span>
+        <span slot='header'>{t('settings.add-backup')}</span>
         <div className='flex flex-col gap-4 py-2'>
           <M3eFormField variant='outlined' className='w-full'>
             <label slot='label' htmlFor='settings-backup-name'>
-              配置名
+              {t('settings.config-name')}
             </label>
             <input
               id='settings-backup-name'
@@ -655,14 +708,16 @@ function SettingsBackupCard() {
         </div>
         <div slot='actions' className='flex justify-end gap-2'>
           <M3eButton variant='text' onClick={() => setAddOpen(false)}>
-            取消
+            {t('settings.cancel')}
           </M3eButton>
           <M3eButton
             variant='filled'
             disabled={!newName.trim() || backupMutation.isPending}
             onClick={onAddConfirm}
           >
-            {backupMutation.isPending ? '备份中…' : '备份'}
+            {backupMutation.isPending
+              ? t('settings.backing-up')
+              : t('settings.backup')}
           </M3eButton>
         </div>
       </M3eDialog>
@@ -670,13 +725,13 @@ function SettingsBackupCard() {
       {/* 还原二次确认：覆盖当前本地设置（项目通用 ConfirmDialog） */}
       <ConfirmDialog
         open={confirmRestore}
-        title='还原设置'
+        title={t('settings.restore-title')}
         message={
           selectedName
-            ? `将用云端配置「${selectedName}」覆盖当前本地设置，确定还原吗？`
+            ? t('settings.restore-confirm', { name: selectedName })
             : ''
         }
-        confirmLabel='还原'
+        confirmLabel={t('settings.restore')}
         onConfirm={onRestoreConfirm}
         onCancel={() => setConfirmRestore(false)}
       />
