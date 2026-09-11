@@ -72,6 +72,10 @@ export interface Work {
   read: boolean;
   /** 作品总时长（秒，后端 SUM(t_track.duration_sec)）；无音轨/全未知为 null（对齐 formattedWorkSchema.duration） */
   duration: number | null;
+  /** 作品整合响度（LUFS，已分析音轨按时长加权）；未分析为 null */
+  loudnessLufs: number | null;
+  /** 均衡增益（dB，已钳制 ±loudnessMaxGainDb 并含 True Peak 防削波）；未分析为 null */
+  gainDb: number | null;
   /** 被管理员覆盖的字段（无覆盖时缺省） */
   overriddenFields?: MetadataField[];
 }
@@ -133,6 +137,8 @@ export interface TrackLeaf {
   lyrics?: LyricsRef;
   /** 时长秒数（仅 audio；未探测/解析失败为 null，对齐后端 /api/tracks/:id） */
   durationSec?: number | null;
+  /** 整合响度 LUFS（仅 audio；未分析为 null，与 durationSec 同构） */
+  loudnessLufs?: number | null;
   children?: never;
 }
 
@@ -305,6 +311,14 @@ export interface SharedConfig {
   offloadMedia: boolean;
   offloadStreamPath: string;
   offloadDownloadPath: string;
+  /** 响度归一总开关（EBU R128） */
+  enableLoudnessNormalization: boolean;
+  /** 目标响度（LUFS，默认 -16，范围 -30..-10） */
+  loudnessTargetLufs: number;
+  /** 增益钳制上限（dB，默认 12，范围 0..30） */
+  loudnessMaxGainDb: number;
+  /** 扫描结束后自动接力响度分析 */
+  autoLoudnessAnalysis: boolean;
 }
 
 export interface RootFolder {
