@@ -14,6 +14,8 @@ import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/sync';
 import '@m3e/icons/outlined/av_timer';
 import '@m3e/icons/outlined/graphic_eq';
+import '@m3e/icons/outlined/ssid_chart';
+import '@m3e/icons/outlined/equalizer';
 import '@m3e/icons/outlined/delete';
 import '@m3e/icons/outlined/edit';
 import type { Work } from '../../types';
@@ -169,16 +171,27 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {/* 详情页显示发售日（卡片不显示，封面右下角已有） */}
           <WorkFactsRow work={work} release={work.release} />
 
-          {/* 作品级响度行（分析过即显示，与均衡开关无关）；gainDb 为客户端均衡系数 */}
+          {/* 作品级响度行（分析过即显示，与均衡开关无关）：响度 / 峰值 / 均衡增益（图标+值） */}
           {work.loudnessLufs != null && (
-            <div className='flex items-center gap-2 text-sm'>
-              <span className='opacity-60'>{t('works.loudness.label')}</span>
-              <span>{work.loudnessLufs.toFixed(1)} LUFS</span>
+            <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-sm'>
+              <span className='flex items-center gap-1'>
+                <M3eIcon name='graphic_eq' className='shrink-0 opacity-60' />
+                <span>{work.loudnessLufs.toFixed(1)} LUFS</span>
+              </span>
+              {work.loudnessTruePeakDb != null && (
+                <span className='flex items-center gap-1'>
+                  <M3eIcon name='ssid_chart' className='shrink-0 opacity-60' />
+                  <span>{work.loudnessTruePeakDb.toFixed(1)} dBTP</span>
+                </span>
+              )}
               {work.gainDb != null && (
-                <span className='opacity-80'>
-                  {t('works.loudness.gain', {
-                    db: (work.gainDb > 0 ? '+' : '') + work.gainDb,
-                  })}
+                <span className='flex items-center gap-1 opacity-80'>
+                  <M3eIcon name='equalizer' className='shrink-0 opacity-60' />
+                  <span>
+                    {t('works.loudness.gain', {
+                      db: (work.gainDb > 0 ? '+' : '') + work.gainDb,
+                    })}
+                  </span>
                 </span>
               )}
             </div>

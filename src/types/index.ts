@@ -74,6 +74,8 @@ export interface Work {
   duration: number | null;
   /** 作品整合响度（LUFS，已分析音轨按时长加权）；未分析为 null */
   loudnessLufs: number | null;
+  /** 作品峰值电平（dBTP，已分析音轨最大 True Peak）；未分析为 null */
+  loudnessTruePeakDb: number | null;
   /** 均衡增益（dB，已钳制 ±loudnessMaxGainDb 并含 True Peak 防削波）；未分析为 null */
   gainDb: number | null;
   /** 被管理员覆盖的字段（无覆盖时缺省） */

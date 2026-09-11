@@ -303,7 +303,6 @@
   "works.admin.loudness-queued": "Queued for analysis",
   "works.admin.loudness-started": "Loudness analysis started",
   "works.admin.loudness-start-failed": "Failed to start analysis: {{message}}",
-  "works.loudness.label": "Loudness",
   "works.loudness.gain": "Gain {{db}} dB",
   "works.loudness.curve-title": "Loudness curve",
   "works.loudness.curve-empty": "No loudness curve yet",
