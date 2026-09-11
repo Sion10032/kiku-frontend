@@ -6,6 +6,7 @@ import {
   type Track,
 } from '../stores/playerStore';
 import { streamUrl, fetchLyricsText } from '../api/media';
+import { useSettingsStore } from '../stores/settingsStore';
 import { attachGainChain } from '../utils/normalizer';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 import {
@@ -83,6 +84,10 @@ export function usePlayer(): void {
   const volume = usePlayerStore((s) => s.volume);
   const muted = usePlayerStore((s) => s.muted);
   const gainDb = usePlayerStore((s) => s.gainDb);
+  // 音量均衡客户端开关：关闭时增益套 0（直通），切换实时生效
+  const loudnessNormalization = useSettingsStore(
+    (s) => s.loudnessNormalization,
+  );
   const rewindSeekMode = usePlayerStore((s) => s.rewindSeekMode);
   const forwardSeekMode = usePlayerStore((s) => s.forwardSeekMode);
   const sleepMode = usePlayerStore((s) => s.sleepMode);
@@ -179,7 +184,9 @@ export function usePlayer(): void {
       sound as unknown as { _sounds?: Array<{ _node?: HTMLAudioElement }> }
     )._sounds?.[0]?._node;
     if (el instanceof HTMLAudioElement) {
-      attachGainChain(el).setGainDb(usePlayerStore.getState().gainDb);
+      attachGainChain(el).setGainDb(
+        loudnessNormalization ? usePlayerStore.getState().gainDb : 0,
+      );
     }
 
     if (initialPlaying) sound.play();
@@ -221,9 +228,9 @@ export function usePlayer(): void {
     } | null;
     const node = el?._sounds?.[0]?._node;
     if (node instanceof HTMLAudioElement) {
-      attachGainChain(node).setGainDb(gainDb);
+      attachGainChain(node).setGainDb(loudnessNormalization ? gainDb : 0);
     }
-  }, [gainDb, currentTrack]);
+  }, [gainDb, currentTrack, loudnessNormalization]);
 
   // —— 时间轮询：播放中每 250ms 写回 currentTime（并节流上报播放进度） ——
 

@@ -107,6 +107,22 @@ export default function Settings() {
   const setColorMode = useSettingsStore((s) => s.setColorMode);
   const mediaNotification = useSettingsStore((s) => s.mediaNotification);
   const setMediaNotification = useSettingsStore((s) => s.setMediaNotification);
+  const loudnessNormalization = useSettingsStore(
+    (s) => s.loudnessNormalization,
+  );
+  const setLoudnessNormalization = useSettingsStore(
+    (s) => s.setLoudnessNormalization,
+  );
+  const loudnessTargetLufs = useSettingsStore(
+    (s) => s.loudnessTargetLufs,
+  );
+  const setLoudnessTargetLufs = useSettingsStore(
+    (s) => s.setLoudnessTargetLufs,
+  );
+  const loudnessMaxGainDb = useSettingsStore((s) => s.loudnessMaxGainDb);
+  const setLoudnessMaxGainDb = useSettingsStore(
+    (s) => s.setLoudnessMaxGainDb,
+  );
   const floatingLyrics = useSettingsStore((s) => s.floatingLyrics);
   const setFloatingLyrics = useSettingsStore((s) => s.setFloatingLyrics);
   const coverBlurMode = useSettingsStore((s) => s.coverBlurMode);
@@ -372,6 +388,76 @@ export default function Settings() {
                 setMediaNotification((e.target as HTMLInputElement).checked)
               }
             />
+          </div>
+
+          {/* 音量均衡：客户端开关，播放时应用服务器已算好的均衡增益 */}
+          <div className='flex cursor-pointer items-center justify-between gap-4'>
+            <span className='flex flex-col'>
+              <span>{t('settings.loudness-normalization')}</span>
+              <span className='text-sm opacity-70'>
+                {t('settings.loudness-normalization-desc')}
+              </span>
+            </span>
+            <M3eSwitch
+              checked={loudnessNormalization}
+              onInput={(e) =>
+                setLoudnessNormalization(
+                  (e.target as HTMLInputElement).checked,
+                )
+              }
+            />
+          </div>
+
+          {/* 目标响度：均衡开启时可调，关闭时禁用 */}
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center justify-between gap-4'>
+              <span className={loudnessNormalization ? '' : 'opacity-50'}>
+                {t('settings.loudness-target-lufs')}
+              </span>
+              <span className='text-sm tabular-nums opacity-70'>
+                {loudnessTargetLufs} LUFS
+              </span>
+            </div>
+            <M3eSlider
+              min={-30}
+              max={-10}
+              step={1}
+              labelled
+              disabled={!loudnessNormalization}
+              onInput={(e) =>
+                setLoudnessTargetLufs(
+                  (e.target as M3eSliderThumbElement).value ?? -16,
+                )
+              }
+            >
+              <M3eSliderThumb value={loudnessTargetLufs} />
+            </M3eSlider>
+          </div>
+
+          {/* 最大增益：均衡开启时可调，关闭时禁用 */}
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center justify-between gap-4'>
+              <span className={loudnessNormalization ? '' : 'opacity-50'}>
+                {t('settings.loudness-max-gain-db')}
+              </span>
+              <span className='text-sm tabular-nums opacity-70'>
+                ±{loudnessMaxGainDb} dB
+              </span>
+            </div>
+            <M3eSlider
+              min={0}
+              max={30}
+              step={1}
+              labelled
+              disabled={!loudnessNormalization}
+              onInput={(e) =>
+                setLoudnessMaxGainDb(
+                  (e.target as M3eSliderThumbElement).value ?? 12,
+                )
+              }
+            >
+              <M3eSliderThumb value={loudnessMaxGainDb} />
+            </M3eSlider>
           </div>
         </div>
       </M3eCard>

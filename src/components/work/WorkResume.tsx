@@ -12,7 +12,8 @@ import { formatDuration } from '../../utils/format';
 import { toTrack, flattenAudioLeaves } from '../../utils/track';
 import { usePlayerStore } from '../../stores/playerStore';
 import { startAnalysis } from '../../api/analysis';
-import { getCachedSharedConfig } from '../../api/sharedConfig';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { computeLoudnessGain } from '../../utils/loudness';
 import { useDeleteProgressMutation } from '../../queries/useProgressMutation';
 import { suppressWorkProgress } from '../../utils/progressReporter';
 
@@ -45,13 +46,20 @@ export default function WorkResume({ work, tree }: WorkResumeProps) {
 
   const hasTree = tree.length > 0;
 
-  /** 入队时应用作品均衡增益；均衡开启但未分析 → 兜底触发分析（fire-and-forget）。 */
+  /** 入队时应用均衡增益（用户开关决定）；开启但未分析 → 兜底触发分析（fire-and-forget）。 */
   function applyLoudness() {
-    usePlayerStore.getState().setGainDb(work.gainDb ?? 0);
-    if (
-      getCachedSharedConfig()?.enableLoudnessNormalization
-      && work.gainDb == null
-    ) {
+    const s = useSettingsStore.getState();
+    usePlayerStore.getState().setGainDb(
+      s.loudnessNormalization
+        ? computeLoudnessGain(
+            work.loudnessLufs,
+            work.loudnessTruePeakDb,
+            s.loudnessTargetLufs,
+            s.loudnessMaxGainDb,
+          )
+        : 0,
+    );
+    if (s.loudnessNormalization && work.loudnessLufs == null) {
       startAnalysis(work.id).catch(() => {});
     }
   }

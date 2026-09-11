@@ -154,28 +154,6 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         label: 'dashboard.settings.check-beta-update',
       },
       {
-        key: 'enableLoudnessNormalization',
-        type: 'bool',
-        label: 'dashboard.settings.enable-loudness-normalization',
-        description: 'dashboard.settings.enable-loudness-normalization-desc',
-      },
-      {
-        key: 'loudnessTargetLufs',
-        type: 'number',
-        label: 'dashboard.settings.loudness-target-lufs',
-        min: -30,
-        max: -10,
-        placeholder: -16,
-      },
-      {
-        key: 'loudnessMaxGainDb',
-        type: 'number',
-        label: 'dashboard.settings.loudness-max-gain-db',
-        min: 0,
-        max: 30,
-        placeholder: 12,
-      },
-      {
         key: 'autoLoudnessAnalysis',
         type: 'bool',
         label: 'dashboard.settings.auto-loudness-analysis',

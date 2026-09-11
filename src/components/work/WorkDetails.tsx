@@ -21,6 +21,7 @@ import '@m3e/icons/outlined/edit';
 import type { Work } from '../../types';
 import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { computeLoudnessGain } from '../../utils/loudness';
 import { getSeedColorForWork } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
 import WorkCircleSeriesLinks from '../common/WorkCircleSeriesLinks';
@@ -54,6 +55,22 @@ interface WorkDetailsProps {
  */
 export default function WorkDetails({ work }: WorkDetailsProps) {
   const { t } = useTranslation();
+  // 音量均衡开关（用户级设置）：决定「均衡增益」是否展示（播放端是否应用）
+  const loudnessNormalization = useSettingsStore(
+    (s) => s.loudnessNormalization,
+  );
+  const loudnessTargetLufs = useSettingsStore((s) => s.loudnessTargetLufs);
+  const loudnessMaxGainDb = useSettingsStore((s) => s.loudnessMaxGainDb);
+  // 均衡增益（dB）：按用户目标/最大增益设置计算，仅在开启均衡且已分析时有值
+  const loudnessGain =
+    loudnessNormalization && work.loudnessLufs != null
+      ? computeLoudnessGain(
+          work.loudnessLufs,
+          work.loudnessTruePeakDb,
+          loudnessTargetLufs,
+          loudnessMaxGainDb,
+        )
+      : null;
   // 写评价对话框开关
   const [reviewOpen, setReviewOpen] = useState(false);
   // 收藏对话框开关
@@ -184,12 +201,12 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
                   <span>{work.loudnessTruePeakDb.toFixed(1)} dBTP</span>
                 </span>
               )}
-              {work.gainDb != null && (
+              {loudnessGain != null && (
                 <span className='flex items-center gap-1 opacity-80'>
                   <M3eIcon name='equalizer' className='shrink-0 opacity-60' />
                   <span>
                     {t('works.loudness.gain', {
-                      db: (work.gainDb > 0 ? '+' : '') + work.gainDb,
+                      db: (loudnessGain > 0 ? '+' : '') + loudnessGain,
                     })}
                   </span>
                 </span>

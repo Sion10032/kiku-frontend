@@ -1,12 +1,12 @@
 /**
  * 响度曲线 Dialog：short-term LUFS 按秒序列 → SVG polyline（分段，null 断线）。
- * y 轴固定 [-40, 0] LUFS（超出 clamp），目标响度虚线（sharedConfig.loudnessTargetLufs）。
+ * y 轴固定 [-40, 0] LUFS（超出 clamp），目标响度虚线（用户设置 loudnessTargetLufs）。
  */
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { M3eDialog } from '@m3e/react/dialog';
 import { getLoudnessCurve } from '../../api/analysis';
-import { getCachedSharedConfig } from '../../api/sharedConfig';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 export interface CurvePoint {
   x: number;
@@ -57,6 +57,8 @@ export function LoudnessCurveDialog(props: {
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  // 目标响度虚线（用户级设置；hook 须在提前 return 之前订阅）
+  const target = useSettingsStore((s) => s.loudnessTargetLufs);
   const open = props.track !== null;
   const { data } = useQuery({
     queryKey: ['loudness-curve', props.workId, props.track?.mediaIndex],
@@ -67,7 +69,6 @@ export function LoudnessCurveDialog(props: {
   // 避免旧 track 的标题/曲线在关闭动画后残留。
   if (props.track === null) return null;
   const track = props.track;
-  const target = getCachedSharedConfig()?.loudnessTargetLufs ?? -16;
   const curve = data?.curve ?? [];
   const W = 560;
   const H = 200;

@@ -76,8 +76,6 @@ export interface Work {
   loudnessLufs: number | null;
   /** 作品峰值电平（dBTP，已分析音轨最大 True Peak）；未分析为 null */
   loudnessTruePeakDb: number | null;
-  /** 均衡增益（dB，已钳制 ±loudnessMaxGainDb 并含 True Peak 防削波）；未分析为 null */
-  gainDb: number | null;
   /** 被管理员覆盖的字段（无覆盖时缺省） */
   overriddenFields?: MetadataField[];
 }
@@ -313,13 +311,7 @@ export interface SharedConfig {
   offloadMedia: boolean;
   offloadStreamPath: string;
   offloadDownloadPath: string;
-  /** 响度归一总开关（EBU R128） */
-  enableLoudnessNormalization: boolean;
-  /** 目标响度（LUFS，默认 -16，范围 -30..-10） */
-  loudnessTargetLufs: number;
-  /** 增益钳制上限（dB，默认 12，范围 0..30） */
-  loudnessMaxGainDb: number;
-  /** 扫描结束后自动接力响度分析 */
+  /** 扫描结束后自动接力响度分析（默认 false） */
   autoLoudnessAnalysis: boolean;
 }
 

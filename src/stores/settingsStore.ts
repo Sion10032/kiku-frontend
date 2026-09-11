@@ -56,6 +56,12 @@ interface SettingsState {
   colorMode: ColorMode;
   /** 媒体通知：锁屏/系统媒体面板显示播放控制（MediaSession） */
   mediaNotification: boolean;
+  /** 音量均衡：播放时按作品响度数据应用增益（需服务器已完成响度分析） */
+  loudnessNormalization: boolean;
+  /** 音量均衡目标响度（LUFS，-30..-10，默认 -16） */
+  loudnessTargetLufs: number;
+  /** 音量均衡最大增益（dB，0..30，默认 12） */
+  loudnessMaxGainDb: number;
   /** 悬浮歌词（LyricsBar）设置 */
   floatingLyrics: FloatingLyricsSettings;
   /** 文件预览设置 */
@@ -77,6 +83,9 @@ interface SettingsState {
   setDynamicColor: (on: boolean) => void;
   setColorMode: (mode: ColorMode) => void;
   setMediaNotification: (on: boolean) => void;
+  setLoudnessNormalization: (on: boolean) => void;
+  setLoudnessTargetLufs: (v: number) => void;
+  setLoudnessMaxGainDb: (v: number) => void;
   setFloatingLyrics: (patch: Partial<FloatingLyricsSettings>) => void;
   setPreview: (patch: Partial<PreviewSettings>) => void;
   setCoverBlurMode: (mode: CoverBlurMode) => void;
@@ -99,6 +108,9 @@ const SNAPSHOT_KEYS = [
   'dynamicColor',
   'colorMode',
   'mediaNotification',
+  'loudnessNormalization',
+  'loudnessTargetLufs',
+  'loudnessMaxGainDb',
   'floatingLyrics',
   'preview',
   'coverBlurMode',
@@ -128,6 +140,12 @@ export const useSettingsStore = create<SettingsState>()(
       setColorMode: (mode) => set({ colorMode: mode }),
       mediaNotification: true,
       setMediaNotification: (on) => set({ mediaNotification: on }),
+      loudnessNormalization: false,
+      setLoudnessNormalization: (on) => set({ loudnessNormalization: on }),
+      loudnessTargetLufs: -16,
+      setLoudnessTargetLufs: (v) => set({ loudnessTargetLufs: v }),
+      loudnessMaxGainDb: 12,
+      setLoudnessMaxGainDb: (v) => set({ loudnessMaxGainDb: v }),
       floatingLyrics: { enabled: false, fontSize: 14, lines: 2, opacity: 0.8 },
       preview: { textFontSize: 14, textWordWrap: true },
       coverBlurMode: 'hover',

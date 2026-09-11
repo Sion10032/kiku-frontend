@@ -47,7 +47,7 @@ interface PlayerState {
   muted: boolean;
   /** 音量 0.0–1.0 */
   volume: number;
-  /** 作品均衡增益（dB，0 = 直通）；入队时由 work.gainDb 写入，经 WebAudio GainNode 应用 */
+  /** 作品均衡增益（dB，0 = 直通）；入队时按用户响度设置经 computeLoudnessGain 计算写入，经 WebAudio GainNode 应用 */
   gainDb: number;
   /** 当前歌词行 */
   currentLyric: string;

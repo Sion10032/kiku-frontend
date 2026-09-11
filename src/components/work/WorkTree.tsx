@@ -29,7 +29,8 @@ import {
 } from '../../stores/progressStore';
 import { downloadUrl, streamUrl } from '../../api/media';
 import { startAnalysis } from '../../api/analysis';
-import { getCachedSharedConfig } from '../../api/sharedConfig';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { computeLoudnessGain } from '../../utils/loudness';
 import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../../types';
 import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
 import { useM3eStyle } from '../../hooks/useM3eStyle';
@@ -163,13 +164,20 @@ export default function WorkTree({
     navigate([...path, folder.title]);
   }
 
-  /** 入队时应用作品均衡增益；均衡开启但未分析 → 兜底触发分析（fire-and-forget）。 */
+  /** 入队时应用均衡增益（用户开关决定）；开启但未分析 → 兜底触发分析（fire-and-forget）。 */
   function applyLoudness() {
-    usePlayerStore.getState().setGainDb(work.gainDb ?? 0);
-    if (
-      getCachedSharedConfig()?.enableLoudnessNormalization
-      && work.gainDb == null
-    ) {
+    const s = useSettingsStore.getState();
+    usePlayerStore.getState().setGainDb(
+      s.loudnessNormalization
+        ? computeLoudnessGain(
+            work.loudnessLufs,
+            work.loudnessTruePeakDb,
+            s.loudnessTargetLufs,
+            s.loudnessMaxGainDb,
+          )
+        : 0,
+    );
+    if (s.loudnessNormalization && work.loudnessLufs == null) {
       startAnalysis(work.id).catch(() => {});
     }
   }
