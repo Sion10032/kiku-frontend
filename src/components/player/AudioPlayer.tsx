@@ -23,6 +23,7 @@ import '@m3e/icons/outlined/volume_off';
 import '@m3e/icons/outlined/music_note';
 import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
+import GainIndicator from './GainIndicator';
 import QueueDialog from './QueueDialog';
 import './AudioPlayer.css';
 import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../../constants';
@@ -284,6 +285,8 @@ export default function AudioPlayer() {
           >
             <M3eSliderThumb value={Math.round(volume * 100)} />
           </M3eSlider>
+          {/* 当前均衡增益（仅均衡开启且≠0 时显示） */}
+          <GainIndicator className='shrink-0' />
         </div>
       </div>
 

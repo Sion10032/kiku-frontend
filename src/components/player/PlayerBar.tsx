@@ -18,6 +18,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { mediaUrl } from '../../api/client';
 import { formatDuration, formatRemaining } from '../../utils/format';
 import LyricsBar from './LyricsBar';
+import GainIndicator from './GainIndicator';
 import MarqueeText from './MarqueeText';
 import ProgressBar from './ProgressBar';
 import QueueDialog from './QueueDialog';
@@ -198,18 +199,23 @@ function VolumeControl({ className = '' }: { className?: string }) {
         <M3eIcon name={muted || volume === 0 ? 'volume_off' : 'volume_up'} />
       </M3eIconButton>
       <div
-        className='pointer-events-none absolute bottom-full right-[-50px] z-50 mb-1 rounded-full bg-(--md-sys-color-surface-container-high) px-4 py-2 opacity-0 shadow-lg transition-opacity group-hover/vol:pointer-events-auto group-hover/vol:opacity-100'
+        className='pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 flex -translate-x-1/2 flex-col items-center gap-2 opacity-0 transition-opacity group-hover/vol:pointer-events-auto group-hover/vol:opacity-100'
         onClick={(e) => e.stopPropagation()}
       >
-        <M3eSlider
-          min={0}
-          max={100}
-          step={1}
-          onInput={handleVolume}
-          className='w-28'
-        >
-          <M3eSliderThumb value={Math.round(volume * 100)} />
-        </M3eSlider>
+        {/* 当前均衡增益：独立悬浮气泡，自带背景/阴影，与音量卡片分离（仅均衡开启且≠0 时显示） */}
+        <GainIndicator className='whitespace-nowrap rounded-full bg-(--md-sys-color-surface-container-high) px-3 py-2 shadow-lg' />
+        {/* 音量条卡片 */}
+        <div className='rounded-full bg-(--md-sys-color-surface-container-high) px-1.5 py-5 shadow-lg'>
+          <M3eSlider
+            orientation='vertical'
+            min={0}
+            max={100}
+            step={1}
+            onInput={handleVolume}
+          >
+            <M3eSliderThumb value={Math.round(volume * 100)} />
+          </M3eSlider>
+        </div>
       </div>
     </div>
   );
