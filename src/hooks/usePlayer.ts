@@ -134,7 +134,8 @@ export function usePlayer(): void {
     const sound = new Howl({
       src: [src],
       html5: true, // 流式播放，避免大文件全量下载
-      volume: m ? 0 : v,
+      // html5 元素 volume 强制 0..1（越界抛 DOMException）；钳制以自愈持久化的非法值
+      volume: m ? 0 : Math.min(1, Math.max(0, v)),
       onload: () => {
         const dur = sound.duration() || 0;
         usePlayerStore.getState().setDuration(dur);
@@ -217,7 +218,7 @@ export function usePlayer(): void {
   // —— 音量/静音同步 ——
 
   useEffect(() => {
-    howl?.volume(muted ? 0 : volume);
+    howl?.volume(muted ? 0 : Math.min(1, Math.max(0, volume)));
   }, [volume, muted]);
 
   // —— 增益均衡：gainDb 变化或切曲后应用到新实例的元素 ——

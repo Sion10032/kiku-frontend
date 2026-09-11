@@ -254,7 +254,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       },
 
       toggleMuted: () => set((s) => ({ muted: !s.muted })),
-      setVolume: (vol) => set({ volume: vol }),
+      setVolume: (vol) => set({ volume: Math.min(1, Math.max(0, vol)) }),
       setGainDb: (db) => set({ gainDb: db }),
       setCurrentLyric: (lyric) => set({ currentLyric: lyric }),
       setLyrics: (lines) => set({ lyricLines: lines, activeLyricIndex: -1 }),
