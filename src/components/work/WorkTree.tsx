@@ -36,6 +36,10 @@ import { useM3eStyle } from '../../hooks/useM3eStyle';
 import { toTrack } from '../../utils/track';
 import { formatDuration } from '../../utils/format';
 import { FilePreviewDialog } from '../preview/FilePreviewDialog';
+import {
+  LoudnessCurveDialog,
+  type CurveTrackInfo,
+} from './LoudnessCurveDialog';
 import { isPreviewable } from '../preview/registry';
 import { toPreviewFile, type PreviewFile } from '../preview/types';
 import type { CssInput } from '../../utils/css';
@@ -128,6 +132,9 @@ export default function WorkTree({
     index: number;
   } | null>(null);
 
+  // 响度曲线 Dialog 的目标音轨（音频行 LUFS 小字点击时传入；null = 关闭）
+  const [curveTrack, setCurveTrack] = useState<CurveTrackInfo | null>(null);
+
   // 当前目录可预览文件（画廊范围）
   const previewFiles = useMemo(
     () =>
@@ -199,6 +206,15 @@ export default function WorkTree({
   function openPreview(leaf: TrackLeaf) {
     const index = previewFiles.findIndex((f) => f.hash === leaf.hash);
     if (index >= 0) setPreview({ files: previewFiles, index });
+  }
+
+  /** 打开音轨响度曲线 Dialog（仅已分析音轨可达，LUFS 小字点击）。 */
+  function openCurve(leaf: TrackLeaf) {
+    setCurveTrack({
+      mediaIndex: leaf.hash,
+      title: leaf.title,
+      loudnessLufs: leaf.loudnessLufs ?? null,
+    });
   }
 
   /** 行点击分流：音频播放；其余可预览文件开预览；不可预览无动作（走 ⋮ 下载）。 */
@@ -291,6 +307,7 @@ export default function WorkTree({
                   current={isCurrent(node)}
                   onLeafClick={handleLeafClick}
                   onOpenMenu={openMenu}
+                  onOpenCurve={openCurve}
                 />
               ),
             )}
@@ -359,6 +376,13 @@ export default function WorkTree({
         index={preview?.index ?? 0}
         onIndexChange={(i) => setPreview((p) => (p ? { ...p, index: i } : p))}
         onClose={() => setPreview(null)}
+      />
+
+      {/* 响度曲线 Dialog（音轨 LUFS 小字点击打开；track=null 时自身不渲染） */}
+      <LoudnessCurveDialog
+        workId={work.id}
+        track={curveTrack}
+        onClose={() => setCurveTrack(null)}
       />
     </div>
   );
@@ -429,15 +453,18 @@ interface TrackLeafListItemProps {
   current: boolean;
   onLeafClick: (node: TrackLeaf) => void;
   onOpenMenu: (node: TrackLeaf, anchor: HTMLElement) => void;
+  /** 打开响度曲线 Dialog（仅已分析音轨的 LUFS 小字触发）。 */
+  onOpenCurve: (node: TrackLeaf) => void;
 }
 
-/** 叶子文件行：类型图标 + 标题 + 时长（音频，标题下方）+ 播放/暂停 + ⋮ 更多操作。 */
+/** 叶子文件行：类型图标 + 标题 + LUFS（已分析音频，标题旁）+ 时长（音频，标题下方）+ 播放/暂停 + ⋮ 更多操作。 */
 function TrackLeafListItem({
   node,
   progress,
   current,
   onLeafClick,
   onOpenMenu,
+  onOpenCurve,
 }: TrackLeafListItemProps) {
   const { t } = useTranslation();
   const ref = useM3eStyle<M3eListOptionElement>({
@@ -455,6 +482,18 @@ function TrackLeafListItem({
         <M3eIcon name={leafIcon(node.type)} />
       </span>
       <span className='min-w-0 flex-1 truncate'>{node.title}</span>
+      {node.type === 'audio' && node.loudnessLufs != null && (
+        <button
+          type='button'
+          className='text-xs opacity-60 hover:opacity-100'
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenCurve(node);
+          }}
+        >
+          {node.loudnessLufs.toFixed(1)} LU
+        </button>
+      )}
       {node.type === 'audio' && (
         <span
           slot='supporting-text'

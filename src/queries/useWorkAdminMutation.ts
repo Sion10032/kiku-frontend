@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import i18next from 'i18next';
+import { startAnalysis } from '../api/analysis';
 import * as api from '../api/works';
 
 /** 提取给用户看的错误消息（apiFetch 已把后端 error 字段转成 ApiError.message）。 */
@@ -59,6 +60,32 @@ export function useSyncWorkTracksMutation() {
     onError: (err) => {
       M3eSnackbar.open(
         i18next.t('works.admin.sync-tracks-failed', {
+          message: apiErrorMessage(err),
+        }),
+      );
+    },
+  });
+}
+
+/**
+ * 触发响度分析（单作品插队）：queued = 已进入优先队列（分析进行中），
+ * 否则为立即启动。不做查询失效/进度绑定——分析耗时分钟级，进度看 Dashboard。
+ */
+export function useStartAnalysisMutation() {
+  return useMutation({
+    mutationFn: (workId: string) => startAnalysis(workId),
+    onSuccess: (r) => {
+      M3eSnackbar.open(
+        i18next.t(
+          r.queued
+            ? 'works.admin.loudness-queued'
+            : 'works.admin.loudness-started',
+        ),
+      );
+    },
+    onError: (err) => {
+      M3eSnackbar.open(
+        i18next.t('works.admin.loudness-start-failed', {
           message: apiErrorMessage(err),
         }),
       );

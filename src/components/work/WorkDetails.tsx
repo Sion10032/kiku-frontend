@@ -13,6 +13,7 @@ import '@m3e/icons/outlined/rate_review';
 import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/sync';
 import '@m3e/icons/outlined/av_timer';
+import '@m3e/icons/outlined/graphic_eq';
 import '@m3e/icons/outlined/delete';
 import '@m3e/icons/outlined/edit';
 import type { Work } from '../../types';
@@ -30,6 +31,7 @@ import { useReadStateMutation } from '../../queries/useProgressMutation';
 import {
   useRefreshWorkMetadataMutation,
   useSoftDeleteWorkMutation,
+  useStartAnalysisMutation,
   useSyncWorkTracksMutation,
 } from '../../queries/useWorkAdminMutation';
 import FavDialog from '../favourites/FavDialog';
@@ -77,6 +79,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   const navigate = useNavigate();
   const refreshMutation = useRefreshWorkMetadataMutation();
   const syncTracksMutation = useSyncWorkTracksMutation();
+  const startAnalysisMutation = useStartAnalysisMutation();
   const deleteMutation = useSoftDeleteWorkMutation();
 
   // 菜单打开：以 ⋮ 按钮为锚点（m3e-menu 自动翻转防溢出）
@@ -165,6 +168,21 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
 
           {/* 详情页显示发售日（卡片不显示，封面右下角已有） */}
           <WorkFactsRow work={work} release={work.release} />
+
+          {/* 作品级响度行（分析过即显示，与均衡开关无关）；gainDb 为客户端均衡系数 */}
+          {work.loudnessLufs != null && (
+            <div className='flex items-center gap-2 text-sm'>
+              <span className='opacity-60'>{t('works.loudness.label')}</span>
+              <span>{work.loudnessLufs.toFixed(1)} LUFS</span>
+              {work.gainDb != null && (
+                <span className='opacity-80'>
+                  {t('works.loudness.gain', {
+                    db: (work.gainDb > 0 ? '+' : '') + work.gainDb,
+                  })}
+                </span>
+              )}
+            </div>
+          )}
 
           <WorkChips work={work} />
 
@@ -294,6 +312,18 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
               <M3eIcon name='av_timer' />
             </span>
             {t('works.menu-sync-tracks')}
+          </M3eMenuItem>
+          <M3eMenuItem
+            disabled={startAnalysisMutation.isPending}
+            onClick={() => {
+              setMenu(null);
+              startAnalysisMutation.mutate(work.id);
+            }}
+          >
+            <span slot='icon'>
+              <M3eIcon name='graphic_eq' />
+            </span>
+            {t('works.admin.analyze-loudness')}
           </M3eMenuItem>
           <M3eMenuItem onClick={() => setEditOpen(true)}>
             <span slot='icon'>
