@@ -132,7 +132,7 @@ export default function WorkTree({
     index: number;
   } | null>(null);
 
-  // 响度曲线 Dialog 的目标音轨（音频行 LUFS 小字点击时传入；null = 关闭）
+  // 响度曲线 Dialog 的目标音轨（⋮ 菜单「响度曲线」项点击时传入；null = 关闭）
   const [curveTrack, setCurveTrack] = useState<CurveTrackInfo | null>(null);
 
   // 当前目录可预览文件（画廊范围）
@@ -208,7 +208,7 @@ export default function WorkTree({
     if (index >= 0) setPreview({ files: previewFiles, index });
   }
 
-  /** 打开音轨响度曲线 Dialog（仅已分析音轨可达，LUFS 小字点击）。 */
+  /** 打开音轨响度曲线 Dialog（仅已分析音轨可达，⋮ 菜单触发）。 */
   function openCurve(leaf: TrackLeaf) {
     setCurveTrack({
       mediaIndex: leaf.hash,
@@ -307,7 +307,6 @@ export default function WorkTree({
                   current={isCurrent(node)}
                   onLeafClick={handleLeafClick}
                   onOpenMenu={openMenu}
-                  onOpenCurve={openCurve}
                 />
               ),
             )}
@@ -349,6 +348,14 @@ export default function WorkTree({
               </span>
               {t('works.menu-play-next')}
             </M3eMenuItem>
+            {menu.node.loudnessLufs != null && (
+              <M3eMenuItem onClick={() => openCurve(menu.node)}>
+                <span slot='icon'>
+                  <M3eIcon name='graphic_eq' />
+                </span>
+                {t('works.menu-loudness-curve')}
+              </M3eMenuItem>
+            )}
           </>
         )}
         {menu && (menu.node.type === 'text' || menu.node.type === 'image') && (
@@ -378,7 +385,7 @@ export default function WorkTree({
         onClose={() => setPreview(null)}
       />
 
-      {/* 响度曲线 Dialog（音轨 LUFS 小字点击打开；track=null 时自身不渲染） */}
+      {/* 响度曲线 Dialog（⋮ 菜单「响度曲线」项打开；track=null 时自身不渲染） */}
       <LoudnessCurveDialog
         workId={work.id}
         track={curveTrack}
@@ -453,18 +460,15 @@ interface TrackLeafListItemProps {
   current: boolean;
   onLeafClick: (node: TrackLeaf) => void;
   onOpenMenu: (node: TrackLeaf, anchor: HTMLElement) => void;
-  /** 打开响度曲线 Dialog（仅已分析音轨的 LUFS 小字触发）。 */
-  onOpenCurve: (node: TrackLeaf) => void;
 }
 
-/** 叶子文件行：类型图标 + 标题 + LUFS（已分析音频，标题旁）+ 时长（音频，标题下方）+ 播放/暂停 + ⋮ 更多操作。 */
+/** 叶子文件行：类型图标 + 标题 + 副文本（音频：时长 · 进度 · LU 响度）+ ⋮ 更多操作。 */
 function TrackLeafListItem({
   node,
   progress,
   current,
   onLeafClick,
   onOpenMenu,
-  onOpenCurve,
 }: TrackLeafListItemProps) {
   const { t } = useTranslation();
   const ref = useM3eStyle<M3eListOptionElement>({
@@ -482,18 +486,6 @@ function TrackLeafListItem({
         <M3eIcon name={leafIcon(node.type)} />
       </span>
       <span className='min-w-0 flex-1 truncate'>{node.title}</span>
-      {node.type === 'audio' && node.loudnessLufs != null && (
-        <button
-          type='button'
-          className='text-xs opacity-60 hover:opacity-100'
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenCurve(node);
-          }}
-        >
-          {node.loudnessLufs.toFixed(1)} LU
-        </button>
-      )}
       {node.type === 'audio' && (
         <span
           slot='supporting-text'
@@ -516,16 +508,18 @@ function TrackLeafListItem({
   );
 }
 
-/** 音频行副文本（D4）：总时长 · 已听百分比；无历史维持纯总时长。 */
+/** 音频行副文本（D4）：总时长 · 已听百分比 · 响度（已分析）；无历史无进度时仅总时长 + 响度。 */
 function audioSubtext(node: TrackLeaf, p?: TrackProgress): string {
   const total = node.durationSec ?? p?.duration ?? null;
-  if (!p) return formatDuration(total);
+  const lufs =
+    node.loudnessLufs != null ? ` · ${node.loudnessLufs.toFixed(1)} LU` : '';
+  if (!p) return `${formatDuration(total)}${lufs}`;
   const denom = p.duration ?? node.durationSec;
   const pct =
     denom != null && denom > 0
       ? ` · ${Math.min(100, Math.round((p.position / denom) * 100))}%`
       : '';
-  return `${formatDuration(total)}${pct}`;
+  return `${formatDuration(total)}${pct}${lufs}`;
 }
 
 function leafIcon(type: TrackLeaf['type']): string {

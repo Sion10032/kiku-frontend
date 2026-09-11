@@ -203,6 +203,7 @@
   "works.menu-preview": "预览",
   "works.menu-add-to-queue": "添加到队列",
   "works.menu-play-next": "下一首播放",
+  "works.menu-loudness-curve": "响度曲线",
   "works.menu-open-file": "打开文件",
   "works.download-file": "下载文件",
   "works.item-count_other": "{{count}} 个项目",

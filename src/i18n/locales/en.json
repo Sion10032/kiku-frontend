@@ -211,6 +211,7 @@
   "works.menu-preview": "Preview",
   "works.menu-add-to-queue": "Add to queue",
   "works.menu-play-next": "Play next",
+  "works.menu-loudness-curve": "Loudness curve",
   "works.menu-open-file": "Open file",
   "works.download-file": "Download file",
   "works.item-count_one": "{{count}} item",

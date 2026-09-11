@@ -44,7 +44,7 @@ export function buildPoints(
 const Y_MIN = -40;
 const Y_MAX = 0;
 
-/** 曲线 Dialog 的目标音轨（WorkTree 音频行 LUFS 小字点击时传入）。 */
+/** 曲线 Dialog 的目标音轨（WorkTree 音频行 ⋮ 菜单「响度曲线」项传入）。 */
 export interface CurveTrackInfo {
   mediaIndex: string;
   title: string;
