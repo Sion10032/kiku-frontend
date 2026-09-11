@@ -34,6 +34,15 @@ export type AnalysisEvent =
   | { type: 'ANALYSIS_FINISHED'; message: string }
   | { type: 'ANALYSIS_ERROR'; error: string };
 
+/** SSE 初始事件 ANALYSIS_INIT_STATE 的 payload（连接 / 重连补播） */
+export interface AnalysisInitState {
+  isAnalyzing: boolean;
+  snapshot: AnalysisSnapshot | null;
+}
+
+/** GET /api/analysis/status 响应（与 ANALYSIS_INIT_STATE 同形状） */
+export type AnalysisStatus = AnalysisInitState;
+
 /** 触发响度分析（全量，或传 workId 插队单作品）：POST /api/analysis/start */
 export function startAnalysis(
   workId?: string,

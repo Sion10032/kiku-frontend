@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import '@m3e/icons/outlined/document_scanner';
 import '@m3e/icons/outlined/edit';
 import '@m3e/icons/outlined/folder';
+import '@m3e/icons/outlined/graphic_eq';
 import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/tune';
 
@@ -19,6 +20,7 @@ import '@m3e/icons/outlined/tune';
 type NavLabelKey =
   | 'dashboard.folders.title'
   | 'dashboard.scan.title'
+  | 'dashboard.analysis.title'
   | 'dashboard.advanced.title'
   | 'dashboard.users.title'
   | 'dashboard.metadata.title';
@@ -36,6 +38,11 @@ const NAV_ENTRIES: NavEntry[] = [
     to: '/admin/scanner',
     label: 'dashboard.scan.title',
     icon: 'document_scanner',
+  },
+  {
+    to: '/admin/analysis',
+    label: 'dashboard.analysis.title',
+    icon: 'graphic_eq',
   },
   { to: '/admin/advanced', label: 'dashboard.advanced.title', icon: 'tune' },
   { to: '/admin/usermanage', label: 'dashboard.users.title', icon: 'group' },

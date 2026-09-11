@@ -14,6 +14,7 @@ import Register from '../pages/Register';
 import Error404 from '../pages/Error404';
 import Folders from '../pages/Dashboard/Folders';
 import Scanner from '../pages/Dashboard/Scanner';
+import Analysis from '../pages/Dashboard/Analysis';
 import Advanced from '../pages/Dashboard/Advanced';
 import UserManage from '../pages/Dashboard/UserManage';
 import MetadataOverride from '../pages/Dashboard/MetadataOverride';
@@ -88,6 +89,11 @@ const scannerRoute = createRoute({
   path: '/admin/scanner',
   component: Scanner,
 });
+const analysisRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/admin/analysis',
+  component: Analysis,
+});
 const advancedRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/admin/advanced',
@@ -154,6 +160,7 @@ export const routeTree = rootRoute.addChildren([
   dashboardLayoutRoute.addChildren([
     foldersRoute,
     scannerRoute,
+    analysisRoute,
     advancedRoute,
     userManageRoute,
     metadataAdminRoute,
