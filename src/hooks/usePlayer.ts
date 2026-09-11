@@ -6,6 +6,7 @@ import {
   type Track,
 } from '../stores/playerStore';
 import { streamUrl, fetchLyricsText } from '../api/media';
+import { attachGainChain } from '../utils/normalizer';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 import {
   trackPlayback,
@@ -81,6 +82,7 @@ export function usePlayer(): void {
   const playing = usePlayerStore((s) => s.playing);
   const volume = usePlayerStore((s) => s.volume);
   const muted = usePlayerStore((s) => s.muted);
+  const gainDb = usePlayerStore((s) => s.gainDb);
   const rewindSeekMode = usePlayerStore((s) => s.rewindSeekMode);
   const forwardSeekMode = usePlayerStore((s) => s.forwardSeekMode);
   const sleepMode = usePlayerStore((s) => s.sleepMode);
@@ -172,6 +174,14 @@ export function usePlayer(): void {
     });
     howl = sound;
 
+    // 音量均衡：html5 元素接 WebAudio 增益链（Howler volume 上限 1，无法提升）
+    const el = (
+      sound as unknown as { _sounds?: Array<{ _node?: HTMLAudioElement }> }
+    )._sounds?.[0]?._node;
+    if (el instanceof HTMLAudioElement) {
+      attachGainChain(el).setGainDb(usePlayerStore.getState().gainDb);
+    }
+
     if (initialPlaying) sound.play();
 
     return () => {
@@ -202,6 +212,18 @@ export function usePlayer(): void {
   useEffect(() => {
     howl?.volume(muted ? 0 : volume);
   }, [volume, muted]);
+
+  // —— 增益均衡：gainDb 变化或切曲后应用到新实例的元素 ——
+
+  useEffect(() => {
+    const el = howl as unknown as {
+      _sounds?: Array<{ _node?: HTMLAudioElement }>;
+    } | null;
+    const node = el?._sounds?.[0]?._node;
+    if (node instanceof HTMLAudioElement) {
+      attachGainChain(node).setGainDb(gainDb);
+    }
+  }, [gainDb, currentTrack]);
 
   // —— 时间轮询：播放中每 250ms 写回 currentTime（并节流上报播放进度） ——
 
