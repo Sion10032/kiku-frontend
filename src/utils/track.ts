@@ -11,6 +11,7 @@ export function toTrack(work: Work, leaf: TrackLeaf): Track {
     workId: work.id,
     mediaStreamUrl: streamUrl(work.id, leaf.hash),
     mediaDownloadUrl: downloadUrl(work.id, leaf.hash),
+    loudness: { lufs: work.loudnessLufs, truePeakDb: work.loudnessTruePeakDb },
     ...(leaf.lyrics ? { lyrics: leaf.lyrics } : {}),
   };
 }

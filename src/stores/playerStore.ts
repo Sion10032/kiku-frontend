@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LyricLine } from '../utils/lrc';
-import type { LyricsRef } from '../types';
+import type { LoudnessInfo, LyricsRef } from '../types';
 
 /** 队列中的音轨。 */
 export interface Track {
@@ -13,6 +13,8 @@ export interface Track {
   workTitle: string;
   /** 所属作品 id（完整 RJ code，动态取色用） */
   workId?: string;
+  /** 作品响度快照（入队时拷贝；播放时按当前响度设置实时计算增益） */
+  loudness?: LoudnessInfo;
   /** 歌词引用（入队时由树节点拷贝；切曲时据此取文本） */
   lyrics?: LyricsRef;
   /** 流媒体 URL（不传则由 usePlayer 用 hash 构造） */
