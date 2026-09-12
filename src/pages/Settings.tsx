@@ -113,16 +113,12 @@ export default function Settings() {
   const setLoudnessNormalization = useSettingsStore(
     (s) => s.setLoudnessNormalization,
   );
-  const loudnessTargetLufs = useSettingsStore(
-    (s) => s.loudnessTargetLufs,
-  );
+  const loudnessTargetLufs = useSettingsStore((s) => s.loudnessTargetLufs);
   const setLoudnessTargetLufs = useSettingsStore(
     (s) => s.setLoudnessTargetLufs,
   );
   const loudnessMaxGainDb = useSettingsStore((s) => s.loudnessMaxGainDb);
-  const setLoudnessMaxGainDb = useSettingsStore(
-    (s) => s.setLoudnessMaxGainDb,
-  );
+  const setLoudnessMaxGainDb = useSettingsStore((s) => s.setLoudnessMaxGainDb);
   const floatingLyrics = useSettingsStore((s) => s.floatingLyrics);
   const setFloatingLyrics = useSettingsStore((s) => s.setFloatingLyrics);
   const coverBlurMode = useSettingsStore((s) => s.coverBlurMode);
@@ -401,32 +397,35 @@ export default function Settings() {
             <M3eSwitch
               checked={loudnessNormalization}
               onInput={(e) =>
-                setLoudnessNormalization(
-                  (e.target as HTMLInputElement).checked,
-                )
+                setLoudnessNormalization((e.target as HTMLInputElement).checked)
               }
             />
           </div>
 
-          {/* 目标响度：均衡开启时可调，关闭时禁用 */}
+          {/* 目标响度：均衡开启时可调，关闭时禁用；范围与响度曲线 y 轴 [-40, 0] 对应 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center justify-between gap-4'>
-              <span className={loudnessNormalization ? '' : 'opacity-50'}>
-                {t('settings.loudness-target-lufs')}
+              <span className='flex flex-col'>
+                <span className={loudnessNormalization ? '' : 'opacity-50'}>
+                  {t('settings.loudness-target-lufs')}
+                </span>
+                <span className='text-sm opacity-70'>
+                  {t('settings.loudness-target-lufs-desc')}
+                </span>
               </span>
               <span className='text-sm tabular-nums opacity-70'>
                 {loudnessTargetLufs} LUFS
               </span>
             </div>
             <M3eSlider
-              min={-30}
-              max={-10}
+              min={-40}
+              max={0}
               step={1}
               labelled
               disabled={!loudnessNormalization}
               onInput={(e) =>
                 setLoudnessTargetLufs(
-                  (e.target as M3eSliderThumbElement).value ?? -16,
+                  (e.target as M3eSliderThumbElement).value ?? -28,
                 )
               }
             >
@@ -437,8 +436,13 @@ export default function Settings() {
           {/* 最大增益：均衡开启时可调，关闭时禁用 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center justify-between gap-4'>
-              <span className={loudnessNormalization ? '' : 'opacity-50'}>
-                {t('settings.loudness-max-gain-db')}
+              <span className='flex flex-col'>
+                <span className={loudnessNormalization ? '' : 'opacity-50'}>
+                  {t('settings.loudness-max-gain-db')}
+                </span>
+                <span className='text-sm opacity-70'>
+                  {t('settings.loudness-max-gain-db-desc')}
+                </span>
               </span>
               <span className='text-sm tabular-nums opacity-70'>
                 ±{loudnessMaxGainDb} dB

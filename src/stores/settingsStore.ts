@@ -58,7 +58,7 @@ interface SettingsState {
   mediaNotification: boolean;
   /** 音量均衡：播放时按作品响度数据应用增益（需服务器已完成响度分析） */
   loudnessNormalization: boolean;
-  /** 音量均衡目标响度（LUFS，-30..-10，默认 -16） */
+  /** 音量均衡目标响度（LUFS，-40..0，默认 -28） */
   loudnessTargetLufs: number;
   /** 音量均衡最大增益（dB，0..30，默认 12） */
   loudnessMaxGainDb: number;
@@ -142,7 +142,7 @@ export const useSettingsStore = create<SettingsState>()(
       setMediaNotification: (on) => set({ mediaNotification: on }),
       loudnessNormalization: false,
       setLoudnessNormalization: (on) => set({ loudnessNormalization: on }),
-      loudnessTargetLufs: -16,
+      loudnessTargetLufs: -28,
       setLoudnessTargetLufs: (v) => set({ loudnessTargetLufs: v }),
       loudnessMaxGainDb: 12,
       setLoudnessMaxGainDb: (v) => set({ loudnessMaxGainDb: v }),
