@@ -1,3 +1,5 @@
+import type { LoudnessInfo } from '../types';
+
 /**
  * 响度增益计算（纯函数）：作品加权 LUFS → 播放均衡增益（dB，1 位小数）。
  * 目标响度 / 最大增益为用户级设置，故在客户端计算（服务端仅下发测量值）。
@@ -15,5 +17,21 @@ export function computeLoudnessGain(
   const cap = -1 - (truePeakDb ?? -99);
   return (
     Math.round(Math.max(-maxGainDb, Math.min(maxGainDb, raw, cap)) * 10) / 10
+  );
+}
+
+/** 音轨应生效的均衡增益（dB）：开关关闭 / 无快照 / 未分析 → 0（直通）。 */
+export function trackGainDb(
+  loudness: LoudnessInfo | undefined,
+  enabled: boolean,
+  targetLufs: number,
+  maxGainDb: number,
+): number {
+  if (!enabled) return 0;
+  return computeLoudnessGain(
+    loudness?.lufs ?? null,
+    loudness?.truePeakDb ?? null,
+    targetLufs,
+    maxGainDb,
   );
 }

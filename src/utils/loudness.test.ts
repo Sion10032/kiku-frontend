@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeLoudnessGain } from './loudness';
+import { computeLoudnessGain, trackGainDb } from './loudness';
 
 describe('computeLoudnessGain', () => {
   it('基础增益：target(-16) − lufs(-20) = +4 dB（峰值有余量不钳制）', () => {
@@ -27,5 +27,25 @@ describe('computeLoudnessGain', () => {
   it('保留 1 位小数', () => {
     // target=-16, lufs=-17.3 → +1.3
     expect(computeLoudnessGain(-17.3, -6, -16, 12)).toBe(1.3);
+  });
+});
+
+describe('trackGainDb', () => {
+  it('均衡开关关闭 → 0 直通', () => {
+    expect(trackGainDb({ lufs: -20, truePeakDb: -6 }, false, -16, 12)).toBe(0);
+  });
+
+  it('无响度快照（undefined）→ 0 直通', () => {
+    expect(trackGainDb(undefined, true, -16, 12)).toBe(0);
+  });
+
+  it('未分析作品（lufs null）→ 0 直通', () => {
+    expect(trackGainDb({ lufs: null, truePeakDb: null }, true, -16, 12)).toBe(
+      0,
+    );
+  });
+
+  it('开启且有快照 → 委托 computeLoudnessGain', () => {
+    expect(trackGainDb({ lufs: -20, truePeakDb: -6 }, true, -16, 12)).toBe(4);
   });
 });

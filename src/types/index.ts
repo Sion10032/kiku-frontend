@@ -147,6 +147,14 @@ export type TrackNode = TrackFolder | TrackLeaf;
 /** /tracks/:id 响应（文件树根数组） */
 export type Tracks = TrackNode[];
 
+/** 作品响度测量值快照（播放队列音轨入队时携带；播放时按当前响度设置计算增益）。 */
+export interface LoudnessInfo {
+  /** 作品整合响度（LUFS）；未分析为 null */
+  lufs: number | null;
+  /** 作品峰值电平（dBTP）；未分析为 null */
+  truePeakDb: number | null;
+}
+
 // ---------- 评价 ----------
 
 /** 收听进度（reviewSchema.progress） */
