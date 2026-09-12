@@ -6,7 +6,6 @@ import {
   type Track,
 } from '../stores/playerStore';
 import { streamUrl, fetchLyricsText } from '../api/media';
-import { useSettingsStore } from '../stores/settingsStore';
 import { attachGainChain } from '../utils/normalizer';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 import {
@@ -14,6 +13,7 @@ import {
   flushProgress,
   reportTrackEnd,
 } from '../utils/progressReporter';
+import { useCurrentGainDb } from './useCurrentGainDb';
 
 /**
  * 模块级 Howl 单例。
@@ -83,11 +83,7 @@ export function usePlayer(): void {
   const playing = usePlayerStore((s) => s.playing);
   const volume = usePlayerStore((s) => s.volume);
   const muted = usePlayerStore((s) => s.muted);
-  const gainDb = usePlayerStore((s) => s.gainDb);
-  // 音量均衡客户端开关：关闭时增益套 0（直通），切换实时生效
-  const loudnessNormalization = useSettingsStore(
-    (s) => s.loudnessNormalization,
-  );
+  const gainDb = useCurrentGainDb();
   const rewindSeekMode = usePlayerStore((s) => s.rewindSeekMode);
   const forwardSeekMode = usePlayerStore((s) => s.forwardSeekMode);
   const sleepMode = usePlayerStore((s) => s.sleepMode);
@@ -185,9 +181,7 @@ export function usePlayer(): void {
       sound as unknown as { _sounds?: Array<{ _node?: HTMLAudioElement }> }
     )._sounds?.[0]?._node;
     if (el instanceof HTMLAudioElement) {
-      attachGainChain(el).setGainDb(
-        loudnessNormalization ? usePlayerStore.getState().gainDb : 0,
-      );
+      attachGainChain(el).setGainDb(gainDb);
     }
 
     if (initialPlaying) sound.play();
@@ -221,7 +215,7 @@ export function usePlayer(): void {
     howl?.volume(muted ? 0 : Math.min(1, Math.max(0, volume)));
   }, [volume, muted]);
 
-  // —— 增益均衡：gainDb 变化或切曲后应用到新实例的元素 ——
+  // —— 增益均衡：gainDb 变化（设置调整/切曲/开关）后应用到实例的元素 ——
 
   useEffect(() => {
     const el = howl as unknown as {
@@ -229,9 +223,9 @@ export function usePlayer(): void {
     } | null;
     const node = el?._sounds?.[0]?._node;
     if (node instanceof HTMLAudioElement) {
-      attachGainChain(node).setGainDb(loudnessNormalization ? gainDb : 0);
+      attachGainChain(node).setGainDb(gainDb);
     }
-  }, [gainDb, currentTrack, loudnessNormalization]);
+  }, [gainDb, currentTrack]);
 
   // —— 时间轮询：播放中每 250ms 写回 currentTime（并节流上报播放进度） ——
 

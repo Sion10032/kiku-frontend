@@ -28,9 +28,6 @@ import {
   type TrackProgress,
 } from '../../stores/progressStore';
 import { downloadUrl, streamUrl } from '../../api/media';
-import { startAnalysis } from '../../api/analysis';
-import { useSettingsStore } from '../../stores/settingsStore';
-import { computeLoudnessGain } from '../../utils/loudness';
 import type { TrackFolder, TrackLeaf, TrackNode, Work } from '../../types';
 import { M3eBreadcrumb, M3eBreadcrumbItem } from '@m3e/react/breadcrumb';
 import { useM3eStyle } from '../../hooks/useM3eStyle';
@@ -164,28 +161,9 @@ export default function WorkTree({
     navigate([...path, folder.title]);
   }
 
-  /** 入队时应用均衡增益（用户开关决定）；开启但未分析 → 兜底触发分析（fire-and-forget）。 */
-  function applyLoudness() {
-    const s = useSettingsStore.getState();
-    usePlayerStore.getState().setGainDb(
-      s.loudnessNormalization
-        ? computeLoudnessGain(
-            work.loudnessLufs,
-            work.loudnessTruePeakDb,
-            s.loudnessTargetLufs,
-            s.loudnessMaxGainDb,
-          )
-        : 0,
-    );
-    if (s.loudnessNormalization && work.loudnessLufs == null) {
-      startAnalysis(work.id).catch(() => {});
-    }
-  }
-
   function playLeaf(leaf: TrackLeaf) {
     const index = queueTracks.findIndex((t) => t.hash === leaf.hash);
     const i = index === -1 ? 0 : index;
-    applyLoudness();
     const queue = queueTracks.map((t) => ({ ...t }));
     // 点击续播（D5）：该轨有未听完历史 → 从上次位置恢复；已听完/无历史 → 从头
     const startAt = selectResumeStartAt(
@@ -334,23 +312,13 @@ export default function WorkTree({
         )}
         {menu && menu.node.type === 'audio' && (
           <>
-            <M3eMenuItem
-              onClick={() => {
-                applyLoudness();
-                addToQueue(toTrack(work, menu.node));
-              }}
-            >
+            <M3eMenuItem onClick={() => addToQueue(toTrack(work, menu.node))}>
               <span slot='icon'>
                 <M3eIcon name='play_arrow' />
               </span>
               {t('works.menu-add-to-queue')}
             </M3eMenuItem>
-            <M3eMenuItem
-              onClick={() => {
-                applyLoudness();
-                playNext(toTrack(work, menu.node));
-              }}
-            >
+            <M3eMenuItem onClick={() => playNext(toTrack(work, menu.node))}>
               <span slot='icon'>
                 <M3eIcon name='queue_music' />
               </span>

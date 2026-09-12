@@ -11,9 +11,6 @@ import type { TrackNode, Work } from '../../types';
 import { formatDuration } from '../../utils/format';
 import { toTrack, flattenAudioLeaves } from '../../utils/track';
 import { usePlayerStore } from '../../stores/playerStore';
-import { startAnalysis } from '../../api/analysis';
-import { useSettingsStore } from '../../stores/settingsStore';
-import { computeLoudnessGain } from '../../utils/loudness';
 import { useDeleteProgressMutation } from '../../queries/useProgressMutation';
 import { suppressWorkProgress } from '../../utils/progressReporter';
 
@@ -46,28 +43,9 @@ export default function WorkResume({ work, tree }: WorkResumeProps) {
 
   const hasTree = tree.length > 0;
 
-  /** 入队时应用均衡增益（用户开关决定）；开启但未分析 → 兜底触发分析（fire-and-forget）。 */
-  function applyLoudness() {
-    const s = useSettingsStore.getState();
-    usePlayerStore.getState().setGainDb(
-      s.loudnessNormalization
-        ? computeLoudnessGain(
-            work.loudnessLufs,
-            work.loudnessTruePeakDb,
-            s.loudnessTargetLufs,
-            s.loudnessMaxGainDb,
-          )
-        : 0,
-    );
-    if (s.loudnessNormalization && work.loudnessLufs == null) {
-      startAnalysis(work.id).catch(() => {});
-    }
-  }
-
   function resume() {
     const leaves = flattenAudioLeaves(tree);
     if (leaves.length === 0) return;
-    applyLoudness();
     const idx = leaves.findIndex((l) => l.hash === progress!.mediaIndex);
     const index = idx === -1 ? 0 : idx;
     const queue = leaves.map((l) => toTrack(work, l));

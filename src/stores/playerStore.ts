@@ -49,8 +49,6 @@ interface PlayerState {
   muted: boolean;
   /** 音量 0.0–1.0 */
   volume: number;
-  /** 作品均衡增益（dB，0 = 直通）；入队时按用户响度设置经 computeLoudnessGain 计算写入，经 WebAudio GainNode 应用 */
-  gainDb: number;
   /** 当前歌词行 */
   currentLyric: string;
   /** 当前曲目完整歌词行 */
@@ -91,8 +89,6 @@ interface PlayerActions {
   changePlayMode: () => void;
   toggleMuted: () => void;
   setVolume: (vol: number) => void;
-  /** 设置作品均衡增益（dB）。 */
-  setGainDb: (db: number) => void;
   setCurrentLyric: (lyric: string) => void;
   /** 切曲时写入/清空完整歌词行。 */
   setLyrics: (lines: LyricLine[]) => void;
@@ -135,7 +131,6 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       playMode: 'order',
       muted: false,
       volume: 0.8,
-      gainDb: 0,
       currentLyric: '',
       lyricLines: [],
       activeLyricIndex: -1,
@@ -257,7 +252,6 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
       toggleMuted: () => set((s) => ({ muted: !s.muted })),
       setVolume: (vol) => set({ volume: Math.min(1, Math.max(0, vol)) }),
-      setGainDb: (db) => set({ gainDb: db }),
       setCurrentLyric: (lyric) => set({ currentLyric: lyric }),
       setLyrics: (lines) => set({ lyricLines: lines, activeLyricIndex: -1 }),
       setActiveLyricIndex: (index) => set({ activeLyricIndex: index }),
