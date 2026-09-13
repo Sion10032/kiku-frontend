@@ -1,8 +1,5 @@
 import { create } from 'zustand';
 
-/** 听完判定阈值（与后端 progress.service.LISTENED_RATIO 一致）。 */
-export const LISTENED_RATIO = 0.95;
-
 /** 单轨播放进度（秒）。 */
 export interface TrackProgress {
   position: number;
@@ -64,8 +61,9 @@ export const useProgressStore = create<ProgressState>()((set) => ({
 }));
 
 /**
- * 续播策略（D5）：有未完历史 → 返回恢复起点；已听完/无历史 → undefined（从头）。
- * duration 未知时以 position > 0 为「未听完」。
+ * 续播策略：有历史且 position > 0 → 返回上次进度作为恢复起点；
+ * 无历史或未开始 → undefined（从头）。已听完轨 seek 到末尾后由 ended
+ * 自然触发 nextTrack 衔接下一轨（order 队尾停止为已知接受行为）。
  */
 export function selectResumeStartAt(
   state: Pick<ProgressState, 'byWork'>,
@@ -74,12 +72,5 @@ export function selectResumeStartAt(
 ): number | undefined {
   const p = state.byWork[workId]?.[hash];
   if (!p || p.position <= 0) return undefined;
-  if (
-    p.duration != null
-    && p.duration > 0
-    && p.position / p.duration >= LISTENED_RATIO
-  ) {
-    return undefined;
-  }
   return p.position;
 }

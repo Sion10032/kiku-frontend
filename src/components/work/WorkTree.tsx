@@ -165,7 +165,8 @@ export default function WorkTree({
     const index = queueTracks.findIndex((t) => t.hash === leaf.hash);
     const i = index === -1 ? 0 : index;
     const queue = queueTracks.map((t) => ({ ...t }));
-    // 点击续播（D5）：该轨有未听完历史 → 从上次位置恢复；已听完/无历史 → 从头
+    // 点击续播：有历史 → 从上次进度恢复（已听完 seek 到末尾由 ended
+    // 自然衔接下一轨）；无历史/未开始 → 从头
     const startAt = selectResumeStartAt(
       useProgressStore.getState(),
       work.id,

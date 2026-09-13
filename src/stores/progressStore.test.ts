@@ -84,10 +84,16 @@ describe('selectResumeStartAt 续播边界', () => {
     expect(selectResumeStartAt(s, 'RJ1', 'a')).toBeUndefined();
   });
 
-  it('position/duration = 0.95（听完）→ undefined', () => {
+  it('已听完（0.95）→ 仍返回 position（seek 到末尾由 ended 自然衔接下一轨）', () => {
     useProgressStore.getState().record('RJ1', 'a', 95, 100);
     const s = useProgressStore.getState();
-    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBeUndefined();
+    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBe(95);
+  });
+
+  it('position=duration（听完）→ 返回 position', () => {
+    useProgressStore.getState().record('RJ1', 'a', 100, 100);
+    const s = useProgressStore.getState();
+    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBe(100);
   });
 
   it('position/duration = 0.94（未听完）→ 返回 position', () => {
