@@ -482,6 +482,8 @@ export interface SaveMetadataOverrideInput {
   removeTagIds?: number[];
   addVas?: Array<{ id?: string; name: string }>;
   removeVaIds?: string[];
+  /** 本请求内先恢复原始的字段；随后再套用本次编辑（后端叠加语义） */
+  resetFields?: MetadataField[];
 }
 
 // ---------- 标题净化 ----------

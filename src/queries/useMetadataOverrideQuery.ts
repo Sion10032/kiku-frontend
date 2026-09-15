@@ -3,15 +3,10 @@ import { M3eSnackbar } from '@m3e/react/snackbar';
 import i18next from 'i18next';
 import {
   getMetadataOverride,
-  resetMetadataField,
   sanitizeTitles,
   saveMetadataOverride,
 } from '../api/metadata';
-import type {
-  MetadataField,
-  SaveMetadataOverrideInput,
-  SanitizeTitlesInput,
-} from '../types';
+import type { SaveMetadataOverrideInput, SanitizeTitlesInput } from '../types';
 
 /** 提取给用户看的错误消息（apiFetch 已把后端 error 字段转成 ApiError.message）。 */
 function apiErrorMessage(err: unknown): string {
@@ -57,26 +52,6 @@ export function useSaveMetadataOverrideMutation(workId: string) {
     onError: (err) => {
       M3eSnackbar.open(
         i18next.t('works.meta.override-save-failed', {
-          message: apiErrorMessage(err),
-        }),
-      );
-    },
-  });
-}
-
-export function useResetMetadataFieldMutation(workId: string) {
-  const qc = useQueryClient();
-  const invalidate = useInvalidateOverriddenWorks();
-  return useMutation({
-    mutationFn: (field: MetadataField) => resetMetadataField(workId, field),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: metadataOverrideKey(workId) });
-      invalidate();
-      M3eSnackbar.open(i18next.t('works.meta.reset-success'));
-    },
-    onError: (err) => {
-      M3eSnackbar.open(
-        i18next.t('works.meta.reset-failed', {
           message: apiErrorMessage(err),
         }),
       );

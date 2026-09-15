@@ -1,5 +1,4 @@
 import type {
-  MetadataField,
   MetadataOverrideDetail,
   SaveMetadataOverrideInput,
   SanitizeTitlesInput,
@@ -14,7 +13,7 @@ export function getMetadataOverride(
   return apiFetch<MetadataOverrideDetail>(`work/${workId}/metadata/override`);
 }
 
-/** 保存覆盖：标量为最终值；tags/vas 为相对载入时生效值的动作列表。 */
+/** 保存覆盖：标量为最终值；tags/vas 为动作列表；resetFields 先恢复原始再套用本次编辑。 */
 export function saveMetadataOverride(
   workId: string,
   input: SaveMetadataOverrideInput,
@@ -22,16 +21,6 @@ export function saveMetadataOverride(
   return apiFetch<{ success: boolean }>(`work/${workId}/metadata`, {
     method: 'PATCH',
     json: input,
-  });
-}
-
-/** 单字段恢复原始（field ∈ title/circle/series/ageRating/tags/vas）。 */
-export function resetMetadataField(
-  workId: string,
-  field: MetadataField,
-): Promise<{ success: boolean }> {
-  return apiFetch<{ success: boolean }>(`work/${workId}/metadata/${field}`, {
-    method: 'DELETE',
   });
 }
 

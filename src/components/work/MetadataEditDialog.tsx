@@ -23,10 +23,10 @@ import { getCircles, getSeries, getTags, getVas } from '../../api/works';
 import { SETTING_CONTROL_FILL } from '../../constants';
 import {
   useMetadataOverride,
-  useResetMetadataFieldMutation,
   useSaveMetadataOverrideMutation,
 } from '../../queries/useMetadataOverrideQuery';
 import type {
+  MetadataField,
   MetadataOverrideDetail,
   SaveMetadataOverrideInput,
 } from '../../types';
@@ -39,14 +39,19 @@ interface Props {
 }
 
 /**
- * 弹窗编辑状态：标量 = 最终值草稿；tags/vas = 相对载入时生效值的动作列表。
- * 保存只提交有变化的键（空 payload 时按钮置灰），符合后端动作列表契约。
+ * 弹窗编辑状态：标量 = 最终值草稿；tags/vas = 动作列表（基准跟随 resetFields：
+ * 默认相对载入时生效值，标记 reset 后相对原始值，与 chips 显示集合一致）。
+ * resetFields = 本会话点过「恢复原始」的字段（纯本地草稿标记，保存时随 PATCH
+ * resetFields 原子提交；标量被再编辑则撤销标记，tags/vas 被再编辑保留标记——
+ * 后端先 purge 后 apply，动作相对 original 叠加）。保存只提交有变化的键
+ * （空 payload 时按钮置灰）。
  */
 interface Draft {
   title: string;
   circleName: string;
   seriesName: string;
   ageRating: 'all' | 'r15' | 'r18';
+  resetFields: MetadataField[];
   removedTagIds: number[];
   addedTagNames: string[];
   removedVaIds: string[];
@@ -59,6 +64,7 @@ function toDraft(detail: MetadataOverrideDetail): Draft {
     circleName: detail.effective.circle?.name ?? '',
     seriesName: detail.effective.series?.name ?? '',
     ageRating: (detail.effective.ageRating as Draft['ageRating']) ?? 'all',
+    resetFields: [],
     removedTagIds: [],
     addedTagNames: [],
     removedVaIds: [],
@@ -72,7 +78,6 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
   const detail = detailQuery.data ?? null;
   const [draft, setDraft] = useState<Draft | null>(null);
   const saveMutation = useSaveMetadataOverrideMutation(workId);
-  const resetMutation = useResetMetadataFieldMutation(workId);
 
   // 维度名补全数据：与列表页共享缓存（useListQuery 同 key），仅弹窗打开时拉取
   const tagsQuery = useQuery({
@@ -97,13 +102,34 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
     enabled: open,
   });
 
-  // 载入完成（或重新打开后重新拉取）时用生效值重置草稿，动作列表随之清零。
-  // 渲染期比较调整：detail（查询数据）变化重置 state 属于渲染期逻辑，
-  // 放 effect 里同步 setState 会级联渲染（react-hooks/set-state-in-effect）
-  const [prevDetail, setPrevDetail] = useState(detail);
-  if (detail !== prevDetail) {
-    setPrevDetail(detail);
-    if (detail) setDraft(toDraft(detail));
+  // 草稿生命周期以「会话」驱动：session = 打开时的 workId（关闭 = null）。
+  // P1-13：useMetadataOverride staleTime 0 + refetchOnWindowFocus，后台 refetch
+  // 会以新对象身份返回 detail；旧逻辑「detail 变了就 toDraft 整体重置」会把
+  // 用户未保存的编辑静默清掉（切窗口回来即丢数据）。新语义：
+  // 1) 会话变化（打开/workId 切换）后的首次载入才整体播种；
+  // 2) 会话内后续 refetch 一律不动草稿（「恢复原始」已改为纯本地草稿操作，
+  //    不存在需要 refetch 合并的待恢复字段）；
+  // 3) 以下两个顺序块沿用渲染期 setState 模式（刻意不用 effect，避免
+  //    react-hooks/set-state-in-effect 级联渲染，与旧实现一致）。
+  const session = open ? workId : null;
+  const [prevSession, setPrevSession] = useState<string | null>(null);
+  const [seededSession, setSeededSession] = useState<string | null>(null);
+  const [chipEpochs, setChipEpochs] = useState({ tags: 0, vas: 0 });
+
+  // 块 1：会话切换 → 作废上一会话的播种，清空草稿（含 reset 标记）。
+  // 关闭（session = null）也走这里：未保存编辑即刻放弃，重开不残留。
+  if (session !== prevSession) {
+    setPrevSession(session);
+    setSeededSession(null);
+    setDraft(null);
+  }
+  // 块 2：本会话首次拿到 detail（含关闭态下缓存已存在的情况，重开时
+  // 再次播种，语义一致）→ 用生效值整体播种，动作列表与 reset 标记清零，
+  // chip DOM 同步重建（epoch 号变化触发 ChipSetSync 重建，见 version 注释）。
+  if (detail && seededSession !== session) {
+    setSeededSession(session);
+    setDraft(toDraft(detail));
+    setChipEpochs((e) => ({ tags: e.tags + 1, vas: e.vas + 1 }));
   }
 
   // 对话框高度：用官方变量 --m3e-dialog-max-height 限高（2.7.11 起默认
@@ -115,13 +141,21 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
   if (!open) return null;
 
   const overridden = new Set(detail?.overriddenFields ?? []);
+  // reset 标记下被覆盖徽标/按钮立即隐藏（保存成功重开后按服务器状态重现）
+  const resetMarked = (field: MetadataField): boolean =>
+    draft?.resetFields.includes(field) ?? false;
 
   // 已存在的维度条目与手工新名字都按名提交（后端按名 upsert 幂等）。
   // chip DOM 由 m3e-input-chip-set 自治（见 ChipSetSync），此处只同步草稿状态。
+  // 增删判定基准跟随 reset 标记：标记 tags/vas 后动作相对 original（后端先
+  // purge 后 apply，结果 = original + 本次编辑），否则维持相对 effective。
   const addTagByName = (name: string) => {
-    if (!draft) return;
+    if (!draft || !detail) return;
     if (draft.addedTagNames.includes(name)) return;
-    const existing = detail?.effective.tags.find((t) => t.name === name);
+    const basis = resetMarked('tags')
+      ? detail.original.tags
+      : detail.effective.tags;
+    const existing = basis.find((t) => t.name === name);
     if (existing) {
       // 重新输入刚移除的既有项 = 撤销移除（组件已把新 chip 建回 DOM）
       if (draft.removedTagIds.includes(existing.id)) {
@@ -136,7 +170,7 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
   };
 
   const removeTagByName = (name: string) => {
-    if (!draft) return;
+    if (!draft || !detail) return;
     if (draft.addedTagNames.includes(name)) {
       setDraft({
         ...draft,
@@ -144,7 +178,10 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
       });
       return;
     }
-    const existing = detail?.effective.tags.find((t) => t.name === name);
+    const basis = resetMarked('tags')
+      ? detail.original.tags
+      : detail.effective.tags;
+    const existing = basis.find((t) => t.name === name);
     if (existing && !draft.removedTagIds.includes(existing.id)) {
       setDraft({
         ...draft,
@@ -154,9 +191,12 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
   };
 
   const addVaByName = (name: string) => {
-    if (!draft) return;
+    if (!draft || !detail) return;
     if (draft.addedVas.some((v) => v.name === name)) return;
-    const existing = detail?.effective.vas.find((v) => v.name === name);
+    const basis = resetMarked('vas')
+      ? detail.original.vas
+      : detail.effective.vas;
+    const existing = basis.find((v) => v.name === name);
     if (existing) {
       if (draft.removedVaIds.includes(existing.id)) {
         setDraft({
@@ -170,7 +210,7 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
   };
 
   const removeVaByName = (name: string) => {
-    if (!draft) return;
+    if (!draft || !detail) return;
     if (draft.addedVas.some((v) => v.name === name)) {
       setDraft({
         ...draft,
@@ -178,7 +218,10 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
       });
       return;
     }
-    const existing = detail?.effective.vas.find((v) => v.name === name);
+    const basis = resetMarked('vas')
+      ? detail.original.vas
+      : detail.effective.vas;
+    const existing = basis.find((v) => v.name === name);
     if (existing && !draft.removedVaIds.includes(existing.id)) {
       setDraft({
         ...draft,
@@ -189,18 +232,30 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
 
   const buildPayload = (): SaveMetadataOverrideInput | null => {
     if (!draft || !detail) return null;
+    const resets = draft.resetFields;
+    // 标量三态：reset 标记 → 显式 null（撤销覆盖；「手输回原值」不是 reset，
+    // 走 diff 作为普通覆盖钉住）；有编辑 → diff vs effective 提交最终值；
+    // 未改 → undefined（不提交该键）。tags/vas 动作在 reset 标记下本就相对
+    // original 基准，直发即可；tagsCleared/vasCleared 由后端 reset 语义处理。
     const input: SaveMetadataOverrideInput = {
-      title: draft.title !== detail.effective.title ? draft.title : undefined,
-      circleName:
-        draft.circleName !== (detail.effective.circle?.name ?? '')
+      title: resets.includes('title')
+        ? null
+        : draft.title !== detail.effective.title
+          ? draft.title
+          : undefined,
+      circleName: resets.includes('circle')
+        ? null
+        : draft.circleName !== (detail.effective.circle?.name ?? '')
           ? draft.circleName || null
           : undefined,
-      seriesName:
-        draft.seriesName !== (detail.effective.series?.name ?? '')
+      seriesName: resets.includes('series')
+        ? null
+        : draft.seriesName !== (detail.effective.series?.name ?? '')
           ? draft.seriesName || null
           : undefined,
-      ageRating:
-        draft.ageRating !== detail.effective.ageRating
+      ageRating: resets.includes('ageRating')
+        ? null
+        : draft.ageRating !== detail.effective.ageRating
           ? draft.ageRating
           : undefined,
       addTags: draft.addedTagNames.length > 0 ? draft.addedTagNames : undefined,
@@ -209,9 +264,51 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
       addVas: draft.addedVas.length > 0 ? draft.addedVas : undefined,
       removeVaIds:
         draft.removedVaIds.length > 0 ? draft.removedVaIds : undefined,
+      resetFields: resets.length > 0 ? resets : undefined,
     };
     const hasAny = Object.values(input).some((v) => v !== undefined);
     return hasAny ? input : null;
+  };
+
+  // 「恢复原始」统一入口：纯本地草稿操作（零网络请求）——立即把界面恢复为
+  // 原始值并记入 draft.resetFields，保存时经 PATCH resetFields 原子提交；
+  // 取消/关闭即随草稿丢弃。标量直接落 original 值（空值回退与 toDraft 一致）；
+  // tags/vas 清空动作列表并 bump chip epoch（DOM 以 original 集合重建）。
+  const resetField = (field: MetadataField) => {
+    if (!draft || !detail) return;
+    const mark = draft.resetFields.includes(field)
+      ? draft.resetFields
+      : [...draft.resetFields, field];
+    if (field === 'tags') {
+      setDraft({
+        ...draft,
+        resetFields: mark,
+        removedTagIds: [],
+        addedTagNames: [],
+      });
+      setChipEpochs((e) => ({ ...e, tags: e.tags + 1 }));
+    } else if (field === 'vas') {
+      setDraft({
+        ...draft,
+        resetFields: mark,
+        removedVaIds: [],
+        addedVas: [],
+      });
+      setChipEpochs((e) => ({ ...e, vas: e.vas + 1 }));
+    } else {
+      const scalar =
+        field === 'title'
+          ? { title: detail.original.title }
+          : field === 'circle'
+            ? { circleName: detail.original.circle?.name ?? '' }
+            : field === 'series'
+              ? { seriesName: detail.original.series?.name ?? '' }
+              : {
+                  ageRating:
+                    (detail.original.ageRating as Draft['ageRating']) ?? 'all',
+                };
+      setDraft({ ...draft, resetFields: mark, ...scalar });
+    }
   };
 
   return (
@@ -238,48 +335,74 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
           <>
             <FieldRow
               label={t('works.meta.field-title')}
-              overridden={overridden.has('title')}
-              onReset={() => resetMutation.mutate('title')}
+              overridden={overridden.has('title') && !resetMarked('title')}
+              onReset={() => resetField('title')}
             >
               <SettingsInput
                 label={t('works.meta.field-title')}
                 value={draft.title}
-                onChange={(title) => setDraft({ ...draft, title })}
+                onChange={(title) =>
+                  setDraft({
+                    ...draft,
+                    title,
+                    // reset 后再编辑 = 转为普通覆盖（标量全量替换，无需基准），
+                    // 撤销 reset 标记；「手输回原值」是重新钉住，不发 null
+                    resetFields: draft.resetFields.filter((f) => f !== 'title'),
+                  })
+                }
               />
             </FieldRow>
 
             <FieldRow
               label={t('works.meta.field-circle')}
-              overridden={overridden.has('circle')}
-              onReset={() => resetMutation.mutate('circle')}
+              overridden={overridden.has('circle') && !resetMarked('circle')}
+              onReset={() => resetField('circle')}
             >
               <SingleAutocomplete
                 label={t('works.meta.field-circle')}
                 placeholder={t('works.meta.filter-placeholder')}
                 value={draft.circleName}
                 candidates={circlesQuery.data?.map((c) => c.name) ?? []}
-                onChange={(circleName) => setDraft({ ...draft, circleName })}
+                onChange={(circleName) =>
+                  setDraft({
+                    ...draft,
+                    circleName,
+                    resetFields: draft.resetFields.filter(
+                      (f) => f !== 'circle',
+                    ),
+                  })
+                }
               />
             </FieldRow>
 
             <FieldRow
               label={t('works.meta.field-series')}
-              overridden={overridden.has('series')}
-              onReset={() => resetMutation.mutate('series')}
+              overridden={overridden.has('series') && !resetMarked('series')}
+              onReset={() => resetField('series')}
             >
               <SingleAutocomplete
                 label={t('works.meta.field-series')}
                 placeholder={t('works.meta.filter-placeholder')}
                 value={draft.seriesName}
                 candidates={seriesQuery.data?.map((s) => s.name) ?? []}
-                onChange={(seriesName) => setDraft({ ...draft, seriesName })}
+                onChange={(seriesName) =>
+                  setDraft({
+                    ...draft,
+                    seriesName,
+                    resetFields: draft.resetFields.filter(
+                      (f) => f !== 'series',
+                    ),
+                  })
+                }
               />
             </FieldRow>
 
             <FieldRow
               label={t('works.meta.field-age-rating')}
-              overridden={overridden.has('ageRating')}
-              onReset={() => resetMutation.mutate('ageRating')}
+              overridden={
+                overridden.has('ageRating') && !resetMarked('ageRating')
+              }
+              onReset={() => resetField('ageRating')}
             >
               {/* 组 value 为 getter-only：受控靠每段 checked（同 SettingRows.SegmentedRow） */}
               <M3eSegmentedButton
@@ -290,6 +413,9 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
                     ...draft,
                     ageRating: (e.target as HTMLInputElement)
                       .value as Draft['ageRating'],
+                    resetFields: draft.resetFields.filter(
+                      (f) => f !== 'ageRating',
+                    ),
                   })
                 }
               >
@@ -307,8 +433,8 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
 
             <FieldRow
               label={t('works.meta.field-tags')}
-              overridden={overridden.has('tags')}
-              onReset={() => resetMutation.mutate('tags')}
+              overridden={overridden.has('tags') && !resetMarked('tags')}
+              onReset={() => resetField('tags')}
             >
               <M3eFormField
                 variant='outlined'
@@ -316,8 +442,11 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
                 className='w-full [--m3e-form-field-width:100%]'
               >
                 <ChipSetSync
-                  version={detail}
-                  items={detail.effective.tags.map((t) => t.name)}
+                  version={chipEpochs.tags}
+                  items={(resetMarked('tags')
+                    ? detail.original.tags
+                    : detail.effective.tags
+                  ).map((t) => t.name)}
                   candidates={tagsQuery.data?.map((t) => t.name) ?? []}
                   ariaLabel={t('works.meta.field-tags')}
                   placeholder={t('works.meta.tags-placeholder')}
@@ -329,8 +458,8 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
 
             <FieldRow
               label={t('works.meta.field-vas')}
-              overridden={overridden.has('vas')}
-              onReset={() => resetMutation.mutate('vas')}
+              overridden={overridden.has('vas') && !resetMarked('vas')}
+              onReset={() => resetField('vas')}
             >
               <M3eFormField
                 variant='outlined'
@@ -338,8 +467,11 @@ export default function MetadataEditDialog({ workId, open, onClose }: Props) {
                 className='w-full [--m3e-form-field-width:100%]'
               >
                 <ChipSetSync
-                  version={detail}
-                  items={detail.effective.vas.map((v) => v.name)}
+                  version={chipEpochs.vas}
+                  items={(resetMarked('vas')
+                    ? detail.original.vas
+                    : detail.effective.vas
+                  ).map((v) => v.name)}
                   candidates={vasQuery.data?.map((v) => v.name) ?? []}
                   ariaLabel={t('works.meta.field-vas')}
                   placeholder={t('works.meta.vas-placeholder')}
@@ -406,12 +538,14 @@ function computeChipOptions(candidates: string[], term: string): string[] {
  * 不能用 JSX 渲染 chip——组件命令式摘除后 React 再卸载同一节点会报
  * 「Node.removeChild: not a child of this node」。
  *
- * React 侧只渲染 slotted 输入框与候选选项：初始 chips 在 version（detail 对象）
- * 变化时命令式重建；候选 options 在 query 事件后按输入过滤渲染；
- * chip 增/删通过 chip-set 的 change 事件（detail.type add/remove + value）同步草稿。
+ * React 侧只渲染 slotted 输入框与候选选项：初始 chips 在 version
+ * （播种/reset 时的 chipEpochs 号）变化时命令式重建；候选 options 在 query
+ * 事件后按输入过滤渲染；chip 增/删通过 chip-set 的 change 事件
+ * （detail.type add/remove + value）同步草稿。
  */
 function ChipSetSync(props: {
-  /** 重建标识：detail 对象身份变化（载入/恢复/保存后重拉）时重建全部 chip */
+  /** 重建标识：播种或本地 reset（epoch 号 +1）触发重建；
+   *  普通 refetch 号不变、不重建（否则 DOM chips 会打回服务器值，与草稿失同步） */
   version: unknown;
   /** 初始 chip 集合（value = label = 维度名） */
   items: string[];
