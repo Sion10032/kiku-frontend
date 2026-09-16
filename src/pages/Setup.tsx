@@ -179,19 +179,17 @@ export default function Setup() {
           <h1 className='m-0 text-2xl font-medium'>{t('auth.setup.title')}</h1>
         </div>
 
-        <M3eStepper orientation='vertical'>
-          {/* 第 1 步：管理员账号（form 校验门控下一步） */}
-          {/* for 是 React 保留属性名，用 attr:for 前缀设置为 attribute */}
-          <M3eStep htmlFor='setup-step-account'>
+        <M3eStepper orientation='vertical' linear>
+          <M3eStep editable htmlFor='setup-step-account'>
             {t('auth.setup.step-account')}
           </M3eStep>
-          <M3eStep htmlFor='setup-step-migrate'>
+          <M3eStep editable htmlFor='setup-step-migrate'>
             {t('auth.setup.step-migrate')}
           </M3eStep>
-          <M3eStep htmlFor='setup-step-mode'>
+          <M3eStep editable htmlFor='setup-step-mode'>
             {t('auth.setup.step-mode')}
           </M3eStep>
-          <M3eStep htmlFor='setup-step-register'>
+          <M3eStep editable htmlFor='setup-step-register'>
             {t('auth.setup.step-register')}
           </M3eStep>
 
