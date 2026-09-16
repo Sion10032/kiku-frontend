@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { M3eTabs, M3eTab } from '@m3e/react/tabs';
 import { M3eActionList, M3eListAction } from '@m3e/react/list';
 import { M3eIcon } from '@m3e/react/icon';
@@ -10,6 +10,7 @@ import '@m3e/icons/outlined/mic';
 import '@m3e/icons/outlined/library_books';
 import '@m3e/icons/outlined/chevron_right';
 import { useFavourites } from '../queries/useFavouritesQuery';
+import { useUserStore } from '../stores/userStore';
 import { fieldQuery } from '../utils/query';
 import { useM3eListActionStyle } from '../hooks/useM3eListActionStyle';
 import type { CssInput } from '../utils/css';
@@ -112,8 +113,27 @@ function FavRow({
 export default function Favourites({ tab }: { tab: FavouritesTab }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const authed = useUserStore((s) => s.auth);
   const query = useFavourites(TAB_TO_TYPE[tab]);
   const items = query.data?.favourites ?? [];
+
+  // 未登录整页早退：收藏是私密数据，useFavourites 在未登录时被禁用（query
+  // 恒 pending），放行到数据分支会无限转圈；对齐 History 页的未登录分支。
+  if (!authed) {
+    return (
+      <div className='mx-auto max-w-3xl py-16 text-center'>
+        <p className='text-base opacity-60'>
+          {t('works.favourites.login-required')}
+        </p>
+        <Link
+          to='/login'
+          className='mt-4 inline-block text-m3-primary no-underline'
+        >
+          {t('works.favourites.go-login')}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className='mx-auto max-w-3xl'>

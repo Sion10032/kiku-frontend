@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
 import { M3eList } from '@m3e/react/list';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { useUserStore } from '../stores/userStore';
@@ -15,6 +16,7 @@ import type { Review, Work } from '../types';
 export default function MyReviews() {
   const { t } = useTranslation();
   const name = useUserStore((s) => s.name);
+  const authed = useUserStore((s) => s.auth);
   const reviewsQuery = useReviewsByUser(name || undefined);
   const reviews = useMemo(() => reviewsQuery.data ?? [], [reviewsQuery.data]);
 
@@ -35,6 +37,25 @@ export default function MyReviews() {
 
   const loading = reviewsQuery.isPending || worksPending;
   const isError = reviewsQuery.isError;
+
+  // 未登录整页早退：评价是私密数据，useReviewsByUser 在未登录（无用户名）
+  // 时被禁用（query 恒 pending），放行到数据分支会无限转圈；对齐 History
+  // 页的未登录分支。
+  if (!authed) {
+    return (
+      <div className='mx-auto max-w-3xl py-16 text-center'>
+        <p className='text-base opacity-60'>
+          {t('works.my-reviews.login-required')}
+        </p>
+        <Link
+          to='/login'
+          className='mt-4 inline-block text-m3-primary no-underline'
+        >
+          {t('works.my-reviews.go-login')}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className='mx-auto max-w-3xl'>
