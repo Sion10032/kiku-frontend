@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="90" x2="0" y2="165">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E9E3F2"/>
+    </linearGradient>
+  </defs>
+  <!-- lavender background -->
+  <rect width="200" height="200" rx="44" fill="#C9ADE8"/>
+  <g transform="translate(10,10) scale(0.9)">
+    <!-- melted puddle: extra flat -->
+    <path fill="url(#g)" d="M80 90C68 90 58 100 55 112 52 122 44 130 34 134 20 138 9 144 8 152 6 160 14 165 26 164 38 163 44 159 56 160 68 161 72 165 84 164 96 163 100 158 112 159 124 160 128 164 140 162 152 160 158 156 168 157 180 158 190 154 192 146 190 138 180 134 168 132 156 130 148 126 144 118 140 100 100 90 80 90Z"/>
+    <!-- splash drops -->
+    <circle cx="170" cy="167" r="4" fill="url(#g)"/>
+    <circle cx="14" cy="168" r="3" fill="url(#g)"/>
+    <!-- eyes: sleepy dashes -->
+    <path d="M62 116H72M92 116H102" fill="none" stroke="#5C4A85" stroke-width="4" stroke-linecap="round"/>
+    <!-- sleep bubbles: growing, steep rise -->
+    <g fill="#A88BD4">
+      <circle cx="98" cy="77" r="6.5"/>
+      <circle cx="110" cy="58" r="8.5"/>
+      <circle cx="124" cy="35" r="11.5"/>
+    </g>
+  </g>
+</svg>
