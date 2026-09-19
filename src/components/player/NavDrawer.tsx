@@ -25,7 +25,7 @@ import { useAuth } from '../../hooks/useAuth';
  *
  * 三段式结构：
  * - 品牌头部：应用名「Kiku」
- * - 导航区：m3e nav-menu 原生组件，按「资料库 / 浏览 / 管理」分组；
+ * - 导航区：m3e nav-menu 原生组件，按「资料库 / 浏览」分组；
  *   激活胶囊、hover、focus 等状态全部由组件内建，不写覆盖样式
  * - 用户区：头像圆片 + 用户名 + 退出登录，钉在侧栏底部
  *
@@ -144,11 +144,13 @@ export default function NavDrawer() {
             )}
           </Link>
         </M3eNavMenuItemGroup>
+      </M3eNavMenu>
 
-        {/* 管理（仅管理员可见） */}
-        {isAdmin && (
-          <M3eNavMenuItemGroup>
-            <span slot='label'>{t('common.admin')}</span>
+      {/* 钉底区：管理后台（仅管理员可见）+ 设置，钉在导航区底部 */}
+      <M3eNavMenu className='shrink-0 border-t border-(--md-sys-color-outline-variant)'>
+        <M3eNavMenuItemGroup>
+          {/* 管理后台（仅管理员可见） */}
+          {isAdmin && (
             <Link
               to='/admin'
               className='block no-underline text-inherit'
@@ -161,13 +163,7 @@ export default function NavDrawer() {
                 </M3eNavMenuItem>
               )}
             </Link>
-          </M3eNavMenuItemGroup>
-        )}
-      </M3eNavMenu>
-
-      {/* 设置：钉在导航区底部 */}
-      <M3eNavMenu className='shrink-0 border-t border-(--md-sys-color-outline-variant)'>
-        <M3eNavMenuItemGroup>
+          )}
           <Link
             to='/settings'
             className='block no-underline text-inherit'
