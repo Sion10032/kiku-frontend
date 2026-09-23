@@ -169,7 +169,7 @@ function makeDetail(
     },
     effective: {
       title: '覆盖标题',
-      circle: { id: 1, name: '社团A' },
+      circle: { id: 'RG10001', name: '社团A' },
       series: null,
       ageRating: 'all',
       tags: [{ id: 11, name: '覆盖标签' }],
@@ -177,7 +177,7 @@ function makeDetail(
     },
     override: {
       title: '覆盖标题',
-      circle: { id: 1, name: '社团A' },
+      circle: { id: 'RG10001', name: '社团A' },
       series: null,
       ageRating: null,
       tagsCleared: false,

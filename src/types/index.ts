@@ -8,7 +8,8 @@
 export type AgeRating = 'all' | 'r15' | 'r18';
 
 export interface Circle {
-  id: number;
+  /** DLsite maker_id（RG/VG + 5 或 8 位）；旧库迁移未知时为 "unknown" */
+  id: string;
   name: string;
 }
 
@@ -442,7 +443,7 @@ export type MetadataActionRow<T> = MetadataEntityRef<T> & {
 export interface MetadataOverrideDetail {
   original: {
     title: string;
-    circle: MetadataEntityRef<number> | null;
+    circle: MetadataEntityRef<string> | null;
     series: MetadataEntityRef<string> | null;
     ageRating: string;
     tags: MetadataEntityRef<number>[];
@@ -450,7 +451,7 @@ export interface MetadataOverrideDetail {
   };
   effective: {
     title: string;
-    circle: MetadataEntityRef<number> | null;
+    circle: MetadataEntityRef<string> | null;
     series: MetadataEntityRef<string> | null;
     ageRating: string;
     tags: MetadataEntityRef<number>[];
@@ -458,7 +459,7 @@ export interface MetadataOverrideDetail {
   };
   override: {
     title: string | null;
-    circle: MetadataEntityRef<number> | null;
+    circle: MetadataEntityRef<string> | null;
     series: MetadataEntityRef<string> | null;
     ageRating: string | null;
     tagsCleared: boolean;
