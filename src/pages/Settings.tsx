@@ -16,6 +16,7 @@ import {
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
 import ConfirmDialog from '../components/ConfirmDialog';
+import PageContainer from '../components/common/PageContainer';
 import { SETTING_CONTROL_FILL, SETTING_ROW_LAYOUT } from '../constants';
 import { setLanguage, type Locale } from '../i18n';
 import {
@@ -31,6 +32,7 @@ import {
   useSettingsStore,
   WORKS_PAGE_SIZES,
   type ColorMode,
+  type ContentWidth,
   type CoverBlurMode,
   type TimeDisplayMode,
   type WorksPaginationMode,
@@ -84,6 +86,16 @@ const WORKS_PAGINATOR_POSITIONS: {
   { value: 'both', label: 'settings.paginator-position-both' },
 ];
 
+const CONTENT_WIDTHS: {
+  value: ContentWidth;
+  label: `settings.content-width-${ContentWidth}`;
+}[] = [
+  { value: 'standard', label: 'settings.content-width-standard' },
+  { value: 'wide', label: 'settings.content-width-wide' },
+  { value: 'ultra', label: 'settings.content-width-ultra' },
+  { value: 'full', label: 'settings.content-width-full' },
+];
+
 /**
  * 设置页：本地偏好（settingsStore，localStorage 持久化）改动即时生效，
  * 无需保存按钮；顶部另含设置备份卡片（依赖登录态）。
@@ -94,7 +106,8 @@ const WORKS_PAGINATOR_POSITIONS: {
  *   关闭瞬间恢复默认紫（#6750A4），详情页不再换色
  * - 颜色模式：auto / light / dark，经 ThemeRoot 传给 M3eTheme
  * - 界面大小：全局缩放（80%–130%），首次使用按屏幕像素密度自动选择一次
- * - 媒体通知：开关 MediaSession（锁屏/系统媒体面板），useMediaSession 读取
+ * - 内容宽度：内容页容器上限档位（标准/宽 1280/更宽 1680/铺满），见 PageContainer
+ * - 动态取色：开启后进入作品详情时从封面提取主题种子色；
  * - 快退/快进秒数：播放器 seek 按钮步长（playerStore，本地持久化）
  * - 时间显示：总时长（22:33）/ 剩余时间（-1:39），作用 PlayerBar 与全屏播放器
  * - 作品库翻页方式：分页（可跳页）/ 无限滚动
@@ -145,6 +158,8 @@ export default function Settings() {
   const setShowHistoryStrip = useSettingsStore((s) => s.setShowHistoryStrip);
   const uiScale = useSettingsStore((s) => s.uiScale);
   const setUiScale = useSettingsStore((s) => s.setUiScale);
+  const contentWidth = useSettingsStore((s) => s.contentWidth);
+  const setContentWidth = useSettingsStore((s) => s.setContentWidth);
   const rewindSeekTime = usePlayerStore((s) => s.rewindSeekTime);
   const forwardSeekTime = usePlayerStore((s) => s.forwardSeekTime);
   const setRewindSeekTime = usePlayerStore((s) => s.setRewindSeekTime);
@@ -157,7 +172,7 @@ export default function Settings() {
   }
 
   return (
-    <div className='mx-auto flex max-w-2xl flex-col gap-4'>
+    <PageContainer base='form' className='flex flex-col gap-4'>
       <h1 className='m-0 text-2xl font-normal'>{t('settings.title')}</h1>
       {/* 云端设置备份：登录可用，实现见文件底部 SettingsBackupCard */}
       <SettingsBackupCard />
@@ -230,6 +245,34 @@ export default function Settings() {
             >
               <M3eSliderThumb value={uiScale} />
             </M3eSlider>
+          </div>
+
+          {/* 内容宽度：内容页容器上限档位（PageContainer 按档位映射 max-w） */}
+          <div className={SETTING_ROW_LAYOUT}>
+            <span className='flex flex-col'>
+              <span>{t('settings.content-width')}</span>
+              <span className='text-sm opacity-70'>
+                {t('settings.content-width-desc')}
+              </span>
+            </span>
+            <M3eSegmentedButton
+              className={SETTING_CONTROL_FILL}
+              onInput={(e) =>
+                setContentWidth(
+                  (e.target as HTMLInputElement).value as ContentWidth,
+                )
+              }
+            >
+              {CONTENT_WIDTHS.map((w) => (
+                <M3eButtonSegment
+                  key={w.value}
+                  value={w.value}
+                  checked={contentWidth === w.value}
+                >
+                  {t(w.label)}
+                </M3eButtonSegment>
+              ))}
+            </M3eSegmentedButton>
           </div>
 
           {/* 动态取色 */}
@@ -664,7 +707,7 @@ export default function Settings() {
           </div>
         </div>
       </M3eCard>
-    </div>
+    </PageContainer>
   );
 }
 

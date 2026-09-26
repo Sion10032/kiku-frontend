@@ -18,6 +18,7 @@ import {
   useVasQuery,
 } from '../queries/useListQuery';
 import { fieldQuery } from '../utils/query';
+import PageContainer from '../components/common/PageContainer';
 import FavButton from '../components/favourites/FavButton';
 import { useFavouriteStatus } from '../queries/useFavouritesQuery';
 import type { FavouriteTargetType } from '../types';
@@ -157,7 +158,7 @@ export default function List({ type }: { type: ListType }) {
           : (vas.data?.length ?? 0);
 
   return (
-    <div className='mx-auto max-w-3xl'>
+    <PageContainer base='narrow'>
       <div className='mb-4'>
         <h1 className='m-0 text-xl'>
           {label}
@@ -246,6 +247,6 @@ export default function List({ type }: { type: ListType }) {
             : t('works.list-empty', { label })}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

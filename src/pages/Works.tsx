@@ -23,6 +23,7 @@ import {
   saveSortOption,
   DEFAULT_SORT,
 } from '../utils/sort';
+import PageContainer from '../components/common/PageContainer';
 import Paginator from '../components/common/Paginator';
 import WorkCard from '../components/works/WorkCard';
 import WorkListItem from '../components/works/WorkListItem';
@@ -230,7 +231,7 @@ export default function Works() {
   }, [isPaginated, page, filterName, pagination, t]);
 
   return (
-    <div className='mx-auto max-w-[1680px]'>
+    <PageContainer base='wide'>
       {/* 最近收听条带 */}
       {showHistoryStrip && <HistoryStrip />}
 
@@ -340,6 +341,6 @@ export default function Works() {
             <M3eCircularProgressIndicator />
           </div>
         )}
-    </div>
+    </PageContainer>
   );
 }

@@ -38,7 +38,22 @@ const SNAPSHOT_KEYS = [
   'worksHistoryStrip',
   'worksPageSize',
   'uiScale',
+  'contentWidth',
 ] as const;
+
+/** 用全新模块实例跑「模块求值期真实水合」：localStorage 必须在动态 import 前种好。 */
+async function hydrateFreshModule(blob: Record<string, unknown>) {
+  localStorage.clear();
+  localStorage.setItem(
+    'kiku-settings',
+    JSON.stringify({ state: blob, version: 0 }),
+  );
+  vi.resetModules();
+  const mod = await import('./settingsStore');
+  // hydrate 在模块求值时启动，merge/落 state 在微任务链里执行：等一拍再断言
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return mod.useSettingsStore;
+}
 
 // 默认值断言：zustand v5 的 getInitialState() 返回 store 创建时的初始快照，
 // 不受同文件其他用例 setState / persist 水合影响（store 是模块单例），
@@ -62,6 +77,22 @@ describe('settingsStore 默认值', () => {
 
   it('worksPageSize 默认为 20', () => {
     expect(useSettingsStore.getInitialState().worksPageSize).toBe(20);
+  });
+
+  it('contentWidth 默认为 standard', () => {
+    expect(useSettingsStore.getInitialState().contentWidth).toBe('standard');
+  });
+});
+
+describe('settingsStore contentWidth', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState({ contentWidth: 'standard' });
+  });
+
+  it('setContentWidth 切换到 wide', () => {
+    useSettingsStore.getState().setContentWidth('wide');
+    expect(useSettingsStore.getState().contentWidth).toBe('wide');
   });
 });
 
@@ -154,8 +185,7 @@ describe('settingsStore worksPageSize 水合消毒', () => {
 
 describe('settingsStore worksPageSize 初次水合（模块求值路径）', () => {
   // 生产路径：persist 在模块求值期间自行 hydrate，而不是测试手动调用 rehydrate()。
-  // 用 vi.resetModules + 动态 import 拿到全新模块实例，让求值期的真实水合跑一遍；
-  // localStorage 必须在动态 import 之前种好，否则测的就不是「初次水合」。
+  // 用 vi.resetModules + 动态 import 拿到全新模块实例（hydrateFreshModule）。
   beforeEach(() => {
     localStorage.clear();
     useSettingsStore.setState(useSettingsStore.getInitialState(), true);
@@ -165,19 +195,6 @@ describe('settingsStore worksPageSize 初次水合（模块求值路径）', () 
     localStorage.clear();
     useSettingsStore.setState(useSettingsStore.getInitialState(), true);
   });
-
-  async function hydrateFreshModule(blob: Record<string, unknown>) {
-    localStorage.clear();
-    localStorage.setItem(
-      'kiku-settings',
-      JSON.stringify({ state: blob, version: 0 }),
-    );
-    vi.resetModules();
-    const mod = await import('./settingsStore');
-    // hydrate 在模块求值时启动，merge/落 state 在微任务链里执行：等一拍再断言
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    return mod.useSettingsStore;
-  }
 
   it('初次水合：持久化非法档位 500 → 回落 20', async () => {
     const store = await hydrateFreshModule({ worksPageSize: 500 });
@@ -192,6 +209,43 @@ describe('settingsStore worksPageSize 初次水合（模块求值路径）', () 
   it('初次水合：blob 缺失 worksPageSize → 回落 20', async () => {
     const store = await hydrateFreshModule({});
     expect(store.getState().worksPageSize).toBe(20);
+  });
+});
+
+describe('settingsStore contentWidth 水合消毒', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  });
+
+  it('persist 水合：持久化非法档位 → 回落 standard', async () => {
+    useSettingsStore.setState({ contentWidth: 'wide' });
+    localStorage.setItem(
+      'kiku-settings',
+      JSON.stringify({ state: { contentWidth: 'super' }, version: 0 }),
+    );
+    await useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState().contentWidth).toBe('standard');
+  });
+
+  it('初次水合：合法档位 wide 原样保留', async () => {
+    const store = await hydrateFreshModule({ contentWidth: 'wide' });
+    expect(store.getState().contentWidth).toBe('wide');
+  });
+
+  it('初次水合：持久化非法档位 → 回落 standard', async () => {
+    const store = await hydrateFreshModule({ contentWidth: 'super' });
+    expect(store.getState().contentWidth).toBe('standard');
+  });
+
+  it('初次水合：blob 缺失 contentWidth → 保持默认 standard', async () => {
+    const store = await hydrateFreshModule({});
+    expect(store.getState().contentWidth).toBe('standard');
   });
 });
 
@@ -234,7 +288,20 @@ describe('settingsStore 快照导出/应用', () => {
     expect(s.worksPaginationMode).toBe('paginate');
     expect(s.worksPaginatorPosition).toBe('both');
     expect(s.worksHistoryStrip).toBe(true);
+    expect(s.contentWidth).toBe('standard');
     expect(s.uiScaleAuto).toBe(true);
+  });
+
+  it('applySettingsSnapshot：非法 contentWidth → 回落 standard', () => {
+    // 先置为合法非默认值，确保断言验证的是消毒兜底，而非「字段被整体忽略」
+    useSettingsStore.setState({ contentWidth: 'ultra' });
+    applySettingsSnapshot({ contentWidth: 'bogus' });
+    expect(useSettingsStore.getState().contentWidth).toBe('standard');
+  });
+
+  it('applySettingsSnapshot：合法 contentWidth(full) → 原样应用', () => {
+    applySettingsSnapshot({ contentWidth: 'full' });
+    expect(useSettingsStore.getState().contentWidth).toBe('full');
   });
 
   it('applySettingsSnapshot：非法 worksPageSize(37) → 回落 20', () => {

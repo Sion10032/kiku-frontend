@@ -15,6 +15,9 @@ export type WorksPaginationMode = 'paginate' | 'infinite';
 /** 作品库分页控件显示位置：top 顶部 / bottom 底部 / both 两处都显示。 */
 export type WorksPaginatorPosition = 'top' | 'bottom' | 'both';
 
+/** 内容宽度档位：standard 维持各页现状 / wide 1280px / ultra 1680px / full 不限宽。 */
+export type ContentWidth = 'standard' | 'wide' | 'ultra' | 'full';
+
 /**
  * 根据屏幕像素密度（devicePixelRatio）推断界面缩放档位（%）。<br />
  * dpr=1 → 100%；dpr 每高 1 放大约 12%，dpr<1 反向缩小；按 5% 取整并夹在 80–130。
@@ -35,6 +38,13 @@ export const WORKS_PAGE_SIZES = [10, 20, 50, 100] as const;
 /** 判断是否为合法档位（越界值会被后端 /api/works 以 400 拒绝）。 */
 function isWorksPageSize(v: unknown): v is (typeof WORKS_PAGE_SIZES)[number] {
   return (WORKS_PAGE_SIZES as readonly number[]).includes(v as number);
+}
+
+const CONTENT_WIDTHS = ['standard', 'wide', 'ultra', 'full'] as const;
+
+/** 判断是否为合法档位（水合/快照还原消毒用，非法值回落 standard）。 */
+function isContentWidth(v: unknown): v is ContentWidth {
+  return (CONTENT_WIDTHS as readonly string[]).includes(v as string);
 }
 
 /** 悬浮歌词（LyricsBar）设置。 */
@@ -88,6 +98,8 @@ interface SettingsState {
   worksPageSize: number;
   /** 界面整体缩放（%，80–130 步进 5），改 html font-size 全局等比缩放 */
   uiScale: number;
+  /** 内容宽度档位：standard 维持各页自身上限，wide/ultra 统一放宽上限，full 不限宽（见 PageContainer） */
+  contentWidth: ContentWidth;
   /** 是否在首次加载时按屏幕像素密度自动推断 uiScale（推断一次后置 false，内部标记不对外暴露） */
   uiScaleAuto: boolean;
   setDynamicColor: (on: boolean) => void;
@@ -105,6 +117,7 @@ interface SettingsState {
   setShowHistoryStrip: (on: boolean) => void;
   setWorksPageSize: (v: number) => void;
   setUiScale: (scale: number) => void;
+  setContentWidth: (v: ContentWidth) => void;
 }
 
 /**
@@ -131,6 +144,7 @@ const SNAPSHOT_KEYS = [
   'worksHistoryStrip',
   'worksPageSize',
   'uiScale',
+  'contentWidth',
 ] as const;
 
 type SnapshotKey = (typeof SNAPSHOT_KEYS)[number];
@@ -168,6 +182,7 @@ export const useSettingsStore = create<SettingsState>()(
       worksPageSize: 20,
       uiScale: 100,
       uiScaleAuto: true,
+      contentWidth: 'standard',
       setFloatingLyrics: (patch) =>
         set((s) => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: (patch) =>
@@ -183,6 +198,7 @@ export const useSettingsStore = create<SettingsState>()(
       setWorksPageSize: (v) =>
         set({ worksPageSize: isWorksPageSize(v) ? v : 20 }),
       setUiScale: (scale) => set({ uiScale: scale }),
+      setContentWidth: (v) => set({ contentWidth: v }),
     }),
     {
       name: 'kiku-settings',
@@ -206,6 +222,11 @@ export const useSettingsStore = create<SettingsState>()(
           worksPageSize: isWorksPageSize(merged.worksPageSize)
             ? merged.worksPageSize
             : 20,
+          // contentWidth 非法档位（旧版本前端/手改 blob）回落 standard，
+          // 防止 PageContainer 映射表查不到
+          contentWidth: isContentWidth(merged.contentWidth)
+            ? merged.contentWidth
+            : 'standard',
         };
       },
       // 首次使用时按屏幕像素密度推断一次界面缩放档位，之后沿用持久化值
@@ -243,6 +264,12 @@ export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
   if ('worksPageSize' in patch) {
     const size = Number(patch.worksPageSize);
     patch.worksPageSize = isWorksPageSize(size) ? size : 20;
+  }
+  // contentWidth 必须落在档位内，否则还原后 PageContainer 映射表查不到
+  if ('contentWidth' in patch) {
+    patch.contentWidth = isContentWidth(patch.contentWidth)
+      ? patch.contentWidth
+      : 'standard';
   }
   // 快照来自同结构 store（写入方同源），字段类型整体信任；嵌套对象整体替换不深合并。
   // setState 走 persist 中间件自动落盘；uiScale 变化由 ThemeRoot 现有 effect 即时生效。

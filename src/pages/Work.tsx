@@ -3,6 +3,7 @@ import { workRoute } from '../routes/work';
 import { useWorkQuery, useTracksQuery } from '../queries/useWorksQuery';
 import { useWorkProgressQuery } from '../queries/useProgressQuery';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
+import PageContainer from '../components/common/PageContainer';
 import WorkDetails from '../components/work/WorkDetails';
 import WorkTree from '../components/work/WorkTree';
 import WorkResume from '../components/work/WorkResume';
@@ -40,7 +41,10 @@ export default function Work() {
   const work = workQuery.data;
 
   return (
-    <div className='mx-auto flex max-w-350 flex-col gap-6 lg:flex-row lg:items-start'>
+    <PageContainer
+      base='detail'
+      className='flex flex-col gap-6 lg:flex-row lg:items-start'
+    >
       <div className='w-full shrink-0 lg:w-90'>
         <WorkDetails work={work} />
       </div>
@@ -55,6 +59,6 @@ export default function Work() {
           loading={tracksQuery.isLoading}
         />
       </div>
-    </div>
+    </PageContainer>
   );
 }

@@ -5,6 +5,7 @@ import { M3eList } from '@m3e/react/list';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { useUserStore } from '../stores/userStore';
 import { useReviewsByUser, useWorkMap } from '../queries/useReviewsQuery';
+import PageContainer from '../components/common/PageContainer';
 import ReviewListItem from '../components/reviews/ReviewListItem';
 import type { Review, Work } from '../types';
 
@@ -43,7 +44,7 @@ export default function MyReviews() {
   // 页的未登录分支。
   if (!authed) {
     return (
-      <div className='mx-auto max-w-3xl py-16 text-center'>
+      <PageContainer base='narrow' className='py-16 text-center'>
         <p className='text-base opacity-60'>
           {t('works.my-reviews.login-required')}
         </p>
@@ -53,12 +54,12 @@ export default function MyReviews() {
         >
           {t('works.my-reviews.go-login')}
         </Link>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className='mx-auto max-w-3xl'>
+    <PageContainer base='narrow'>
       <h1 className='m-0 mb-4 text-xl'>{t('works.my-reviews.title')}</h1>
 
       {loading && (
@@ -86,6 +87,6 @@ export default function MyReviews() {
           {t('works.my-reviews.empty')}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

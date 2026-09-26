@@ -8,6 +8,7 @@ import { useUserStore } from '../stores/userStore';
 import { historyRoute } from '../routes/history';
 import { useResetPageOnPageSizeChange } from '../hooks/useResetPageOnPageSizeChange';
 import { useResetOutOfRangePage } from '../hooks/useResetOutOfRangePage';
+import PageContainer from '../components/common/PageContainer';
 import Paginator from '../components/common/Paginator';
 import WorkCard from '../components/works/WorkCard';
 
@@ -68,7 +69,7 @@ export default function History() {
   // 未登录提示
   if (!authed) {
     return (
-      <div className='mx-auto max-w-[1680px] py-16 text-center'>
+      <PageContainer base='wide' className='py-16 text-center'>
         <p className='text-base opacity-60'>
           {t('works.history.login-required')}
         </p>
@@ -78,7 +79,7 @@ export default function History() {
         >
           {t('works.history.go-login')}
         </Link>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -92,7 +93,7 @@ export default function History() {
   }
 
   return (
-    <div className='mx-auto max-w-[1680px]'>
+    <PageContainer base='wide'>
       {/* 标题 */}
       <div className='mb-4 flex items-center gap-3'>
         <h1 className='m-0 text-xl'>
@@ -128,6 +129,6 @@ export default function History() {
           />
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -9,6 +9,7 @@ import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/mic';
 import '@m3e/icons/outlined/library_books';
 import '@m3e/icons/outlined/chevron_right';
+import PageContainer from '../components/common/PageContainer';
 import { useFavourites } from '../queries/useFavouritesQuery';
 import { useUserStore } from '../stores/userStore';
 import { fieldQuery } from '../utils/query';
@@ -121,7 +122,7 @@ export default function Favourites({ tab }: { tab: FavouritesTab }) {
   // 恒 pending），放行到数据分支会无限转圈；对齐 History 页的未登录分支。
   if (!authed) {
     return (
-      <div className='mx-auto max-w-3xl py-16 text-center'>
+      <PageContainer base='narrow' className='py-16 text-center'>
         <p className='text-base opacity-60'>
           {t('works.favourites.login-required')}
         </p>
@@ -131,12 +132,12 @@ export default function Favourites({ tab }: { tab: FavouritesTab }) {
         >
           {t('works.favourites.go-login')}
         </Link>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className='mx-auto max-w-3xl'>
+    <PageContainer base='narrow'>
       <h1 className='m-0 mb-4 text-xl'>{t('works.favourites.title')}</h1>
 
       <M3eTabs stretch className='mb-4'>
@@ -222,6 +223,6 @@ export default function Favourites({ tab }: { tab: FavouritesTab }) {
           {t('works.favourites.empty')}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }
