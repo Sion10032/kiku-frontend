@@ -37,12 +37,28 @@ vi.mock('@m3e/react/form-field', () => ({
     <div>{props.children}</div>
   ),
 }));
+// M3eButton 必须透传 type/onClick：登录 submit 接线与 setup 按钮跳转是被测契约
 vi.mock('@m3e/react/button', () => ({
-  M3eButton: (props: { children?: ReactNode }) => (
-    <button type='submit'>{props.children}</button>
+  M3eButton: (props: {
+    children?: ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    type?: 'button' | 'submit' | 'reset';
+  }) => (
+    <button
+      type={props.type ?? 'button'}
+      disabled={props.disabled}
+      onClick={props.onClick}
+    >
+      {props.children}
+    </button>
   ),
 }));
 vi.mock('@m3e/react/icon', () => ({ M3eIcon: () => null }));
+
+vi.mock('@m3e/react/card', () => ({
+  M3eCard: (props: { children?: ReactNode }) => <div>{props.children}</div>,
+}));
 
 import Login from './Login';
 
@@ -57,7 +73,7 @@ describe('Login 初始化入口', () => {
     h.getSetupNeeded.mockReturnValue(true);
     render(<Login />);
 
-    const entry = screen.getByText('auth.first-time-setup');
+    const entry = screen.getByText('auth.setup-instance');
     fireEvent.click(entry);
     expect(h.navigate).toHaveBeenCalledWith({ to: '/setup' });
   });
@@ -66,7 +82,7 @@ describe('Login 初始化入口', () => {
     h.getSetupNeeded.mockReturnValue(false);
     render(<Login />);
 
-    expect(screen.queryByText('auth.first-time-setup')).toBeNull();
-    expect(screen.getByText('auth.no-account-register')).toBeTruthy();
+    expect(screen.queryByText('auth.setup-instance')).toBeNull();
+    expect(screen.getByText('auth.register')).toBeTruthy();
   });
 });

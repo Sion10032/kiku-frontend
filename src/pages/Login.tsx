@@ -11,6 +11,7 @@ import '@m3e/icons/outlined/library_music';
 import { getSetupNeeded } from '../api/setup';
 import { useAuth } from '../hooks/useAuth';
 import { ApiError } from '../api/client';
+import { M3eCard } from '@m3e/react/card';
 
 /**
  * 登录页。
@@ -55,78 +56,81 @@ export default function Login() {
   }
 
   return (
-    <div className='flex min-h-dvh items-center justify-center p-4'>
-      <form
-        onSubmit={onSubmit}
-        className='flex w-full max-w-sm flex-col gap-5 rounded-3xl p-8 shadow-lg'
-      >
-        <div className='mb-2 flex flex-col items-center gap-2'>
-          <M3eIcon name='library_music' className='text-4xl' />
-          <h1 className='m-0 text-2xl font-medium'>Kiku</h1>
-        </div>
+    <div className='flex min-h-dvh items-center justify-center'>
+      <M3eCard>
+        <form onSubmit={onSubmit} className='flex max-w-sm flex-col gap-5 p-8'>
+          <div className='mb-2 flex flex-col items-center gap-2'>
+            <M3eIcon name='library_music' className='text-4xl' />
+            <h1 className='m-0 text-2xl font-medium'>Kiku</h1>
+          </div>
 
-        <M3eFormField variant='outlined' className='w-full'>
-          <label slot='label' htmlFor='login-name'>
-            {t('auth.username')}
-          </label>
-          <M3eIcon slot='prefix' name='person' />
-          <input
-            id='login-name'
-            type='text'
-            autoComplete='username'
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={onKeyDown}
-            required
-            minLength={4}
-            className='w-full border-none bg-transparent p-y-2 text-base outline-none'
-          />
-        </M3eFormField>
+          <M3eFormField variant='outlined' className='w-full'>
+            <label slot='label' htmlFor='login-name'>
+              {t('auth.username')}
+            </label>
+            <M3eIcon slot='prefix' name='person' />
+            <input
+              id='login-name'
+              type='text'
+              autoComplete='username'
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={onKeyDown}
+              required
+              minLength={4}
+              className='w-full border-none bg-transparent p-y-2 text-base outline-none'
+            />
+          </M3eFormField>
 
-        <M3eFormField variant='outlined' className='w-full'>
-          <label slot='label' htmlFor='login-password'>
-            {t('auth.password')}
-          </label>
-          <M3eIcon slot='prefix' name='lock' />
-          <input
-            id='login-password'
-            type='password'
-            autoComplete='current-password'
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={onKeyDown}
-            required
-            minLength={5}
-            className='w-full border-none bg-transparent py-2 text-base outline-none'
-          />
-        </M3eFormField>
+          <M3eFormField variant='outlined' className='w-full'>
+            <label slot='label' htmlFor='login-password'>
+              {t('auth.password')}
+            </label>
+            <M3eIcon slot='prefix' name='lock' />
+            <input
+              id='login-password'
+              type='password'
+              autoComplete='current-password'
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={onKeyDown}
+              required
+              minLength={5}
+              className='w-full border-none bg-transparent py-2 text-base outline-none'
+            />
+          </M3eFormField>
 
-        <M3eButton
-          type='submit'
-          variant='filled'
-          className='mt-2 w-full'
-          disabled={loading}
-        >
-          {loading ? t('auth.logging-in') : t('auth.login')}
-        </M3eButton>
-
-        {getSetupNeeded() === true && (
-          <button
-            type='button'
-            onClick={() => navigate({ to: '/setup' })}
-            className='text-center text-sm text-(--md-sys-color-primary) no-underline'
+          <M3eButton
+            type='submit'
+            variant='filled'
+            className='mt-2 w-full'
+            disabled={loading}
           >
-            {t('auth.first-time-setup')}
-          </button>
-        )}
+            {loading ? t('auth.logging-in') : t('auth.login')}
+          </M3eButton>
 
-        <Link
-          to='/register'
-          className='text-center text-sm text-(--md-sys-color-primary) no-underline'
-        >
-          {t('auth.no-account-register')}
-        </Link>
-      </form>
+          {getSetupNeeded() === true && (
+            <M3eButton
+              type='button'
+              variant='outlined'
+              className='w-full'
+              onClick={() => navigate({ to: '/setup' })}
+            >
+              {t('auth.setup-instance')}
+            </M3eButton>
+          )}
+
+          <p className='m-0 text-center text-sm text-(--md-sys-color-on-surface-variant)'>
+            {t('auth.no-account')}
+            <Link
+              to='/register'
+              className='ms-1 font-medium text-(--md-sys-color-primary) hover:underline'
+            >
+              {t('auth.register')}
+            </Link>
+          </p>
+        </form>
+      </M3eCard>
     </div>
   );
 }
