@@ -36,6 +36,7 @@ const SNAPSHOT_KEYS = [
   'worksPaginationMode',
   'worksPaginatorPosition',
   'worksHistoryStrip',
+  'worksPageSize',
   'uiScale',
 ] as const;
 
@@ -57,6 +58,10 @@ describe('settingsStore 默认值', () => {
 
   it('worksHistoryStrip 默认为 true', () => {
     expect(useSettingsStore.getInitialState().worksHistoryStrip).toBe(true);
+  });
+
+  it('worksPageSize 默认为 20', () => {
+    expect(useSettingsStore.getInitialState().worksPageSize).toBe(20);
   });
 });
 
@@ -93,6 +98,18 @@ describe('settingsStore worksHistoryStrip', () => {
   it('setShowHistoryStrip 切换到 false', () => {
     useSettingsStore.getState().setShowHistoryStrip(false);
     expect(useSettingsStore.getState().worksHistoryStrip).toBe(false);
+  });
+});
+
+describe('settingsStore worksPageSize', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState({ worksPageSize: 20 });
+  });
+
+  it('setWorksPageSize 置为 100', () => {
+    useSettingsStore.getState().setWorksPageSize(100);
+    expect(useSettingsStore.getState().worksPageSize).toBe(100);
   });
 });
 
@@ -136,6 +153,18 @@ describe('settingsStore 快照导出/应用', () => {
     expect(s.worksPaginatorPosition).toBe('both');
     expect(s.worksHistoryStrip).toBe(true);
     expect(s.uiScaleAuto).toBe(true);
+  });
+
+  it('applySettingsSnapshot：非法 worksPageSize(37) → 回落 20', () => {
+    // 先置为合法非默认值，确保断言验证的是夹取兜底，而非「字段被整体忽略」
+    useSettingsStore.setState({ worksPageSize: 100 });
+    applySettingsSnapshot({ worksPageSize: 37 });
+    expect(useSettingsStore.getState().worksPageSize).toBe(20);
+  });
+
+  it('applySettingsSnapshot：合法 worksPageSize(100) → 原样应用', () => {
+    applySettingsSnapshot({ worksPageSize: 100 });
+    expect(useSettingsStore.getState().worksPageSize).toBe(100);
   });
 
   it('applySettingsSnapshot({}) 不改变任何 state 字段', () => {

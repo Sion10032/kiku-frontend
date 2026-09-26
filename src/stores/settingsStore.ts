@@ -29,6 +29,9 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
+/** 作品库每页条数可选档位（单一来源，后端 /api/works 的 pageSize 上限即最大值 100）。 */
+export const WORKS_PAGE_SIZES = [10, 20, 50, 100] as const;
+
 /** 悬浮歌词（LyricsBar）设置。 */
 export interface FloatingLyricsSettings {
   /** 是否显示悬浮歌词 */
@@ -76,6 +79,8 @@ interface SettingsState {
   worksPaginatorPosition: WorksPaginatorPosition;
   /** 作品库是否显示「最近收听」条（默认显示） */
   worksHistoryStrip: boolean;
+  /** 作品库每页条数，取值限 WORKS_PAGE_SIZES（默认 20） */
+  worksPageSize: number;
   /** 界面整体缩放（%，80–130 步进 5），改 html font-size 全局等比缩放 */
   uiScale: number;
   /** 是否在首次加载时按屏幕像素密度自动推断 uiScale（推断一次后置 false，内部标记不对外暴露） */
@@ -93,6 +98,7 @@ interface SettingsState {
   setWorksPaginationMode: (mode: WorksPaginationMode) => void;
   setWorksPaginatorPosition: (position: WorksPaginatorPosition) => void;
   setShowHistoryStrip: (on: boolean) => void;
+  setWorksPageSize: (v: number) => void;
   setUiScale: (scale: number) => void;
 }
 
@@ -118,6 +124,7 @@ const SNAPSHOT_KEYS = [
   'worksPaginationMode',
   'worksPaginatorPosition',
   'worksHistoryStrip',
+  'worksPageSize',
   'uiScale',
 ] as const;
 
@@ -153,6 +160,7 @@ export const useSettingsStore = create<SettingsState>()(
       worksPaginationMode: 'paginate',
       worksPaginatorPosition: 'both',
       worksHistoryStrip: true,
+      worksPageSize: 20,
       uiScale: 100,
       uiScaleAuto: true,
       setFloatingLyrics: (patch) =>
@@ -165,6 +173,7 @@ export const useSettingsStore = create<SettingsState>()(
       setWorksPaginatorPosition: (position) =>
         set({ worksPaginatorPosition: position }),
       setShowHistoryStrip: (on) => set({ worksHistoryStrip: on }),
+      setWorksPageSize: (v) => set({ worksPageSize: v }),
       setUiScale: (scale) => set({ uiScale: scale }),
     }),
     {
@@ -190,7 +199,10 @@ export function getSettingsSnapshot(): Record<string, unknown> {
   return pickSettings(useSettingsStore.getState());
 }
 
-/** 应用备份快照：仅接受白名单字段，未知/缺失字段忽略（保留当前值），uiScale 夹取 80–130。 */
+/**
+ * 应用备份快照：仅接受白名单字段，未知/缺失字段忽略（保留当前值），
+ * uiScale 夹取 80–130，worksPageSize 必须落在 WORKS_PAGE_SIZES 内（否则回落 20）。
+ */
 export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
   const patch: Partial<Record<SnapshotKey, unknown>> = {};
   for (const key of SNAPSHOT_KEYS) {
@@ -201,6 +213,13 @@ export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
   // uiScale 夹取 80–130 并取整，防止备份中的越界值破坏界面缩放
   if ('uiScale' in patch) {
     patch.uiScale = clamp(Math.round(Number(patch.uiScale)), 80, 130);
+  }
+  // worksPageSize 必须落在可选档位内，否则还原后会把非法值发给 /api/works（400 白屏）
+  if ('worksPageSize' in patch) {
+    const size = Number(patch.worksPageSize);
+    patch.worksPageSize = (WORKS_PAGE_SIZES as readonly number[]).includes(size)
+      ? size
+      : 20;
   }
   // 快照来自同结构 store（写入方同源），字段类型整体信任；嵌套对象整体替换不深合并。
   // setState 走 persist 中间件自动落盘；uiScale 变化由 ThemeRoot 现有 effect 即时生效。
