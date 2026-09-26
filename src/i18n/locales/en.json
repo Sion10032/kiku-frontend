@@ -81,6 +81,7 @@
   "auth.login-failed": "Sign-in failed. Check your network.",
   "auth.invalid-credentials": "Incorrect username or password",
   "auth.no-account-register": "No account? Register",
+  "auth.first-time-setup": "First time here? Set up the instance",
   "auth.register": "Register",
   "auth.registering": "Registering…",
   "auth.register-title": "Register Kiku",

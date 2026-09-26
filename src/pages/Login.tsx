@@ -8,6 +8,7 @@ import { M3eSnackbar } from '@m3e/react/snackbar';
 import '@m3e/icons/outlined/person';
 import '@m3e/icons/outlined/lock';
 import '@m3e/icons/outlined/library_music';
+import { getSetupNeeded } from '../api/setup';
 import { useAuth } from '../hooks/useAuth';
 import { ApiError } from '../api/client';
 
@@ -108,6 +109,16 @@ export default function Login() {
         >
           {loading ? t('auth.logging-in') : t('auth.login')}
         </M3eButton>
+
+        {getSetupNeeded() === true && (
+          <button
+            type='button'
+            onClick={() => navigate({ to: '/setup' })}
+            className='text-center text-sm text-(--md-sys-color-primary) no-underline'
+          >
+            {t('auth.first-time-setup')}
+          </button>
+        )}
 
         <Link
           to='/register'

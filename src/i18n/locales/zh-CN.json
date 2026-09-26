@@ -81,6 +81,7 @@
   "auth.login-failed": "登录失败，请检查网络",
   "auth.invalid-credentials": "用户名或密码错误",
   "auth.no-account-register": "没有账号？注册",
+  "auth.first-time-setup": "首次部署？初始化实例",
   "auth.register": "注册",
   "auth.registering": "注册中…",
   "auth.register-title": "注册 Kiku",
