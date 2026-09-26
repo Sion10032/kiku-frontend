@@ -166,8 +166,14 @@ export default function AudioManage() {
                   <td className='whitespace-nowrap px-2 py-2 font-mono text-xs'>
                     {w.id}
                   </td>
-                  <td className='line-clamp-1 px-2 py-2'>{w.title}</td>
-                  <td className='line-clamp-1 px-2 py-2'>{w.circle.name}</td>
+                  {/* line-clamp 不能放在 td 上：其 display:-webkit-box 会覆盖
+                      table-cell 导致列错位，须移到单元格内元素 */}
+                  <td className='px-2 py-2'>
+                    <span className='line-clamp-1'>{w.title}</span>
+                  </td>
+                  <td className='px-2 py-2'>
+                    <span className='line-clamp-1'>{w.circle.name}</span>
+                  </td>
                   <td className='whitespace-nowrap px-2 py-2'>
                     {w.release ?? '—'}
                   </td>
