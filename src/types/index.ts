@@ -326,7 +326,8 @@ export interface SharedConfig {
 
 export interface RootFolder {
   name: string;
-  path: string;
+  /** null = 迁移遗留的未配置路径（UI 需提示补配） */
+  path: string | null;
 }
 
 export interface AdminConfig extends SharedConfig {
@@ -335,7 +336,6 @@ export interface AdminConfig extends SharedConfig {
   checkUpdate: boolean;
   checkBetaUpdate: boolean;
   maxParallelism: number;
-  rootFolders: RootFolder[];
   databaseFolderDir: string;
   md5secret: string;
   jwtsecret: string;

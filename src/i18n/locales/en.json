@@ -368,6 +368,7 @@
   "dashboard.folders.delete-root-confirm": "Delete “{{name}}”? Works already added to the library are not affected.",
   "dashboard.folders.name-path-required": "Name and path are required",
   "dashboard.folders.path-exists": "This path already exists",
+  "dashboard.folders.path-unset": "Path not configured",
   "dashboard.scan.title": "Scanner",
   "dashboard.scan.start-scan": "Scan local library",
   "dashboard.scan.start-update": "Refresh library info",

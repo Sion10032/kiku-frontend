@@ -353,6 +353,7 @@
   "dashboard.folders.delete-root-confirm": "确定删除「{{name}}」吗？已入库的作品记录不受影响。",
   "dashboard.folders.name-path-required": "名称和路径不能为空",
   "dashboard.folders.path-exists": "该路径已存在",
+  "dashboard.folders.path-unset": "未配置路径",
   "dashboard.scan.title": "扫描器",
   "dashboard.scan.start-scan": "扫描本地音声库",
   "dashboard.scan.start-update": "刷新音声库信息",

@@ -6,93 +6,101 @@ import { M3eSnackbar } from '@m3e/react/snackbar';
 import { useTranslation } from 'react-i18next';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import DashboardPage from '../../components/dashboard/DashboardPage';
+import {
+  useCreateRootFolder,
+  useDeleteRootFolder,
+  useRootFolders,
+  useUpdateRootFolder,
+} from '../../queries/useRootFolders';
 import type { RootFolder } from '../../types';
 import { showApiError } from '../../utils/apiError';
-import {
-  useAdminConfig,
-  useUpdateAdminConfig,
-} from '../../queries/useAdminQuery';
 
 /**
  * 文件夹管理页面。
  *
- * - 读取 AdminConfig.rootFolders，增删改后写回。
- * - RootFolder = { name: string; path: string }。
+ * - 数据源为 /api/config/root-folders（RootFolder = { name; path: string | null }），
+ *   增删改分别调用 mutation，成功后由 query 失效刷新列表。
+ * - name 是主键；path 为 null = 迁移遗留未配置，需提示补配。
  */
 export default function Folders() {
   const { t } = useTranslation();
-  const { data: config, isPending } = useAdminConfig();
-  const updateConfig = useUpdateAdminConfig();
-  const folders = config?.rootFolders ?? [];
-  const saving = updateConfig.isPending;
+  const { data, isPending, isError } = useRootFolders();
+  const folders = data?.folders ?? [];
+
+  const createFolder = useCreateRootFolder();
+  const updateFolder = useUpdateRootFolder();
+  const deleteFolder = useDeleteRootFolder();
+  const saving =
+    createFolder.isPending || updateFolder.isPending || deleteFolder.isPending;
 
   // 新增表单
   const [newName, setNewName] = useState('');
   const [newPath, setNewPath] = useState('');
 
-  // 编辑中的索引（-1 表示不在编辑）
-  const [editIndex, setEditIndex] = useState(-1);
+  // 编辑态：editingName 是改名前的当前名字（作为 PUT 的 currentName）
+  const [editingName, setEditingName] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editPath, setEditPath] = useState('');
 
-  // 待删除的文件夹索引（非 null 时显示确认对话框）
-  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
+  // 待删除的根目录名（非 null 时显示确认对话框）
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const pendingFolder = folders.find((f) => f.name === pendingDelete) ?? null;
 
-  async function saveFolders(next: RootFolder[]) {
-    try {
-      await updateConfig.mutateAsync({ rootFolders: next });
-      M3eSnackbar.open(t('common.save-success'));
-    } catch (err) {
-      showApiError(err, t('common.save-failed'));
-    }
-  }
-
-  function handleAdd() {
+  async function handleAdd() {
     const name = newName.trim();
     const path = newPath.trim();
     if (!name || !path) {
       M3eSnackbar.open(t('dashboard.folders.name-path-required'));
       return;
     }
-    if (folders.some((f) => f.path === path)) {
-      M3eSnackbar.open(t('dashboard.folders.path-exists'));
-      return;
+    try {
+      await createFolder.mutateAsync({ name, path });
+      setNewName('');
+      setNewPath('');
+      M3eSnackbar.open(t('common.save-success'));
+    } catch (err) {
+      showApiError(err, t('common.save-failed'));
     }
-    const next = [...folders, { name, path }];
-    setNewName('');
-    setNewPath('');
-    saveFolders(next);
   }
 
-  function handleDelete(index: number) {
-    setPendingDelete(index);
+  function startEdit(folder: RootFolder) {
+    setEditingName(folder.name);
+    setEditName(folder.name);
+    // path 为 null（迁移遗留未配置）时从空串开始，用户必须填路径。
+    setEditPath(folder.path ?? '');
   }
 
-  function confirmDelete() {
-    if (pendingDelete === null) return;
-    const next = folders.filter((_, i) => i !== pendingDelete);
-    if (editIndex === pendingDelete) setEditIndex(-1);
-    else if (editIndex > pendingDelete) setEditIndex(editIndex - 1);
-    setPendingDelete(null);
-    saveFolders(next);
-  }
-
-  function startEdit(index: number) {
-    setEditIndex(index);
-    setEditName(folders[index].name);
-    setEditPath(folders[index].path);
-  }
-
-  function handleEditSave() {
+  async function handleEditSave() {
+    if (editingName === null) return;
     const name = editName.trim();
     const path = editPath.trim();
     if (!name || !path) {
       M3eSnackbar.open(t('dashboard.folders.name-path-required'));
       return;
     }
-    const next = folders.map((f, i) => (i === editIndex ? { name, path } : f));
-    setEditIndex(-1);
-    saveFolders(next);
+    try {
+      await updateFolder.mutateAsync({
+        currentName: editingName,
+        body: { name, path },
+      });
+      setEditingName(null);
+      M3eSnackbar.open(t('common.save-success'));
+    } catch (err) {
+      showApiError(err, t('common.save-failed'));
+    }
+  }
+
+  async function confirmDelete() {
+    if (pendingDelete === null) return;
+    try {
+      await deleteFolder.mutateAsync(pendingDelete);
+      if (editingName === pendingDelete) setEditingName(null);
+      M3eSnackbar.open(t('common.save-success'));
+    } catch (err) {
+      showApiError(err, t('common.save-failed'));
+    } finally {
+      setPendingDelete(null);
+    }
   }
 
   if (isPending) {
@@ -102,7 +110,7 @@ export default function Folders() {
       </DashboardPage>
     );
   }
-  if (!config) {
+  if (isError) {
     return (
       <DashboardPage title={t('dashboard.folders.title')}>
         <p className='text-[var(--md-sys-color-error)]'>
@@ -126,39 +134,40 @@ export default function Folders() {
           )}
 
           <div className='flex flex-col gap-3'>
-            {folders.map((folder, index) => (
+            {folders.map((folder) => (
               <div
-                key={`${folder.path}-${index}`}
+                key={folder.name}
                 className='flex flex-col gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] p-3'
               >
-                {editIndex === index ? (
+                {editingName === folder.name ? (
                   <>
                     <M3eFormField variant='outlined' hideSubscript='always'>
-                      <label slot='label' htmlFor={`edit-name-${index}`}>
+                      <label slot='label' htmlFor={`edit-name-${folder.name}`}>
                         {t('dashboard.folders.name')}
                       </label>
                       <input
-                        id={`edit-name-${index}`}
+                        id={`edit-name-${folder.name}`}
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         className='w-full border-none bg-transparent py-2 text-sm outline-none'
                       />
                     </M3eFormField>
                     <M3eFormField variant='outlined' hideSubscript='always'>
-                      <label slot='label' htmlFor={`edit-path-${index}`}>
+                      <label slot='label' htmlFor={`edit-path-${folder.name}`}>
                         {t('dashboard.folders.path')}
                       </label>
                       <input
-                        id={`edit-path-${index}`}
+                        id={`edit-path-${folder.name}`}
                         value={editPath}
                         onChange={(e) => setEditPath(e.target.value)}
+                        placeholder='/path/to/library'
                         className='w-full border-none bg-transparent py-2 text-sm outline-none'
                       />
                     </M3eFormField>
                     <div className='flex gap-2'>
                       <M3eButton
                         variant='text'
-                        onClick={() => setEditIndex(-1)}
+                        onClick={() => setEditingName(null)}
                       >
                         {t('common.cancel')}
                       </M3eButton>
@@ -177,14 +186,20 @@ export default function Folders() {
                       <div className='truncate text-sm font-medium'>
                         {folder.name}
                       </div>
-                      <div className='truncate text-xs opacity-50'>
-                        {folder.path}
+                      <div
+                        className={`truncate text-xs ${
+                          folder.path
+                            ? 'opacity-50'
+                            : 'text-[var(--md-sys-color-error)]'
+                        }`}
+                      >
+                        {folder.path ?? t('dashboard.folders.path-unset')}
                       </div>
                     </div>
                     <div className='flex shrink-0 gap-1'>
                       <M3eButton
                         variant='text'
-                        onClick={() => startEdit(index)}
+                        onClick={() => startEdit(folder)}
                       >
                         {t('dashboard.folders.edit')}
                       </M3eButton>
@@ -192,7 +207,7 @@ export default function Folders() {
                         variant='text'
                         className='text-[var(--md-sys-color-error)]'
                         disabled={saving}
-                        onClick={() => handleDelete(index)}
+                        onClick={() => setPendingDelete(folder.name)}
                       >
                         {t('common.delete')}
                       </M3eButton>
@@ -252,9 +267,9 @@ export default function Folders() {
         open={pendingDelete !== null}
         title={t('dashboard.folders.delete-root-title')}
         message={
-          pendingDelete !== null
+          pendingFolder
             ? t('dashboard.folders.delete-root-confirm', {
-                name: folders[pendingDelete]?.name,
+                name: pendingFolder.name,
               })
             : ''
         }
