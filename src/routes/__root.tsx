@@ -6,7 +6,6 @@ import {
 } from '@tanstack/react-router';
 import { useUserStore } from '../stores/userStore';
 import { restoreSession } from '../hooks/useAuth';
-import { ensureSetupStatus, getSetupNeeded } from '../api/setup';
 import MainLayout from '../layouts/MainLayout';
 import DashboardLayout from '../layouts/DashboardLayout';
 
@@ -14,16 +13,13 @@ import DashboardLayout from '../layouts/DashboardLayout';
  * 根路由：仅渲染 <Outlet/>。
  * 404、/login、/setup、/register 作为 root 的直接子路由（无布局包裹）。
  *
- * beforeLoad：恢复会话 → 拉取 setup 状态（promise 缓存）。
- * 首次部署（用户表为空）时，除 /setup 外一律重定向到 /setup 向导。
+ * beforeLoad：只恢复会话。setup 状态探测已下沉到 /login 与 /setup 的守卫
+ * （业务页刷新不再请求 GET /api/setup）；实例未初始化时，未登录用户会由
+ * 业务请求 401 经 api/client.ts 落到 /login。
  */
 export const rootRoute = createRootRoute({
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async () => {
     await restoreSession();
-    await ensureSetupStatus();
-    if (location.pathname !== '/setup' && getSetupNeeded()) {
-      throw redirect({ to: '/setup' });
-    }
   },
   component: () => <Outlet />,
 });

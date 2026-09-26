@@ -1,6 +1,7 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 import { rootRoute, mainLayoutRoute, dashboardLayoutRoute } from './__root';
+import { ensureSetupStatus } from '../api/setup';
 import { worksRoute } from './works';
 import { workRoute } from './work';
 import { historyRoute } from './history';
@@ -113,6 +114,15 @@ const metadataAdminRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
+  beforeLoad: async () => {
+    // 全应用唯一的 setup 预检点（/setup 守卫复用同一份缓存，不额外发请求）。
+    // 失败兜底：后端不可达时登录页照常渲染，不把用户挡在错误页。
+    try {
+      await ensureSetupStatus();
+    } catch {
+      /* 忽略：登录页不需要 setup 状态也能用 */
+    }
+  },
   component: Login,
 });
 const setupRoute = createRoute({
@@ -120,7 +130,6 @@ const setupRoute = createRoute({
   path: '/setup',
   beforeLoad: async () => {
     // 已初始化时访问 /setup → 回首页（此时已有登录态，无需要求再登录）
-    const { ensureSetupStatus } = await import('../api/setup');
     if (!(await ensureSetupStatus())) {
       throw redirect({ to: '/' });
     }

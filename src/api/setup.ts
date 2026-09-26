@@ -59,7 +59,9 @@ export interface MigrationSseData {
 /** 迁移进度 SSE 端点（Setup 向导用，免鉴权白名单内） */
 export const MIGRATION_SSE_URL = '/api/setup/migration/events';
 
-// ---- setup 状态缓存（首次部署引导） ----
+// ---- setup 状态缓存 ----
+// 全应用唯一的 setup 预检点是 /login 与 /setup 的 beforeLoad 守卫；
+// 业务页面刷新不探测（未初始化时由业务请求 401 落到 /login）。
 
 let setupNeeded: boolean | null = null;
 
