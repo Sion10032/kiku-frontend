@@ -14,11 +14,10 @@ import Setup from '../pages/Setup';
 import Register from '../pages/Register';
 import Error404 from '../pages/Error404';
 import Folders from '../pages/Dashboard/Folders';
-import Scanner from '../pages/Dashboard/Scanner';
 import Analysis from '../pages/Dashboard/Analysis';
 import Advanced from '../pages/Dashboard/Advanced';
 import UserManage from '../pages/Dashboard/UserManage';
-import MetadataOverride from '../pages/Dashboard/MetadataOverride';
+import AudioManage from '../pages/Dashboard/AudioManage';
 
 // / → 重定向到 /works
 const indexRoute = createRoute({
@@ -84,11 +83,6 @@ const foldersRoute = createRoute({
   path: '/admin',
   component: Folders,
 });
-const scannerRoute = createRoute({
-  getParentRoute: () => dashboardLayoutRoute,
-  path: '/admin/scanner',
-  component: Scanner,
-});
 const analysisRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/admin/analysis',
@@ -104,10 +98,25 @@ const userManageRoute = createRoute({
   path: '/admin/usermanage',
   component: UserManage,
 });
-const metadataAdminRoute = createRoute({
+const audioRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/admin/audio',
+  component: AudioManage,
+});
+// 旧路由重定向：扫描器与元数据覆盖已合并为音声管理页
+const scannerRedirectRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/admin/scanner',
+  beforeLoad: () => {
+    throw redirect({ to: '/admin/audio' });
+  },
+});
+const metadataRedirectRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/admin/metadata',
-  component: MetadataOverride,
+  beforeLoad: () => {
+    throw redirect({ to: '/admin/audio' });
+  },
 });
 
 // 登录 / 初始化 / 注册 / 404（无布局包裹）
@@ -161,11 +170,12 @@ export const routeTree = rootRoute.addChildren([
   ]),
   dashboardLayoutRoute.addChildren([
     foldersRoute,
-    scannerRoute,
     analysisRoute,
     advancedRoute,
     userManageRoute,
-    metadataAdminRoute,
+    audioRoute,
+    scannerRedirectRoute,
+    metadataRedirectRoute,
   ]),
   loginRoute,
   setupRoute,

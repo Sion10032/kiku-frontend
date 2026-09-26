@@ -9,21 +9,19 @@ import { M3eButton } from '@m3e/react/button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eTab, M3eTabs } from '@m3e/react/tabs';
 import { useTranslation } from 'react-i18next';
-import '@m3e/icons/outlined/document_scanner';
-import '@m3e/icons/outlined/edit';
 import '@m3e/icons/outlined/folder';
 import '@m3e/icons/outlined/graphic_eq';
 import '@m3e/icons/outlined/group';
+import '@m3e/icons/outlined/library_music';
 import '@m3e/icons/outlined/tune';
 
 /** 导航文案为字典 key（渲染处经 t() 转换），与管理页标题共用同一 key。 */
 type NavLabelKey =
   | 'dashboard.folders.title'
-  | 'dashboard.scan.title'
   | 'dashboard.analysis.title'
   | 'dashboard.advanced.title'
   | 'dashboard.users.title'
-  | 'dashboard.metadata.title';
+  | 'dashboard.audio.title';
 
 interface NavEntry {
   to: string;
@@ -34,11 +32,7 @@ interface NavEntry {
 
 const NAV_ENTRIES: NavEntry[] = [
   { to: '/admin', label: 'dashboard.folders.title', icon: 'folder' },
-  {
-    to: '/admin/scanner',
-    label: 'dashboard.scan.title',
-    icon: 'document_scanner',
-  },
+  { to: '/admin/audio', label: 'dashboard.audio.title', icon: 'library_music' },
   {
     to: '/admin/analysis',
     label: 'dashboard.analysis.title',
@@ -46,13 +40,12 @@ const NAV_ENTRIES: NavEntry[] = [
   },
   { to: '/admin/advanced', label: 'dashboard.advanced.title', icon: 'tune' },
   { to: '/admin/usermanage', label: 'dashboard.users.title', icon: 'group' },
-  { to: '/admin/metadata', label: 'dashboard.metadata.title', icon: 'edit' },
 ];
 
 /**
  * 复刻 TanStack `activeOptions.exact` 的选中语义：
- * - `/admin` 仅精确匹配，避免与子路由（/admin/scanner 等）双高亮；
- * - 其余条目按「等于或子路径」前缀匹配（`/admin/scannerx` 不会误匹配 /admin/scanner）。
+ * - `/admin` 仅精确匹配，避免与子路由（/admin/audio 等）双高亮；
+ * - 其余条目按「等于或子路径」前缀匹配（`/admin/audiox` 不会误匹配 /admin/audio）。
  */
 function isActive(pathname: string, entry: NavEntry): boolean {
   if (entry.to === '/admin') return pathname === '/admin';

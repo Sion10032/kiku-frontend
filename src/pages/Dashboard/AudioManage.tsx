@@ -6,6 +6,7 @@ import { M3eFormField } from '@m3e/react/form-field';
 import { useTranslation } from 'react-i18next';
 import { getWorksList } from '../../api/works';
 import DashboardPage from '../../components/dashboard/DashboardPage';
+import ScannerPanel from '../../components/dashboard/ScannerPanel';
 import Paginator from '../../components/common/Paginator';
 import MetadataEditDialog from '../../components/work/MetadataEditDialog';
 import TitleSanitizeDialog from '../../components/work/TitleSanitizeDialog';
@@ -76,6 +77,10 @@ export default function AudioManage() {
 
   return (
     <DashboardPage title={t('dashboard.audio.title')}>
+      {/* 合并页上半部分：扫描器面板（SSE 实时状态 + 详情弹窗） */}
+      <ScannerPanel />
+      <hr className='border-[var(--md-sys-color-outline-variant)]' />
+
       {/* 搜索框 + 标题净化快捷入口（范围 = 本搜索框当前条件，见弹窗组件注释）。
           hideSubscript 去掉字段底部保留区，按钮与输入框垂直居中对齐 */}
       <div className='flex items-center gap-2'>
