@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // node 环境没有 window，而 zustand v5 persist 默认存储为
 // createJSONStorage(() => window.localStorage)，绑定失败会退化为纯内存（永不落盘）。
@@ -110,6 +110,88 @@ describe('settingsStore worksPageSize', () => {
   it('setWorksPageSize 置为 100', () => {
     useSettingsStore.getState().setWorksPageSize(100);
     expect(useSettingsStore.getState().worksPageSize).toBe(100);
+  });
+
+  it('setWorksPageSize 非法档位 500 → 回落 20', () => {
+    useSettingsStore.getState().setWorksPageSize(500);
+    expect(useSettingsStore.getState().worksPageSize).toBe(20);
+  });
+});
+
+describe('settingsStore worksPageSize 水合消毒', () => {
+  // 水合用例会改写 localStorage 与 store 单例状态：前后都恢复，避免污染其余用例
+  beforeEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  });
+
+  it('persist 水合：持久化非法档位 500 → 回落 20', async () => {
+    useSettingsStore.setState({ worksPageSize: 10 });
+    localStorage.setItem(
+      'kiku-settings',
+      JSON.stringify({ state: { worksPageSize: 500 }, version: 0 }),
+    );
+    await useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState().worksPageSize).toBe(20);
+  });
+
+  it('persist 水合：blob 缺失 worksPageSize → 回落 20', async () => {
+    // 先制造非默认内存值，证明「缺失」也走消毒分支（而非依赖初始值恰好为 20）
+    useSettingsStore.setState({ worksPageSize: 500 });
+    localStorage.setItem(
+      'kiku-settings',
+      JSON.stringify({ state: {}, version: 0 }),
+    );
+    await useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState().worksPageSize).toBe(20);
+  });
+});
+
+describe('settingsStore worksPageSize 初次水合（模块求值路径）', () => {
+  // 生产路径：persist 在模块求值期间自行 hydrate，而不是测试手动调用 rehydrate()。
+  // 用 vi.resetModules + 动态 import 拿到全新模块实例，让求值期的真实水合跑一遍；
+  // localStorage 必须在动态 import 之前种好，否则测的就不是「初次水合」。
+  beforeEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  });
+
+  async function hydrateFreshModule(blob: Record<string, unknown>) {
+    localStorage.clear();
+    localStorage.setItem(
+      'kiku-settings',
+      JSON.stringify({ state: blob, version: 0 }),
+    );
+    vi.resetModules();
+    const mod = await import('./settingsStore');
+    // hydrate 在模块求值时启动，merge/落 state 在微任务链里执行：等一拍再断言
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return mod.useSettingsStore;
+  }
+
+  it('初次水合：持久化非法档位 500 → 回落 20', async () => {
+    const store = await hydrateFreshModule({ worksPageSize: 500 });
+    expect(store.getState().worksPageSize).toBe(20);
+  });
+
+  it('初次水合：合法档位 50 原样保留', async () => {
+    const store = await hydrateFreshModule({ worksPageSize: 50 });
+    expect(store.getState().worksPageSize).toBe(50);
+  });
+
+  it('初次水合：blob 缺失 worksPageSize → 回落 20', async () => {
+    const store = await hydrateFreshModule({});
+    expect(store.getState().worksPageSize).toBe(20);
   });
 });
 

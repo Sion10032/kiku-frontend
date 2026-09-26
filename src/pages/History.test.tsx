@@ -55,6 +55,15 @@ async function flushAsync() {
   });
 }
 
+/** 取最近一次 navigate 的 search 更新器并应用（History 已改为函数式写法） */
+function navigateSearch(prev: Record<string, unknown> = {}) {
+  const lastCall = h.navigate.mock.calls.at(-1);
+  const arg = lastCall?.[0] as {
+    search: (p: Record<string, unknown>) => Record<string, unknown>;
+  };
+  return arg.search(prev);
+}
+
 beforeEach(() => {
   h.search = { page: 5 };
   h.navigate.mockReset();
@@ -73,7 +82,7 @@ describe('History 越界页码归位', () => {
     await flushAsync();
 
     expect(h.navigate).toHaveBeenCalledTimes(1);
-    expect(h.navigate).toHaveBeenCalledWith({ search: { page: undefined } });
+    expect(navigateSearch()).toEqual({ page: undefined });
   });
 
   it('首屏页码合法 → 不导航', async () => {
@@ -101,6 +110,6 @@ describe('History 越界页码归位', () => {
     await flushAsync();
 
     expect(h.navigate).toHaveBeenCalledTimes(1);
-    expect(h.navigate).toHaveBeenCalledWith({ search: { page: undefined } });
+    expect(navigateSearch()).toEqual({ page: undefined });
   });
 });

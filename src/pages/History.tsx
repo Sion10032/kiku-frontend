@@ -45,7 +45,9 @@ export default function History() {
   // 页码归位：切档（本页挂载时）或残留的越界页码（切档发生在别处、Back/书签
   // 带进来）都回到第 1 页。合法页码不导航，所以正常首屏不跳转。
   function resetPage() {
-    if (search.page != null) navigate({ search: { page: undefined } });
+    if (search.page != null) {
+      navigate({ search: (prev) => ({ ...prev, page: undefined }) });
+    }
   }
 
   useResetPageOnPageSizeChange(worksPageSize, resetPage);

@@ -51,7 +51,7 @@ export default function Works() {
   // 分页控件显示位置（设置项）：top 顶部 / bottom 底部 / both 两处
   const paginatorPosition = useSettingsStore((s) => s.worksPaginatorPosition);
   const worksHistoryStrip = useSettingsStore((s) => s.worksHistoryStrip);
-  // 每页条数（设置项，Task 5 的用户偏好）
+  // 每页条数（设置项，与收听历史共用同一偏好）
   const worksPageSize = useSettingsStore((s) => s.worksPageSize);
   const page = search.page ?? 1;
 

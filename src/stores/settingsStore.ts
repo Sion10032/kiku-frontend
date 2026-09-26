@@ -32,6 +32,11 @@ function clamp(n: number, min: number, max: number): number {
 /** 作品库每页条数可选档位（单一来源，后端 /api/works 的 pageSize 上限即最大值 100）。 */
 export const WORKS_PAGE_SIZES = [10, 20, 50, 100] as const;
 
+/** 判断是否为合法档位（越界值会被后端 /api/works 以 400 拒绝）。 */
+function isWorksPageSize(v: unknown): v is (typeof WORKS_PAGE_SIZES)[number] {
+  return (WORKS_PAGE_SIZES as readonly number[]).includes(v as number);
+}
+
 /** 悬浮歌词（LyricsBar）设置。 */
 export interface FloatingLyricsSettings {
   /** 是否显示悬浮歌词 */
@@ -173,7 +178,10 @@ export const useSettingsStore = create<SettingsState>()(
       setWorksPaginatorPosition: (position) =>
         set({ worksPaginatorPosition: position }),
       setShowHistoryStrip: (on) => set({ worksHistoryStrip: on }),
-      setWorksPageSize: (v) => set({ worksPageSize: v }),
+      // 公开 API 层校验：非法档位回落 20，保证「worksPageSize 取值限
+      // WORKS_PAGE_SIZES」这一文档契约对 setter 也成立
+      setWorksPageSize: (v) =>
+        set({ worksPageSize: isWorksPageSize(v) ? v : 20 }),
       setUiScale: (scale) => set({ uiScale: scale }),
     }),
     {
@@ -183,6 +191,23 @@ export const useSettingsStore = create<SettingsState>()(
         // uiScaleAuto 为内部标记：持久化以支持「首次加载推断一次 uiScale」，但不进快照
         uiScaleAuto: s.uiScaleAuto,
       }),
+      // 水合消毒放在 merge（而非 onRehydrateStorage 回调）：persist 在模块求值期就
+      // 启动 hydrate，此时 `useSettingsStore` 常量仍在 TDZ，回调里引用它会抛
+      // ReferenceError 并被 zustand 静默吞掉。merge 在 set 之前同步执行、无需引用该常量。
+      // 语义：先完全复刻 zustand 默认浅合并 { ...current, ...persisted }，再消毒
+      // worksPageSize（缺失/越界/非数字一律回落 20，合法档位原样保留）。
+      merge: (persisted, current) => {
+        const merged = {
+          ...current,
+          ...(persisted as Partial<SettingsState>),
+        };
+        return {
+          ...merged,
+          worksPageSize: isWorksPageSize(merged.worksPageSize)
+            ? merged.worksPageSize
+            : 20,
+        };
+      },
       // 首次使用时按屏幕像素密度推断一次界面缩放档位，之后沿用持久化值
       onRehydrateStorage: () => (state) => {
         if (state?.uiScaleAuto) {
@@ -217,9 +242,7 @@ export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
   // worksPageSize 必须落在可选档位内，否则还原后会把非法值发给 /api/works（400 白屏）
   if ('worksPageSize' in patch) {
     const size = Number(patch.worksPageSize);
-    patch.worksPageSize = (WORKS_PAGE_SIZES as readonly number[]).includes(size)
-      ? size
-      : 20;
+    patch.worksPageSize = isWorksPageSize(size) ? size : 20;
   }
   // 快照来自同结构 store（写入方同源），字段类型整体信任；嵌套对象整体替换不深合并。
   // setState 走 persist 中间件自动落盘；uiScale 变化由 ThemeRoot 现有 effect 即时生效。

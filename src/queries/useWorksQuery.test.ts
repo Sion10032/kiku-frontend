@@ -9,7 +9,8 @@ describe('worksListQueryKey', () => {
   });
 
   it('key 形状固定：base 显式含 pageSize（键序稳定，hash 不漂移）', () => {
-    expect(worksListQueryKey({ page: 2, pageSize: 50, q: 'tag:x' })).toEqual([
+    const key = worksListQueryKey({ page: 2, pageSize: 50, q: 'tag:x' });
+    expect(key).toEqual([
       'works',
       {
         order: undefined,
@@ -19,6 +20,14 @@ describe('worksListQueryKey', () => {
         pageSize: 50,
       },
       2,
+    ]);
+    // toEqual 忽略值为 undefined 的属性：单独钉住 base 的键集合与键序
+    expect(Object.keys(key[1])).toEqual([
+      'order',
+      'sort',
+      'seed',
+      'q',
+      'pageSize',
     ]);
   });
 });
