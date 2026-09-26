@@ -257,7 +257,12 @@ export default function ScannerPanel() {
               {t('dashboard.scan.failed-count', { n: failedTasks.length })}
             </span>
           )}
-          <M3eIcon name='chevron_right' className='shrink-0 opacity-60' />
+          {/* 纯装饰箭头，避免读屏念出 ligature 文本 */}
+          <M3eIcon
+            name='chevron_right'
+            aria-hidden='true'
+            className='shrink-0 opacity-60'
+          />
         </button>
       )}
 

@@ -145,7 +145,13 @@ export default function AudioManage() {
               {works.map((w) => (
                 <tr
                   key={w.id}
+                  tabIndex={0}
                   onClick={() => setSelected(w.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setSelected(w.id);
+                    }
+                  }}
                   className='cursor-pointer border-b border-[var(--md-sys-color-outline-variant)] last:border-b-0 hover:bg-[var(--md-sys-color-surface-container)]'
                 >
                   <td
@@ -157,13 +163,15 @@ export default function AudioManage() {
                       onChange={() => toggle(w.id)}
                     />
                   </td>
-                  <td className='whitespace-nowrap font-mono text-xs'>
+                  <td className='whitespace-nowrap px-2 py-2 font-mono text-xs'>
                     {w.id}
                   </td>
-                  <td className='line-clamp-1'>{w.title}</td>
-                  <td className='line-clamp-1'>{w.circle.name}</td>
-                  <td className='whitespace-nowrap'>{w.release ?? '—'}</td>
-                  <td>
+                  <td className='line-clamp-1 px-2 py-2'>{w.title}</td>
+                  <td className='line-clamp-1 px-2 py-2'>{w.circle.name}</td>
+                  <td className='whitespace-nowrap px-2 py-2'>
+                    {w.release ?? '—'}
+                  </td>
+                  <td className='px-2 py-2'>
                     {w.overriddenFields?.length
                       ? w.overriddenFields.join(', ')
                       : '—'}
