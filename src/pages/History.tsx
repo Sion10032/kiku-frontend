@@ -3,8 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { useHistoryPage } from '../queries/useHistoryQuery';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useUserStore } from '../stores/userStore';
 import { historyRoute } from '../routes/history';
+import { useResetPageOnPageSizeChange } from '../hooks/useResetPageOnPageSizeChange';
+import { useResetOutOfRangePage } from '../hooks/useResetOutOfRangePage';
 import Paginator from '../components/common/Paginator';
 import WorkCard from '../components/works/WorkCard';
 
@@ -21,8 +24,10 @@ export default function History() {
   const navigate = historyRoute.useNavigate();
   const page = search.page ?? 1;
   const authed = useUserStore((s) => s.auth);
+  // 每页条数（设置项，与作品库共用同一偏好）
+  const worksPageSize = useSettingsStore((s) => s.worksPageSize);
 
-  const { data, isLoading } = useHistoryPage(page);
+  const { data, isLoading } = useHistoryPage(page, worksPageSize);
   const works = data?.works ?? [];
   const pagination = data?.pagination;
   const totalCount = pagination?.totalCount;
@@ -36,6 +41,16 @@ export default function History() {
       search: { page: next === 1 ? undefined : next },
     });
   }
+
+  // 页码归位：切档（本页挂载时）或残留的越界页码（切档发生在别处、Back/书签
+  // 带进来）都回到第 1 页。合法页码不导航，所以正常首屏不跳转。
+  function resetPage() {
+    if (search.page != null) navigate({ search: { page: undefined } });
+  }
+
+  useResetPageOnPageSizeChange(worksPageSize, resetPage);
+  // 档位是在 /settings 改的（本页未挂载）或越界页码来自书签/刷新：依据回执兜底
+  useResetOutOfRangePage(page, worksPageSize, pagination, resetPage);
 
   // title 同步页码；卸载恢复 Kiku
   useEffect(() => {

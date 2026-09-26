@@ -96,6 +96,8 @@ export type WorksSort = 'desc' | 'asc';
 
 export interface WorksParams {
   page?: number;
+  /** 每页条数（1..100，服务端上限 100） */
+  pageSize?: number;
   order?: WorksOrder;
   sort?: WorksSort;
   /** random/betterRandom 排序的随机种子 */

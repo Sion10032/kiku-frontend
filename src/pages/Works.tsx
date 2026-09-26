@@ -15,6 +15,8 @@ import { useWorksPage, useWorksInfinite } from '../queries/useWorksQuery';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUserStore } from '../stores/userStore';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { useResetPageOnPageSizeChange } from '../hooks/useResetPageOnPageSizeChange';
+import { useResetOutOfRangePage } from '../hooks/useResetOutOfRangePage';
 import {
   SORT_OPTIONS,
   loadSortOption,
@@ -49,6 +51,8 @@ export default function Works() {
   // 分页控件显示位置（设置项）：top 顶部 / bottom 底部 / both 两处
   const paginatorPosition = useSettingsStore((s) => s.worksPaginatorPosition);
   const worksHistoryStrip = useSettingsStore((s) => s.worksHistoryStrip);
+  // 每页条数（设置项，Task 5 的用户偏好）
+  const worksPageSize = useSettingsStore((s) => s.worksPageSize);
   const page = search.page ?? 1;
 
   // 视图模式（state 驱动，初始读 localStorage）
@@ -94,11 +98,11 @@ export default function Works() {
 
   // 查询：分页模式按页拉取（keepPreviousData 防翻页闪 loading），无限模式滚动追加
   const paged = useWorksPage(
-    { ...filterParams, ...sortParams, page },
+    { ...filterParams, ...sortParams, pageSize: worksPageSize, page },
     isPaginated,
   );
   const infinite = useWorksInfinite(
-    { ...filterParams, ...sortParams },
+    { ...filterParams, ...sortParams, pageSize: worksPageSize },
     !isPaginated,
   );
 
@@ -190,6 +194,18 @@ export default function Works() {
       });
     }
   }, [sortOption.order]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 页码归位：切档（本页挂载时）或残留的越界页码（切档发生在别处、Back/书签
+  // 带进来）都回到第 1 页。合法页码不导航，所以正常首屏不跳转。
+  function resetPage() {
+    if (search.page != null) {
+      navigate({ search: (prev) => ({ ...prev, page: undefined }) });
+    }
+  }
+
+  useResetPageOnPageSizeChange(worksPageSize, resetPage);
+  // 档位是在 /settings 改的（本页未挂载）或越界页码来自书签/刷新：依据回执兜底
+  useResetOutOfRangePage(page, worksPageSize, pagination, resetPage);
 
   // title 同步筛选名与页码（分页模式）；卸载/切模式时恢复默认
   useEffect(() => {

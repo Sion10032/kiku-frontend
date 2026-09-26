@@ -24,11 +24,11 @@ export function useRecentHistory() {
 }
 
 /** 收听历史页分页查询（keepPreviousData 防翻页闪 loading）。 */
-export function useHistoryPage(page: number) {
+export function useHistoryPage(page: number, pageSize: number) {
   const authed = useUserStore((s) => s.auth);
   return useQuery({
-    queryKey: historyQueryKey({ page, pageSize: 20 }),
-    queryFn: () => getHistory({ page, pageSize: 20 }),
+    queryKey: historyQueryKey({ page, pageSize }),
+    queryFn: () => getHistory({ page, pageSize }),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
     enabled: authed,

@@ -12,10 +12,11 @@ import type {
 
 /** 构造分页 + 排序 searchParams（去除 undefined）。 */
 function worksSearchParams(
-  params: Pick<WorksParams, 'page' | 'order' | 'sort' | 'seed'>,
+  params: Pick<WorksParams, 'page' | 'pageSize' | 'order' | 'sort' | 'seed'>,
 ): Record<string, string> {
   const sp: Record<string, string> = {};
   if (params.page) sp.page = String(params.page);
+  if (params.pageSize != null) sp.pageSize = String(params.pageSize);
   if (params.order) sp.order = params.order;
   if (params.sort) sp.sort = params.sort;
   if (params.seed != null) sp.seed = String(params.seed);
