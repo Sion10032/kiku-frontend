@@ -29,12 +29,14 @@ import { getDeviceName } from '../utils/deviceName';
 import { useUserStore } from '../stores/userStore';
 import {
   useSettingsStore,
+  WORKS_PAGE_SIZES,
   type ColorMode,
   type CoverBlurMode,
   type TimeDisplayMode,
   type WorksPaginationMode,
   type WorksPaginatorPosition,
 } from '../stores/settingsStore';
+import { usePlayerStore } from '../stores/playerStore';
 import { useThemeStore, DEFAULT_SEED } from '../stores/themeStore';
 
 const COLOR_MODES: {
@@ -93,9 +95,11 @@ const WORKS_PAGINATOR_POSITIONS: {
  * - 颜色模式：auto / light / dark，经 ThemeRoot 传给 M3eTheme
  * - 界面大小：全局缩放（80%–130%），首次使用按屏幕像素密度自动选择一次
  * - 媒体通知：开关 MediaSession（锁屏/系统媒体面板），useMediaSession 读取
+ * - 快退/快进秒数：播放器 seek 按钮步长（playerStore，本地持久化）
  * - 时间显示：总时长（22:33）/ 剩余时间（-1:39），作用 PlayerBar 与全屏播放器
  * - 作品库翻页方式：分页（可跳页）/ 无限滚动
  * - 分页控件位置：作品库分页控件显示在顶部 / 底部 / 顶部和底部
+ * - 每页数量：作品库与收听历史每页显示的作品数（10/20/50/100）
  * - 最近收听：作品库首页是否显示「最近收听」条
  * - 悬浮歌词：LyricsBar 的字体大小 / 换行行数上限 / 背景透明度
  */
@@ -135,10 +139,16 @@ export default function Settings() {
   const setWorksPaginatorPosition = useSettingsStore(
     (s) => s.setWorksPaginatorPosition,
   );
+  const worksPageSize = useSettingsStore((s) => s.worksPageSize);
+  const setWorksPageSize = useSettingsStore((s) => s.setWorksPageSize);
   const worksHistoryStrip = useSettingsStore((s) => s.worksHistoryStrip);
   const setShowHistoryStrip = useSettingsStore((s) => s.setShowHistoryStrip);
   const uiScale = useSettingsStore((s) => s.uiScale);
   const setUiScale = useSettingsStore((s) => s.setUiScale);
+  const rewindSeekTime = usePlayerStore((s) => s.rewindSeekTime);
+  const forwardSeekTime = usePlayerStore((s) => s.forwardSeekTime);
+  const setRewindSeekTime = usePlayerStore((s) => s.setRewindSeekTime);
+  const setForwardSeekTime = usePlayerStore((s) => s.setForwardSeekTime);
 
   // select.value 为 getter-only，经事件读取（同下方备份配置选择）
   function onLanguageChange(e: Event) {
@@ -354,6 +364,34 @@ export default function Settings() {
             </M3eSegmentedButton>
           </div>
 
+          {/* 每页数量：作用作品库与收听历史 */}
+          <div className={SETTING_ROW_LAYOUT}>
+            <span className='flex flex-col'>
+              <span>{t('settings.works-page-size')}</span>
+              <span className='text-sm opacity-70'>
+                {t('settings.works-page-size-desc')}
+              </span>
+            </span>
+            <M3eSegmentedButton
+              className={SETTING_CONTROL_FILL}
+              onInput={(e) =>
+                setWorksPageSize(
+                  Number((e.target as HTMLInputElement).value) || 20,
+                )
+              }
+            >
+              {WORKS_PAGE_SIZES.map((size) => (
+                <M3eButtonSegment
+                  key={size}
+                  value={String(size)}
+                  checked={worksPageSize === size}
+                >
+                  {String(size)}
+                </M3eButtonSegment>
+              ))}
+            </M3eSegmentedButton>
+          </div>
+
           {/* 最近收听条 */}
           <div className='flex cursor-pointer items-center justify-between gap-4'>
             <span className='flex flex-col'>
@@ -384,6 +422,62 @@ export default function Settings() {
                 setMediaNotification((e.target as HTMLInputElement).checked)
               }
             />
+          </div>
+
+          {/* 快退秒数：播放器本地设置（playerStore） */}
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center justify-between gap-4'>
+              <span className='flex flex-col'>
+                <span>{t('settings.rewind-seek-time')}</span>
+                <span className='text-sm opacity-70'>
+                  {t('settings.rewind-seek-time-desc')}
+                </span>
+              </span>
+              <span className='text-sm tabular-nums opacity-70'>
+                {rewindSeekTime}s
+              </span>
+            </div>
+            <M3eSlider
+              min={1}
+              max={60}
+              step={1}
+              labelled
+              onInput={(e) =>
+                setRewindSeekTime(
+                  (e.target as M3eSliderThumbElement).value ?? 5,
+                )
+              }
+            >
+              <M3eSliderThumb value={rewindSeekTime} />
+            </M3eSlider>
+          </div>
+
+          {/* 快进秒数：播放器本地设置（playerStore） */}
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center justify-between gap-4'>
+              <span className='flex flex-col'>
+                <span>{t('settings.forward-seek-time')}</span>
+                <span className='text-sm opacity-70'>
+                  {t('settings.forward-seek-time-desc')}
+                </span>
+              </span>
+              <span className='text-sm tabular-nums opacity-70'>
+                {forwardSeekTime}s
+              </span>
+            </div>
+            <M3eSlider
+              min={1}
+              max={120}
+              step={1}
+              labelled
+              onInput={(e) =>
+                setForwardSeekTime(
+                  (e.target as M3eSliderThumbElement).value ?? 30,
+                )
+              }
+            >
+              <M3eSliderThumb value={forwardSeekTime} />
+            </M3eSlider>
           </div>
 
           {/* 音量均衡：客户端开关，播放时应用服务器已算好的均衡增益 */}
