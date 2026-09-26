@@ -18,7 +18,6 @@ import Analysis from '../pages/Dashboard/Analysis';
 import Advanced from '../pages/Dashboard/Advanced';
 import UserManage from '../pages/Dashboard/UserManage';
 import MetadataOverride from '../pages/Dashboard/MetadataOverride';
-import { getCachedSharedConfig } from '../api/sharedConfig';
 
 // / → 重定向到 /works
 const indexRoute = createRoute({
@@ -121,7 +120,7 @@ const setupRoute = createRoute({
   path: '/setup',
   beforeLoad: async () => {
     // 已初始化时访问 /setup → 回首页（此时已有登录态，无需要求再登录）
-    const { ensureSetupStatus } = await import('../api/sharedConfig');
+    const { ensureSetupStatus } = await import('../api/setup');
     if (!(await ensureSetupStatus())) {
       throw redirect({ to: '/' });
     }
@@ -131,12 +130,6 @@ const setupRoute = createRoute({
 const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/register',
-  beforeLoad: () => {
-    const shared = getCachedSharedConfig();
-    if (!shared?.allowRegistration) {
-      throw redirect({ to: '/login' });
-    }
-  },
   component: Register,
 });
 const notFoundRoute = createRoute({

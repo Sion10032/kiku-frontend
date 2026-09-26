@@ -58,3 +58,24 @@ export interface MigrationSseData {
 
 /** 迁移进度 SSE 端点（Setup 向导用，免鉴权白名单内） */
 export const MIGRATION_SSE_URL = '/api/setup/migration/events';
+
+// ---- setup 状态缓存（首次部署引导） ----
+
+let setupNeeded: boolean | null = null;
+
+export async function ensureSetupStatus(): Promise<boolean> {
+  if (setupNeeded === null) {
+    setupNeeded = (await getSetupStatus()).needed;
+  }
+  return setupNeeded;
+}
+
+/** 同步读取已缓存的 setup 状态（尚未拉取时为 null）。 */
+export function getSetupNeeded(): boolean | null {
+  return setupNeeded;
+}
+
+/** 标记 setup 已完成（向导提交成功后调用，避免后续导航再重定向）。 */
+export function markSetupDone(): void {
+  setupNeeded = false;
+}

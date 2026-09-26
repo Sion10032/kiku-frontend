@@ -14,7 +14,8 @@ import { useUserStore } from '../stores/userStore';
 import { ApiError } from '../api/client';
 
 /**
- * 注册页。守卫保证仅在 allowRegistration 开启时可到达。
+ * 注册页。不预取开关：入口常显，由后端 403（`errors.auth.registration-disabled`，
+ * 已本地化）拒绝。
  * 注册成功自动登录（存 token + 更新 userStore）→ 跳 /works。
  * 重名（409）提示「用户名已存在」。
  */

@@ -6,12 +6,7 @@ import {
 } from '@tanstack/react-router';
 import { useUserStore } from '../stores/userStore';
 import { restoreSession } from '../hooks/useAuth';
-import {
-  ensureSetupStatus,
-  ensureSharedConfig,
-  getCachedSharedConfig,
-  getSetupNeeded,
-} from '../api/sharedConfig';
+import { ensureSetupStatus, getSetupNeeded } from '../api/setup';
 import MainLayout from '../layouts/MainLayout';
 import DashboardLayout from '../layouts/DashboardLayout';
 
@@ -19,13 +14,13 @@ import DashboardLayout from '../layouts/DashboardLayout';
  * 根路由：仅渲染 <Outlet/>。
  * 404、/login、/setup、/register 作为 root 的直接子路由（无布局包裹）。
  *
- * beforeLoad：恢复会话 → 拉取 setup 状态与 sharedConfig（均 promise 缓存）。
+ * beforeLoad：恢复会话 → 拉取 setup 状态（promise 缓存）。
  * 首次部署（用户表为空）时，除 /setup 外一律重定向到 /setup 向导。
  */
 export const rootRoute = createRootRoute({
   beforeLoad: async ({ location }) => {
     await restoreSession();
-    await Promise.all([ensureSetupStatus(), ensureSharedConfig()]);
+    await ensureSetupStatus();
     if (location.pathname !== '/setup' && getSetupNeeded()) {
       throw redirect({ to: '/setup' });
     }
@@ -35,18 +30,11 @@ export const rootRoute = createRootRoute({
 
 /**
  * 主布局路由（pathless，仅作 layout）。
- * 私有模式：未登录跳 /login；公开模式匿名放行（只读浏览）。
+ * 实例模式开关不再预取：私有模式下由后端 401/403（已本地化）拒绝。
  */
 export const mainLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'main',
-  beforeLoad: () => {
-    const { auth } = useUserStore.getState();
-    const shared = getCachedSharedConfig();
-    if (shared?.instanceMode === 'private' && !auth) {
-      throw redirect({ to: '/login' });
-    }
-  },
   component: MainLayout,
 });
 

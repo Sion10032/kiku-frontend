@@ -309,28 +309,18 @@ export type TagLanguage = 'ja-jp' | 'zh-tw' | 'zh-cn';
 
 export type InstanceMode = 'private' | 'public';
 
-export interface SharedConfig {
-  instanceMode: InstanceMode;
-  allowRegistration: boolean;
-  pageSize: number;
-  tagLanguage: TagLanguage;
-  enableGzip: boolean;
-  rewindSeekTime: number;
-  forwardSeekTime: number;
-  offloadMedia: boolean;
-  offloadStreamPath: string;
-  offloadDownloadPath: string;
-  /** 扫描结束后自动接力响度分析（默认 false） */
-  autoLoudnessAnalysis: boolean;
-}
-
 export interface RootFolder {
   name: string;
   /** null = 迁移遗留的未配置路径（UI 需提示补配） */
   path: string | null;
 }
 
-export interface AdminConfig extends SharedConfig {
+export interface AdminConfig {
+  instanceMode: InstanceMode;
+  allowRegistration: boolean;
+  tagLanguage: TagLanguage;
+  /** 扫描结束后自动接力响度分析（默认 false） */
+  autoLoudnessAnalysis: boolean;
   production: boolean;
   dbBusyTimeout: number;
   checkUpdate: boolean;

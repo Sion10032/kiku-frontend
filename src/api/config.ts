@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { AdminConfig, SharedConfig } from '../types';
+import type { AdminConfig } from '../types';
 
 /** 获取管理员配置：GET /api/config/admin */
 export function getAdminConfig(): Promise<AdminConfig> {
@@ -14,9 +14,4 @@ export function updateAdminConfig(
     method: 'PUT',
     json: patch,
   });
-}
-
-/** 获取共享配置（所有用户可见）：GET /api/config/shared */
-export function getSharedConfig(): Promise<SharedConfig> {
-  return apiFetch<SharedConfig>('config/shared');
 }

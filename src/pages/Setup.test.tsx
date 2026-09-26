@@ -25,11 +25,7 @@ vi.mock('../api/setup', () => ({
   setup: h.api.setup,
   getMigrationStatus: h.api.getMigrationStatus,
   runMigration: h.api.runMigration,
-}));
-
-vi.mock('../api/sharedConfig', () => ({
   markSetupDone: () => {},
-  refreshSharedConfig: () => Promise.resolve(),
 }));
 
 // 挂载副作用：迁移进度 SSE 订阅替换为 no-op，只渲染静态结构

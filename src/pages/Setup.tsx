@@ -22,10 +22,10 @@ import {
   setup as apiSetup,
   getMigrationStatus,
   runMigration,
+  markSetupDone,
   type MigrationSseData,
 } from '../api/setup';
 import { setToken } from '../api/token';
-import { markSetupDone, refreshSharedConfig } from '../api/sharedConfig';
 import { useSSE } from '../hooks/useSSE';
 import { useUserStore } from '../stores/userStore';
 import { ApiError } from '../api/client';
@@ -95,7 +95,6 @@ export default function Setup() {
       setUser(res.name, res.group);
       setAuth(true);
       markSetupDone();
-      await refreshSharedConfig();
       M3eSnackbar.open(t('auth.setup.success'));
       navigate({ to: '/works' });
     } catch (err) {

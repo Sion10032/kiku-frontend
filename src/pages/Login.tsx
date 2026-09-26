@@ -9,7 +9,6 @@ import '@m3e/icons/outlined/person';
 import '@m3e/icons/outlined/lock';
 import '@m3e/icons/outlined/library_music';
 import { useAuth } from '../hooks/useAuth';
-import { getCachedSharedConfig } from '../api/sharedConfig';
 import { ApiError } from '../api/client';
 
 /**
@@ -110,14 +109,12 @@ export default function Login() {
           {loading ? t('auth.logging-in') : t('auth.login')}
         </M3eButton>
 
-        {getCachedSharedConfig()?.allowRegistration && (
-          <Link
-            to='/register'
-            className='text-center text-sm text-(--md-sys-color-primary) no-underline'
-          >
-            {t('auth.no-account-register')}
-          </Link>
-        )}
+        <Link
+          to='/register'
+          className='text-center text-sm text-(--md-sys-color-primary) no-underline'
+        >
+          {t('auth.no-account-register')}
+        </Link>
       </form>
     </div>
   );

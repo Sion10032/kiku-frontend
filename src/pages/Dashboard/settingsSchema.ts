@@ -80,15 +80,6 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
     title: 'dashboard.settings.section-general',
     fields: [
       {
-        key: 'pageSize',
-        type: 'number',
-        label: 'dashboard.settings.page-size',
-        description: 'dashboard.settings.page-size-desc',
-        min: 1,
-        max: 100,
-        placeholder: 20,
-      },
-      {
         key: 'tagLanguage',
         type: 'select',
         label: 'dashboard.settings.tag-language',
@@ -119,29 +110,6 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         type: 'bool',
         label: 'dashboard.settings.allow-registration',
         description: 'dashboard.settings.allow-registration-desc',
-      },
-      {
-        key: 'enableGzip',
-        type: 'bool',
-        label: 'dashboard.settings.enable-gzip',
-      },
-      {
-        key: 'rewindSeekTime',
-        type: 'number',
-        label: 'dashboard.settings.rewind-seek-time',
-        description: 'dashboard.settings.rewind-seek-time-desc',
-        min: 0,
-        max: 120,
-        placeholder: 5,
-      },
-      {
-        key: 'forwardSeekTime',
-        type: 'number',
-        label: 'dashboard.settings.forward-seek-time',
-        description: 'dashboard.settings.forward-seek-time-desc',
-        min: 0,
-        max: 300,
-        placeholder: 30,
       },
       {
         key: 'checkUpdate',
@@ -300,28 +268,6 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         min: 1,
         max: 65535,
         placeholder: 443,
-      },
-    ],
-  },
-  {
-    title: 'dashboard.settings.section-offload',
-    fields: [
-      {
-        key: 'offloadMedia',
-        type: 'bool',
-        label: 'dashboard.settings.offload-media',
-      },
-      {
-        key: 'offloadStreamPath',
-        type: 'text',
-        label: 'dashboard.settings.offload-stream-path',
-        placeholder: 'dashboard.settings.offload-path-ph',
-      },
-      {
-        key: 'offloadDownloadPath',
-        type: 'text',
-        label: 'dashboard.settings.offload-download-path',
-        placeholder: 'dashboard.settings.offload-path-ph',
       },
     ],
   },
