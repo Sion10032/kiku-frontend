@@ -3,24 +3,37 @@ import { useState } from 'react';
 import { M3eButton } from '@m3e/react/button';
 import { M3eCheckbox } from '@m3e/react/checkbox';
 import { M3eFormField } from '@m3e/react/form-field';
+import { M3eIcon } from '@m3e/react/icon';
+import { M3eDivider } from '@m3e/react/divider';
+import '@m3e/icons/outlined/play_arrow';
+import '@m3e/icons/outlined/sync';
+import '@m3e/icons/outlined/stop';
 import { useTranslation } from 'react-i18next';
 import { getWorksList } from '../../api/works';
 import DashboardPage from '../../components/dashboard/DashboardPage';
 import ScannerPanel from '../../components/dashboard/ScannerPanel';
+import AnalysisPanel from '../../components/dashboard/AnalysisPanel';
+import { useScannerEvents } from '../../components/dashboard/useScannerEvents';
+import { useAnalysisEvents } from '../../components/dashboard/useAnalysisEvents';
 import Paginator from '../../components/common/Paginator';
 import MetadataEditDialog from '../../components/work/MetadataEditDialog';
 import TitleSanitizeDialog from '../../components/work/TitleSanitizeDialog';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 /**
- * 音声管理页（合并页下半部分）：作品表格（checkbox 多选）+ 搜索 + 分页，
- * 行点击打开编辑弹窗（复用 MetadataEditDialog）。
+ * 音声管理页（合并页）：顶部一行操作按钮（扫描器组 | 响度分析组，
+ * 垂直分隔符分组），下接两个指示器面板（SSE 实时状态 + 详情弹窗，
+ * 展示方式一致），下半部分为作品表格（checkbox 多选）+ 搜索 +
+ * 分页，行点击打开编辑弹窗（复用 MetadataEditDialog）。
  * 搜索复用公开 works 列表 API（LQL：标题/社团/标签/声优/裸词）；
  * 搜索框旁挂标题净化快捷入口：弹窗内范围只读套用当前搜索条件。
  * 多选仅记录当前页选中项，翻页 / 搜索词变化时清空；本期已选栏仅计数占位。
  */
 export default function AudioManage() {
   const { t } = useTranslation();
+  // 扫描器 / 响度分析的 SSE 状态与动作（按钮行在本页渲染，面板只负责展示）
+  const scanner = useScannerEvents();
+  const analysis = useAnalysisEvents();
   const [q, setQ] = useState('');
   const debouncedQ = useDebouncedValue(q, 300);
   const [page, setPage] = useState(1);
@@ -79,8 +92,60 @@ export default function AudioManage() {
     // 固定头尾布局：scroll 关掉（外层只给高度，列由 DashboardPage 撑满），
     // 只有表体所在容器滚动，扫描器 / 搜索行 / 已选栏 / 分页常驻可见
     <DashboardPage scroll={false} className='flex flex-col gap-4'>
-      {/* 合并页上半部分：扫描器面板（SSE 实时状态 + 详情弹窗） */}
-      <ScannerPanel />
+      {/* 合并页上半部分：共享按钮行（扫描器组 | 响度分析组）+ 两个指示器面板 */}
+      <div className='flex flex-wrap items-center gap-3'>
+        {/* 扫描器组 */}
+        <M3eButton
+          variant='filled'
+          disabled={scanner.state === 'running'}
+          onClick={() => scanner.start('scan')}
+        >
+          <M3eIcon slot='leadingIcon' name='play_arrow' />
+          {t('dashboard.scan.start-scan')}
+        </M3eButton>
+        <M3eButton
+          variant='tonal'
+          disabled={scanner.state === 'running'}
+          onClick={() => scanner.start('update')}
+        >
+          <M3eIcon slot='leadingIcon' name='sync' />
+          {t('dashboard.scan.start-update')}
+        </M3eButton>
+        <M3eButton
+          variant='outlined'
+          className='text-[var(--md-sys-color-error)]'
+          disabled={scanner.state !== 'running'}
+          onClick={scanner.kill}
+        >
+          <M3eIcon slot='leadingIcon' name='stop' />
+          {t('dashboard.scan.kill')}
+        </M3eButton>
+
+        {/* 组间垂直分隔符 */}
+        <M3eDivider vertical className='mx-1 h-6' />
+
+        {/* 响度分析组 */}
+        <M3eButton
+          variant='filled'
+          disabled={analysis.state === 'running'}
+          onClick={analysis.start}
+        >
+          <M3eIcon slot='leadingIcon' name='play_arrow' />
+          {t('dashboard.analysis.start')}
+        </M3eButton>
+        <M3eButton
+          variant='outlined'
+          className='text-[var(--md-sys-color-error)]'
+          disabled={analysis.state !== 'running'}
+          onClick={analysis.kill}
+        >
+          <M3eIcon slot='leadingIcon' name='stop' />
+          {t('dashboard.analysis.kill')}
+        </M3eButton>
+      </div>
+
+      <ScannerPanel ev={scanner} />
+      <AnalysisPanel ev={analysis} />
 
       {/* 搜索框 + 标题净化快捷入口（范围 = 本搜索框当前条件，见弹窗组件注释）。
           hideSubscript 去掉字段底部保留区，按钮与输入框垂直居中对齐 */}

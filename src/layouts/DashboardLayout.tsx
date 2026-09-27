@@ -10,7 +10,6 @@ import { M3eIcon } from '@m3e/react/icon';
 import { M3eTab, M3eTabs } from '@m3e/react/tabs';
 import { useTranslation } from 'react-i18next';
 import '@m3e/icons/outlined/folder';
-import '@m3e/icons/outlined/graphic_eq';
 import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/library_music';
 import '@m3e/icons/outlined/tune';
@@ -18,7 +17,6 @@ import '@m3e/icons/outlined/tune';
 /** 导航文案为字典 key（渲染处经 t() 转换），与管理页标题共用同一 key。 */
 type NavLabelKey =
   | 'dashboard.folders.title'
-  | 'dashboard.analysis.title'
   | 'dashboard.advanced.title'
   | 'dashboard.users.title'
   | 'dashboard.audio.title';
@@ -33,11 +31,6 @@ interface NavEntry {
 const NAV_ENTRIES: NavEntry[] = [
   { to: '/admin', label: 'dashboard.folders.title', icon: 'folder' },
   { to: '/admin/audio', label: 'dashboard.audio.title', icon: 'library_music' },
-  {
-    to: '/admin/analysis',
-    label: 'dashboard.analysis.title',
-    icon: 'graphic_eq',
-  },
   { to: '/admin/advanced', label: 'dashboard.advanced.title', icon: 'tune' },
   { to: '/admin/usermanage', label: 'dashboard.users.title', icon: 'group' },
 ];

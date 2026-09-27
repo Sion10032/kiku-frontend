@@ -14,7 +14,6 @@ import Setup from '../pages/Setup';
 import Register from '../pages/Register';
 import Error404 from '../pages/Error404';
 import Folders from '../pages/Dashboard/Folders';
-import Analysis from '../pages/Dashboard/Analysis';
 import Advanced from '../pages/Dashboard/Advanced';
 import UserManage from '../pages/Dashboard/UserManage';
 import AudioManage from '../pages/Dashboard/AudioManage';
@@ -83,11 +82,6 @@ const foldersRoute = createRoute({
   path: '/admin',
   component: Folders,
 });
-const analysisRoute = createRoute({
-  getParentRoute: () => dashboardLayoutRoute,
-  path: '/admin/analysis',
-  component: Analysis,
-});
 const advancedRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/admin/advanced',
@@ -114,6 +108,14 @@ const scannerRedirectRoute = createRoute({
 const metadataRedirectRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/admin/metadata',
+  beforeLoad: () => {
+    throw redirect({ to: '/admin/audio' });
+  },
+});
+// 旧路由重定向：响度分析已合并为音声管理页
+const analysisRedirectRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/admin/analysis',
   beforeLoad: () => {
     throw redirect({ to: '/admin/audio' });
   },
@@ -170,12 +172,12 @@ export const routeTree = rootRoute.addChildren([
   ]),
   dashboardLayoutRoute.addChildren([
     foldersRoute,
-    analysisRoute,
     advancedRoute,
     userManageRoute,
     audioRoute,
     scannerRedirectRoute,
     metadataRedirectRoute,
+    analysisRedirectRoute,
   ]),
   loginRoute,
   setupRoute,
