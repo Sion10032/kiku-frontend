@@ -79,6 +79,8 @@
   "settings.restore-failed": "Restore failed",
   "settings.restore-title": "Restore settings",
   "settings.restore-confirm": "This will overwrite current local settings with cloud profile \"{{name}}\". Restore anyway?",
+  "settings.version-frontend": "Frontend",
+  "settings.version-backend": "Backend",
   "auth.username": "Username",
   "auth.password": "Password",
   "auth.login": "Sign in",

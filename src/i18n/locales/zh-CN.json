@@ -79,6 +79,8 @@
   "settings.restore-failed": "还原失败",
   "settings.restore-title": "还原设置",
   "settings.restore-confirm": "将用云端配置「{{name}}」覆盖当前本地设置，确定还原吗？",
+  "settings.version-frontend": "前端",
+  "settings.version-backend": "服务端",
   "auth.username": "用户名",
   "auth.password": "密码",
   "auth.login": "登录",

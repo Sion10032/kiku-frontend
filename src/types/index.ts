@@ -359,6 +359,8 @@ export interface AdminConfig {
 export interface VersionResponse {
   /** 当前版本号 */
   current: string;
+  /** 构建时的 git 短 hash；镜像未注入且无 git 时为 'unknown' */
+  commit: string;
   /** 最新版本号（无更新时为 null） */
   latest: string | null;
   /** 是否有可用更新 */

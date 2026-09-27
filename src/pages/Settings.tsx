@@ -17,6 +17,7 @@ import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PageContainer from '../components/common/PageContainer';
+import VersionCard from '../components/VersionCard';
 import { SETTING_CONTROL_FILL, SETTING_ROW_LAYOUT } from '../constants';
 import { setLanguage, type Locale } from '../i18n';
 import {
@@ -115,6 +116,7 @@ const CONTENT_WIDTHS: {
  * - 每页数量：作品库与收听历史每页显示的作品数（10/20/50/100）
  * - 最近收听：作品库首页是否显示「最近收听」条
  * - 悬浮歌词：LyricsBar 的字体大小 / 换行行数上限 / 背景透明度
+ * - 版本信息：前端构建期注入 + 服务端 /api/version，见 components/VersionCard
  */
 export default function Settings() {
   const { t } = useTranslation();
@@ -707,6 +709,9 @@ export default function Settings() {
           </div>
         </div>
       </M3eCard>
+
+      {/* 版本信息：无交互，纯展示（前端构建期注入 + 服务端接口） */}
+      <VersionCard />
     </PageContainer>
   );
 }
