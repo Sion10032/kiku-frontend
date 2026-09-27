@@ -5,6 +5,7 @@ import { M3eCheckbox } from '@m3e/react/checkbox';
 import { M3eFormField } from '@m3e/react/form-field';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eDivider } from '@m3e/react/divider';
+import '@m3e/icons/outlined/cleaning_services';
 import '@m3e/icons/outlined/play_arrow';
 import '@m3e/icons/outlined/sync';
 import '@m3e/icons/outlined/stop';
@@ -22,12 +23,12 @@ import TitleSanitizeDialog from '../../components/work/TitleSanitizeDialog';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 /**
- * 音声管理页（合并页）：顶部一行操作按钮（扫描器组 | 响度分析组，
+ * 音声管理页（合并页）：顶部一行操作按钮（扫描器组 | 响度分析组 | 标题净化，
  * 垂直分隔符分组），下接两个指示器面板（SSE 实时状态 + 详情弹窗，
  * 展示方式一致），下半部分为作品表格（checkbox 多选）+ 搜索 +
  * 分页，行点击打开编辑弹窗（复用 MetadataEditDialog）。
  * 搜索复用公开 works 列表 API（LQL：标题/社团/标签/声优/裸词）；
- * 搜索框旁挂标题净化快捷入口：弹窗内范围只读套用当前搜索条件。
+ * 标题净化弹窗范围只读套用当前搜索条件。
  * 多选仅记录当前页选中项，翻页 / 搜索词变化时清空；已选栏仅计数占位。
  * 刷新音声库信息 / 开始响度分析点击后先弹确认弹窗（ConfirmDialog）：
  * 无选中 → 全局执行；有选中 → 仅对选中的作品执行（workIds 子集）。
@@ -149,13 +150,23 @@ export default function AudioManage() {
           <M3eIcon slot='leadingIcon' name='stop' />
           {t('dashboard.analysis.kill')}
         </M3eButton>
+
+        {/* 标题净化组：范围 = 下方搜索框当前条件，弹窗内只读展示 */}
+        <M3eDivider vertical className='mx-1 h-6' />
+        <M3eButton
+          variant='filled'
+          title={t('dashboard.metadata.sanitize-title')}
+          onClick={() => setSanitizeOpen(true)}
+        >
+          <M3eIcon slot='leadingIcon' name='cleaning_services' />
+          {t('dashboard.metadata.sanitize')}
+        </M3eButton>
       </div>
 
       <ScannerPanel ev={scanner} />
       <AnalysisPanel ev={analysis} />
 
-      {/* 搜索框 + 标题净化快捷入口（范围 = 本搜索框当前条件，见弹窗组件注释）。
-          hideSubscript 去掉字段底部保留区，按钮与输入框垂直居中对齐 */}
+      {/* 搜索框：标题净化入口已上移至顶部操作行（第三组） */}
       <div className='flex items-center gap-2'>
         <M3eFormField
           variant='outlined'
@@ -173,14 +184,6 @@ export default function AudioManage() {
             className='w-full border-none bg-transparent py-2 text-sm outline-none'
           />
         </M3eFormField>
-        <M3eButton
-          variant='outlined'
-          className='shrink-0'
-          title={t('dashboard.metadata.sanitize-title')}
-          onClick={() => setSanitizeOpen(true)}
-        >
-          {t('dashboard.metadata.sanitize')}
-        </M3eButton>
       </div>
 
       {/* 表格区：flex-1 吃掉剩余高度，纵横溢出都交给本容器滚动 */}

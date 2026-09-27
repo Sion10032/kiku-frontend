@@ -89,6 +89,7 @@ vi.mock('@m3e/react/divider', () => ({ M3eDivider: () => <hr /> }));
 vi.mock('@m3e/icons/outlined/play_arrow', () => ({}));
 vi.mock('@m3e/icons/outlined/sync', () => ({}));
 vi.mock('@m3e/icons/outlined/stop', () => ({}));
+vi.mock('@m3e/icons/outlined/cleaning_services', () => ({}));
 
 vi.mock('../../components/dashboard/DashboardPage', () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
