@@ -15,7 +15,7 @@ export type WorksPaginationMode = 'paginate' | 'infinite';
 /** 作品库分页控件显示位置：top 顶部 / bottom 底部 / both 两处都显示。 */
 export type WorksPaginatorPosition = 'top' | 'bottom' | 'both';
 
-/** 内容宽度档位：standard 维持各页现状 / wide 1280px / ultra 1680px / full 不限宽。 */
+/** 内容宽度档位：standard 维持各页现状 / wide 1280px / ultra 1680px / full 不限宽；默认 wide。 */
 export type ContentWidth = 'standard' | 'wide' | 'ultra' | 'full';
 
 /**
@@ -98,7 +98,7 @@ interface SettingsState {
   worksPageSize: number;
   /** 界面整体缩放（%，80–130 步进 5），改 html font-size 全局等比缩放 */
   uiScale: number;
-  /** 内容宽度档位：standard 维持各页自身上限，wide/ultra 统一放宽上限，full 不限宽（见 PageContainer） */
+  /** 内容宽度档位（默认 wide）：standard 维持各页自身上限，wide/ultra 统一放宽上限，full 不限宽（见 PageContainer） */
   contentWidth: ContentWidth;
   /** 是否在首次加载时按屏幕像素密度自动推断 uiScale（推断一次后置 false，内部标记不对外暴露） */
   uiScaleAuto: boolean;
@@ -182,7 +182,7 @@ export const useSettingsStore = create<SettingsState>()(
       worksPageSize: 20,
       uiScale: 100,
       uiScaleAuto: true,
-      contentWidth: 'standard',
+      contentWidth: 'wide',
       setFloatingLyrics: (patch) =>
         set((s) => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: (patch) =>
@@ -222,11 +222,11 @@ export const useSettingsStore = create<SettingsState>()(
           worksPageSize: isWorksPageSize(merged.worksPageSize)
             ? merged.worksPageSize
             : 20,
-          // contentWidth 非法档位（旧版本前端/手改 blob）回落 standard，
+          // contentWidth 非法档位（旧版本前端/手改 blob）回落默认档 wide，
           // 防止 PageContainer 映射表查不到
           contentWidth: isContentWidth(merged.contentWidth)
             ? merged.contentWidth
-            : 'standard',
+            : 'wide',
         };
       },
       // 首次使用时按屏幕像素密度推断一次界面缩放档位，之后沿用持久化值
@@ -269,7 +269,7 @@ export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
   if ('contentWidth' in patch) {
     patch.contentWidth = isContentWidth(patch.contentWidth)
       ? patch.contentWidth
-      : 'standard';
+      : 'wide';
   }
   // 快照来自同结构 store（写入方同源），字段类型整体信任；嵌套对象整体替换不深合并。
   // setState 走 persist 中间件自动落盘；uiScale 变化由 ThemeRoot 现有 effect 即时生效。

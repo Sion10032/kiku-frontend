@@ -79,8 +79,8 @@ describe('settingsStore 默认值', () => {
     expect(useSettingsStore.getInitialState().worksPageSize).toBe(20);
   });
 
-  it('contentWidth 默认为 standard', () => {
-    expect(useSettingsStore.getInitialState().contentWidth).toBe('standard');
+  it('contentWidth 默认为 wide', () => {
+    expect(useSettingsStore.getInitialState().contentWidth).toBe('wide');
   });
 });
 
@@ -223,29 +223,30 @@ describe('settingsStore contentWidth 水合消毒', () => {
     useSettingsStore.setState(useSettingsStore.getInitialState(), true);
   });
 
-  it('persist 水合：持久化非法档位 → 回落 standard', async () => {
-    useSettingsStore.setState({ contentWidth: 'wide' });
+  it('persist 水合：持久化非法档位 → 回落默认 wide', async () => {
+    // 先置为合法非默认值（standard），排除「值恰好未变」的假阳性
+    useSettingsStore.setState({ contentWidth: 'standard' });
     localStorage.setItem(
       'kiku-settings',
       JSON.stringify({ state: { contentWidth: 'super' }, version: 0 }),
     );
     await useSettingsStore.persist.rehydrate();
-    expect(useSettingsStore.getState().contentWidth).toBe('standard');
+    expect(useSettingsStore.getState().contentWidth).toBe('wide');
   });
 
-  it('初次水合：合法档位 wide 原样保留', async () => {
-    const store = await hydrateFreshModule({ contentWidth: 'wide' });
+  it('初次水合：合法档位 ultra 原样保留', async () => {
+    const store = await hydrateFreshModule({ contentWidth: 'ultra' });
+    expect(store.getState().contentWidth).toBe('ultra');
+  });
+
+  it('初次水合：持久化非法档位 → 回落默认 wide', async () => {
+    const store = await hydrateFreshModule({ contentWidth: 'super' });
     expect(store.getState().contentWidth).toBe('wide');
   });
 
-  it('初次水合：持久化非法档位 → 回落 standard', async () => {
-    const store = await hydrateFreshModule({ contentWidth: 'super' });
-    expect(store.getState().contentWidth).toBe('standard');
-  });
-
-  it('初次水合：blob 缺失 contentWidth → 保持默认 standard', async () => {
+  it('初次水合：blob 缺失 contentWidth → 保持默认 wide', async () => {
     const store = await hydrateFreshModule({});
-    expect(store.getState().contentWidth).toBe('standard');
+    expect(store.getState().contentWidth).toBe('wide');
   });
 });
 
@@ -288,15 +289,15 @@ describe('settingsStore 快照导出/应用', () => {
     expect(s.worksPaginationMode).toBe('paginate');
     expect(s.worksPaginatorPosition).toBe('both');
     expect(s.worksHistoryStrip).toBe(true);
-    expect(s.contentWidth).toBe('standard');
+    expect(s.contentWidth).toBe('wide');
     expect(s.uiScaleAuto).toBe(true);
   });
 
-  it('applySettingsSnapshot：非法 contentWidth → 回落 standard', () => {
+  it('applySettingsSnapshot：非法 contentWidth → 回落默认 wide', () => {
     // 先置为合法非默认值，确保断言验证的是消毒兜底，而非「字段被整体忽略」
-    useSettingsStore.setState({ contentWidth: 'ultra' });
+    useSettingsStore.setState({ contentWidth: 'standard' });
     applySettingsSnapshot({ contentWidth: 'bogus' });
-    expect(useSettingsStore.getState().contentWidth).toBe('standard');
+    expect(useSettingsStore.getState().contentWidth).toBe('wide');
   });
 
   it('applySettingsSnapshot：合法 contentWidth(full) → 原样应用', () => {

@@ -21,6 +21,7 @@ function renderClass(base?: PageWidthBase, className?: string): string {
 
 describe('PageContainer 档位映射', () => {
   it('standard：各 base 维持自身上限', () => {
+    useSettingsStore.setState({ contentWidth: 'standard' });
     expect(renderClass('narrow')).toContain('max-w-3xl');
     expect(renderClass('form')).toContain('max-w-2xl');
     expect(renderClass('detail')).toContain('max-w-350');
