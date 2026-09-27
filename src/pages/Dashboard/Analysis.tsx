@@ -204,7 +204,7 @@ export default function Analysis() {
   const isRunning = state === 'running';
 
   return (
-    <DashboardPage title={t('dashboard.analysis.title')}>
+    <DashboardPage>
       {/* 操作按钮 */}
       <div className='flex flex-wrap gap-3'>
         <M3eButton variant='filled' disabled={isRunning} onClick={handleStart}>

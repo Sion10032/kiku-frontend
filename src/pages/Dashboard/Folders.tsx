@@ -105,14 +105,14 @@ export default function Folders() {
 
   if (isPending) {
     return (
-      <DashboardPage title={t('dashboard.folders.title')}>
+      <DashboardPage>
         <p className='opacity-70'>{t('common.loading')}</p>
       </DashboardPage>
     );
   }
   if (isError) {
     return (
-      <DashboardPage title={t('dashboard.folders.title')}>
+      <DashboardPage>
         <p className='text-[var(--md-sys-color-error)]'>
           {t('dashboard.load-failed')}
         </p>
@@ -121,7 +121,7 @@ export default function Folders() {
   }
 
   return (
-    <DashboardPage title={t('dashboard.folders.title')}>
+    <DashboardPage>
       <h2 className='m-0 text-lg font-normal'>
         {t('dashboard.folders.root-folders')}
       </h2>

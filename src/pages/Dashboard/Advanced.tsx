@@ -34,13 +34,13 @@ export default function Advanced() {
 
   if (isPending)
     return (
-      <DashboardPage title={t('dashboard.advanced.title')}>
+      <DashboardPage>
         <p className='opacity-70'>{t('common.loading')}</p>
       </DashboardPage>
     );
   if (!cfg)
     return (
-      <DashboardPage title={t('dashboard.advanced.title')}>
+      <DashboardPage>
         <p className='text-[var(--md-sys-color-error)]'>
           {t('dashboard.load-failed')}
         </p>
@@ -116,7 +116,7 @@ export default function Advanced() {
   };
 
   return (
-    <DashboardPage title={t('dashboard.advanced.title')}>
+    <DashboardPage>
       {SETTINGS_SECTIONS.map((section) => (
         <SettingsSection
           key={section.title}

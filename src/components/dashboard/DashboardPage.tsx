@@ -8,15 +8,12 @@ import PageContainer from '../common/PageContainer';
  * 加载 / 错误等早退分支也应包在本壳内，保证窄容器版式一致。
  */
 export default function DashboardPage({
-  title,
   children,
 }: {
-  title: string;
   children: ReactNode;
 }) {
   return (
     <PageContainer base='form' className='flex flex-col gap-4'>
-      <h1 className='m-0 text-2xl font-normal'>{title}</h1>
       {children}
     </PageContainer>
   );

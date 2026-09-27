@@ -76,7 +76,7 @@ export default function AudioManage() {
   };
 
   return (
-    <DashboardPage title={t('dashboard.audio.title')}>
+    <DashboardPage>
       {/* 合并页上半部分：扫描器面板（SSE 实时状态 + 详情弹窗） */}
       <ScannerPanel />
       <hr className='border-[var(--md-sys-color-outline-variant)]' />
