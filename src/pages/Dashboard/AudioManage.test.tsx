@@ -86,10 +86,37 @@ vi.mock('@m3e/react/form-field', () => ({
 }));
 vi.mock('@m3e/react/icon', () => ({ M3eIcon: () => <span /> }));
 vi.mock('@m3e/react/divider', () => ({ M3eDivider: () => <hr /> }));
+vi.mock('@m3e/react/icon-button', () => ({
+  M3eIconButton: (props: {
+    children?: ReactNode;
+    onClick?: (e: { currentTarget: unknown }) => void;
+    'aria-label'?: string;
+  }) => (
+    <button aria-label={props['aria-label']} onClick={props.onClick}>
+      {props.children}
+    </button>
+  ),
+}));
+vi.mock('@m3e/react/menu', () => ({
+  // jsdom 无法 show()：mock 成常显容器，测试直接点菜单项
+  M3eMenu: (props: { children?: ReactNode }) => <div>{props.children}</div>,
+  M3eMenuItem: (props: { children?: ReactNode; onClick?: () => void }) => (
+    <button onClick={props.onClick}>{props.children}</button>
+  ),
+}));
 vi.mock('@m3e/icons/outlined/play_arrow', () => ({}));
 vi.mock('@m3e/icons/outlined/sync', () => ({}));
 vi.mock('@m3e/icons/outlined/stop', () => ({}));
 vi.mock('@m3e/icons/outlined/cleaning_services', () => ({}));
+vi.mock('@m3e/icons/outlined/filter_list', () => ({}));
+vi.mock('@m3e/icons/outlined/check', () => ({}));
+vi.mock('@m3e/icons/outlined/edit_note', () => ({}));
+vi.mock('@m3e/icons/outlined/help_center', () => ({}));
+vi.mock('@m3e/icons/outlined/explicit', () => ({}));
+vi.mock('@m3e/icons/outlined/title', () => ({}));
+vi.mock('@m3e/icons/outlined/warning', () => ({}));
+vi.mock('@m3e/icons/outlined/family_restroom', () => ({}));
+vi.mock('@m3e/icons/outlined/close', () => ({}));
 
 vi.mock('../../components/dashboard/DashboardPage', () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -264,5 +291,191 @@ describe('AudioManage 执行前确认弹窗', () => {
       fireEvent.click(getByTestId('confirm-ok'));
     });
     expect(h.analysis.start).toHaveBeenCalledWith(['RJ00000001']);
+  });
+});
+
+/** 快捷筛选菜单（mock 后常显）：按 i18n key 点菜单项 */
+function clickQuickFilter(container: HTMLElement, key: string) {
+  const item = [...container.querySelectorAll('button')].find(
+    (b) => b.textContent === key,
+  );
+  if (!item) throw new Error(`quick filter not found: ${key}`);
+  fireEvent.click(item);
+}
+
+function searchInput(container: HTMLElement) {
+  const input = container.querySelector<HTMLInputElement>(
+    '#audio-admin-search',
+  );
+  if (!input) throw new Error('search input not found');
+  return input;
+}
+
+describe('AudioManage 快捷筛选下拉', () => {
+  /** 点菜单项后先断言搜索框立即更新，再断言请求同步提交（无需回车） */
+  it('点击「已修改的信息」追加 overridden:any 到搜索框并触发请求', async () => {
+    const { container } = renderPage();
+    await act(async () => {});
+    expect(searchInput(container).value).toBe('');
+
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>(
+        'button[aria-label="dashboard.audio.quick-filter"]',
+      )
+        ?? (() => {
+          throw new Error('quick filter button not found');
+        })(),
+    );
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-overridden');
+
+    expect(searchInput(container).value).toBe('overridden:any');
+    await act(async () => {});
+    const { getWorksList } = await import('../../api/works');
+    expect(getWorksList).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: 'overridden:any' }),
+    );
+  });
+
+  it('再点同一菜单项：从搜索框移除片段，请求 q 回到 undefined', async () => {
+    const { container } = renderPage();
+    await act(async () => {});
+
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-overridden');
+    await act(async () => {});
+
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-overridden');
+    expect(searchInput(container).value).toBe('');
+    await act(async () => {});
+    const { getWorksList } = await import('../../api/works');
+    expect(getWorksList).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: undefined }),
+    );
+  });
+
+  it('与手输词共存：先输「催眠」再点「unknown 社团」拼接为「催眠 circle:unknown」', async () => {
+    const { container } = renderPage();
+    await act(async () => {});
+
+    fireEvent.change(searchInput(container), {
+      target: { value: '催眠' },
+    });
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-unknown-circle');
+
+    expect(searchInput(container).value).toBe('催眠 circle:unknown');
+    await act(async () => {});
+    const { getWorksList } = await import('../../api/works');
+    expect(getWorksList).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: '催眠 circle:unknown' }),
+    );
+  });
+
+  it('分级互斥：R18 选中后点 R15，替换为 age:r15 而非累积', async () => {
+    const { container } = renderPage();
+    await act(async () => {});
+
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-r18');
+    await act(async () => {});
+
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-r15');
+    expect(searchInput(container).value).toBe('age:r15');
+    await act(async () => {});
+    const { getWorksList } = await import('../../api/works');
+    expect(getWorksList).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: 'age:r15' }),
+    );
+  });
+
+  it('分级与其它筛选共存：R15→R18 替换，再点 R18 只移除分级', async () => {
+    const { container } = renderPage();
+    await act(async () => {});
+
+    fireEvent.change(searchInput(container), {
+      target: { value: '催眠' },
+    });
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-overridden');
+    await act(async () => {});
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-r15');
+    expect(searchInput(container).value).toBe('催眠 overridden:any age:r15');
+    await act(async () => {});
+
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-r18');
+    expect(searchInput(container).value).toBe('催眠 overridden:any age:r18');
+    await act(async () => {});
+
+    clickQuickFilter(container, 'dashboard.audio.quick-filter-r18');
+    expect(searchInput(container).value).toBe('催眠 overridden:any');
+    await act(async () => {});
+    const { getWorksList } = await import('../../api/works');
+    expect(getWorksList).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: '催眠 overridden:any' }),
+    );
+  });
+
+  it('清空按钮：q 空时不存在；输入词后点击清空并回到全量请求', async () => {
+    const { container } = renderPage();
+    await act(async () => {});
+    expect(
+      container.querySelector(
+        'button[aria-label="dashboard.audio.clear-search"]',
+      ),
+    ).toBeNull();
+
+    fireEvent.change(searchInput(container), {
+      target: { value: '催眠 overridden:any' },
+    });
+    await act(async () => {});
+
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>(
+        'button[aria-label="dashboard.audio.clear-search"]',
+      )
+        ?? (() => {
+          throw new Error('clear button not found');
+        })(),
+    );
+    expect(searchInput(container).value).toBe('');
+    await act(async () => {});
+    const { getWorksList } = await import('../../api/works');
+    expect(getWorksList).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: undefined }),
+    );
+  });
+});
+
+describe('AudioManage 搜索提交（回车触发）', () => {
+  it('输入词不回车不触发请求；回车后才提交', async () => {
+    const { container } = renderPage();
+    await flushAsync();
+    const { getWorksList } = await import('../../api/works');
+    const callsBefore = vi.mocked(getWorksList).mock.calls.length;
+
+    const input = searchInput(container);
+    fireEvent.change(input, { target: { value: '催眠' } });
+    await flushAsync();
+    expect(input.value).toBe('催眠');
+    expect(vi.mocked(getWorksList).mock.calls.length).toBe(callsBefore);
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await flushAsync();
+    expect(vi.mocked(getWorksList).mock.calls.length).toBe(callsBefore + 1);
+    expect(getWorksList).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: '催眠' }),
+    );
+  });
+
+  it('IME 组合中的回车（选词确认）不触发提交', async () => {
+    const { container } = renderPage();
+    await flushAsync();
+    const { getWorksList } = await import('../../api/works');
+    const callsBefore = vi.mocked(getWorksList).mock.calls.length;
+
+    const input = searchInput(container);
+    fireEvent.change(input, { target: { value: '催眠' } });
+    fireEvent(
+      input,
+      new KeyboardEvent('keydown', { key: 'Enter', isComposing: true }),
+    );
+    await flushAsync();
+    expect(vi.mocked(getWorksList).mock.calls.length).toBe(callsBefore);
   });
 });
