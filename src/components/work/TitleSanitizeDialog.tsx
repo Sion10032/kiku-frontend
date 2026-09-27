@@ -72,145 +72,142 @@ export default function TitleSanitizeDialog({ open, q, onClose }: Props) {
   const samples = result?.samples;
 
   return (
-    <div
+    <M3eDialog
       className={clsx(
         // 官方 CSS 变量：弹窗尺寸（沿 DOM 继承到面板），同 FilePreviewDialog
         '[--m3e-dialog-min-width:92vw] [--m3e-dialog-max-width:92vw]',
         'lg:[--m3e-dialog-min-width:56vw] lg:[--m3e-dialog-max-width:56vw]',
         '[--m3e-dialog-max-height:80dvh]',
       )}
+      ref={dialogRef}
+      open={open}
+      onClosed={() => {
+        onClose();
+        setPattern('');
+        setReplacement('');
+        setPreviewedKey(null);
+        setResult(null);
+      }}
+      dismissible
+      closeLabel={t('common.close')}
     >
-      <M3eDialog
-        ref={dialogRef}
-        open={open}
-        onClosed={() => {
-          onClose();
-          setPattern('');
-          setReplacement('');
-          setPreviewedKey(null);
-          setResult(null);
-        }}
-        dismissible
-        closeLabel={t('common.close')}
-      >
-        <span slot='header'>{t('works.sanitize.title')}</span>
-        <div className='flex flex-col gap-4'>
-          {/* 范围：只读套用页面搜索框当前条件 */}
-          <div className='flex flex-col gap-1'>
-            <div className='flex items-baseline gap-2 text-sm'>
-              <span className='shrink-0 opacity-70'>
-                {t('works.sanitize.scope')}
-              </span>
-              {q?.trim() ? (
-                <code className='break-all rounded bg-black/5 px-1 py-0.5 font-mono text-xs dark:bg-white/10'>
-                  {q}
-                </code>
-              ) : (
-                <span>{t('works.sanitize.scope-all')}</span>
-              )}
-            </div>
-            <p className='m-0 text-xs opacity-60'>
-              {t('works.sanitize.scope-hint')}
+      <span slot='header'>{t('works.sanitize.title')}</span>
+      <div className='flex flex-col gap-4'>
+        {/* 范围：只读套用页面搜索框当前条件 */}
+        <div className='flex flex-col gap-1'>
+          <div className='flex items-baseline gap-2 text-sm'>
+            <span className='shrink-0 opacity-70'>
+              {t('works.sanitize.scope')}
+            </span>
+            {q?.trim() ? (
+              <code className='break-all rounded bg-black/5 px-1 py-0.5 font-mono text-xs dark:bg-white/10'>
+                {q}
+              </code>
+            ) : (
+              <span>{t('works.sanitize.scope-all')}</span>
+            )}
+          </div>
+          <p className='m-0 text-xs opacity-60'>
+            {t('works.sanitize.scope-hint')}
+          </p>
+        </div>
+
+        <div className='grid gap-3 md:grid-cols-2'>
+          <M3eFormField
+            variant='outlined'
+            className='w-full [--m3e-form-field-width:100%]'
+          >
+            <label slot='label' htmlFor='sanitize-pattern'>
+              {t('works.sanitize.pattern')}
+            </label>
+            <input
+              id='sanitize-pattern'
+              type='text'
+              value={pattern}
+              onChange={(e) => setPattern(e.target.value)}
+              className='w-full border-none bg-transparent py-2 text-sm outline-none'
+            />
+          </M3eFormField>
+          <M3eFormField
+            variant='outlined'
+            className='w-full [--m3e-form-field-width:100%]'
+          >
+            <label slot='label' htmlFor='sanitize-replacement'>
+              {t('works.sanitize.replacement')}
+            </label>
+            <input
+              id='sanitize-replacement'
+              type='text'
+              value={replacement}
+              onChange={(e) => setReplacement(e.target.value)}
+              className='w-full border-none bg-transparent py-2 text-sm outline-none'
+            />
+          </M3eFormField>
+        </div>
+
+        {sanitize.isPending && (
+          <div className='py-2 text-sm opacity-60'>
+            {t('works.sanitize.processing')}
+          </div>
+        )}
+        {samples !== undefined && samples.length === 0 && (
+          <div className='py-2 text-sm opacity-60'>
+            {t('works.sanitize.no-match')}
+          </div>
+        )}
+        {samples !== undefined && samples.length > 0 && (
+          <div className='overflow-x-auto'>
+            <table className='w-full text-sm'>
+              <thead>
+                <tr className='text-left opacity-60'>
+                  <th className='py-1 pr-3 font-normal'>ID</th>
+                  <th className='py-1 pr-3 font-normal'>
+                    {t('works.sanitize.col-before')}
+                  </th>
+                  <th className='py-1 pr-3 font-normal'>
+                    {t('works.sanitize.col-after')}
+                  </th>
+                  <th className='py-1 font-normal' />
+                </tr>
+              </thead>
+              <tbody>
+                {samples.map((s) => (
+                  <tr key={s.id} className='border-t border-current/10'>
+                    <td className='py-1 pr-3 font-mono text-xs'>{s.id}</td>
+                    <td className='py-1 pr-3 break-all'>{s.before}</td>
+                    <td className='py-1 pr-3 break-all'>{s.after}</td>
+                    <td className='py-1 text-xs opacity-70'>
+                      {s.overridden ? t('works.sanitize.will-override') : ''}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className='mt-1 text-xs opacity-60'>
+              {t('works.sanitize.summary', {
+                count: result?.matched ?? 0,
+                overridden: result?.overridden ?? 0,
+                samples: samples.length,
+              })}
             </p>
           </div>
-
-          <div className='grid gap-3 md:grid-cols-2'>
-            <M3eFormField
-              variant='outlined'
-              className='w-full [--m3e-form-field-width:100%]'
-            >
-              <label slot='label' htmlFor='sanitize-pattern'>
-                {t('works.sanitize.pattern')}
-              </label>
-              <input
-                id='sanitize-pattern'
-                type='text'
-                value={pattern}
-                onChange={(e) => setPattern(e.target.value)}
-                className='w-full border-none bg-transparent py-2 text-sm outline-none'
-              />
-            </M3eFormField>
-            <M3eFormField
-              variant='outlined'
-              className='w-full [--m3e-form-field-width:100%]'
-            >
-              <label slot='label' htmlFor='sanitize-replacement'>
-                {t('works.sanitize.replacement')}
-              </label>
-              <input
-                id='sanitize-replacement'
-                type='text'
-                value={replacement}
-                onChange={(e) => setReplacement(e.target.value)}
-                className='w-full border-none bg-transparent py-2 text-sm outline-none'
-              />
-            </M3eFormField>
-          </div>
-
-          {sanitize.isPending && (
-            <div className='py-2 text-sm opacity-60'>
-              {t('works.sanitize.processing')}
-            </div>
-          )}
-          {samples !== undefined && samples.length === 0 && (
-            <div className='py-2 text-sm opacity-60'>
-              {t('works.sanitize.no-match')}
-            </div>
-          )}
-          {samples !== undefined && samples.length > 0 && (
-            <div className='overflow-x-auto'>
-              <table className='w-full text-sm'>
-                <thead>
-                  <tr className='text-left opacity-60'>
-                    <th className='py-1 pr-3 font-normal'>ID</th>
-                    <th className='py-1 pr-3 font-normal'>
-                      {t('works.sanitize.col-before')}
-                    </th>
-                    <th className='py-1 pr-3 font-normal'>
-                      {t('works.sanitize.col-after')}
-                    </th>
-                    <th className='py-1 font-normal' />
-                  </tr>
-                </thead>
-                <tbody>
-                  {samples.map((s) => (
-                    <tr key={s.id} className='border-t border-current/10'>
-                      <td className='py-1 pr-3 font-mono text-xs'>{s.id}</td>
-                      <td className='py-1 pr-3 break-all'>{s.before}</td>
-                      <td className='py-1 pr-3 break-all'>{s.after}</td>
-                      <td className='py-1 text-xs opacity-70'>
-                        {s.overridden ? t('works.sanitize.will-override') : ''}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className='mt-1 text-xs opacity-60'>
-                {t('works.sanitize.summary', {
-                  count: result?.matched ?? 0,
-                  overridden: result?.overridden ?? 0,
-                  samples: samples.length,
-                })}
-              </p>
-            </div>
-          )}
-        </div>
-        <div slot='actions' className='flex justify-end gap-2'>
-          <M3eButton variant='text' onClick={onClose}>
-            {t('common.cancel')}
-          </M3eButton>
-          <M3eButton
-            variant='outlined'
-            disabled={!canSubmit}
-            onClick={() => run(true)}
-          >
-            {t('works.sanitize.preview')}
-          </M3eButton>
-          <M3eButton disabled={!canExecute} onClick={() => run(false)}>
-            {t('works.sanitize.execute')}
-          </M3eButton>
-        </div>
-      </M3eDialog>
-    </div>
+        )}
+      </div>
+      <div slot='actions' className='flex justify-end gap-2'>
+        <M3eButton variant='text' onClick={onClose}>
+          {t('common.cancel')}
+        </M3eButton>
+        <M3eButton
+          variant='outlined'
+          disabled={!canSubmit}
+          onClick={() => run(true)}
+        >
+          {t('works.sanitize.preview')}
+        </M3eButton>
+        <M3eButton disabled={!canExecute} onClick={() => run(false)}>
+          {t('works.sanitize.execute')}
+        </M3eButton>
+      </div>
+    </M3eDialog>
   );
 }

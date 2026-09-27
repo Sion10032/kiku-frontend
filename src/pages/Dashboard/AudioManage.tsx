@@ -79,7 +79,6 @@ export default function AudioManage() {
     <DashboardPage>
       {/* 合并页上半部分：扫描器面板（SSE 实时状态 + 详情弹窗） */}
       <ScannerPanel />
-      <hr className='border-[var(--md-sys-color-outline-variant)]' />
 
       {/* 搜索框 + 标题净化快捷入口（范围 = 本搜索框当前条件，见弹窗组件注释）。
           hideSubscript 去掉字段底部保留区，按钮与输入框垂直居中对齐 */}
@@ -109,12 +108,6 @@ export default function AudioManage() {
           {t('dashboard.metadata.sanitize')}
         </M3eButton>
       </div>
-
-      <TitleSanitizeDialog
-        open={sanitizeOpen}
-        q={debouncedQ}
-        onClose={() => setSanitizeOpen(false)}
-      />
 
       {worksQuery.isLoading ? (
         <div className='py-8 text-center opacity-60'>{t('common.loading')}</div>
@@ -199,7 +192,7 @@ export default function AudioManage() {
       {/* 分页（有结果时显示；翻页请求进行中禁用，同 Works.tsx 用法）。
           多选仅当前页语义，翻页时清空 */}
       {!worksQuery.isLoading && pagination && pagination.totalCount > 0 && (
-        <div className='mt-3 flex items-center justify-center gap-2'>
+        <div className='flex items-center justify-center gap-2'>
           <Paginator
             length={pagination.totalCount}
             pageSize={pagination.pageSize}
@@ -212,6 +205,12 @@ export default function AudioManage() {
           />
         </div>
       )}
+
+      <TitleSanitizeDialog
+        open={sanitizeOpen}
+        q={debouncedQ}
+        onClose={() => setSanitizeOpen(false)}
+      />
 
       <MetadataEditDialog
         workId={selected ?? ''}
