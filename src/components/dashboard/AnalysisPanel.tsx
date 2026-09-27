@@ -23,6 +23,23 @@ export default function AnalysisPanel({ ev }: { ev: AnalysisEvents }) {
   const isRunning = state === 'running';
   const lastLog = logs.length > 0 ? logs[logs.length - 1] : null;
 
+  const detailDialog = (
+    <AnalysisDetailDialog
+      open={detailOpen}
+      onClose={() => setDetailOpen(false)}
+      logs={logs}
+      tasks={tasks}
+      failedTasks={failedTasks}
+      state={state}
+      resultMessage={resultMessage}
+      completedCount={snapshot?.completed ?? 0}
+    />
+  );
+
+  // idle 且无 ffmpeg 警告时无可见内容（弹窗入口只存在于指示器行，open 必为
+  // false）：返回裸弹窗（渲染为 null），避免空 wrapper div 撑出多余 gap
+  if (state === 'idle' && !ffmpegMissing) return detailDialog;
+
   return (
     <div className='flex flex-col gap-3'>
       {/* ffmpeg 缺失：置顶安装指引 */}
@@ -88,16 +105,7 @@ export default function AnalysisPanel({ ev }: { ev: AnalysisEvents }) {
         </button>
       )}
 
-      <AnalysisDetailDialog
-        open={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        logs={logs}
-        tasks={tasks}
-        failedTasks={failedTasks}
-        state={state}
-        resultMessage={resultMessage}
-        completedCount={snapshot?.completed ?? 0}
-      />
+      {detailDialog}
     </div>
   );
 }

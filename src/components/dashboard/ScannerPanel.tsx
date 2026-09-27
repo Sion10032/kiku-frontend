@@ -20,68 +20,73 @@ export default function ScannerPanel({ ev }: { ev: ScannerEvents }) {
   const isRunning = state === 'running';
   const lastLog = mainLogs.length > 0 ? mainLogs[mainLogs.length - 1] : null;
 
+  const detailDialog = (
+    <ScanDetailDialog
+      open={detailOpen}
+      onClose={() => setDetailOpen(false)}
+      logs={mainLogs}
+      tasks={tasks}
+      failedTasks={failedTasks}
+      state={state}
+      resultMessage={resultMessage}
+      completedCount={ev.completedCount}
+    />
+  );
+
+  // idle 时无可见内容（弹窗入口只存在于指示器行，open 必为 false）：
+  // 返回裸弹窗（渲染为 null），避免空 wrapper div 在页面 flex 布局中撑出多余 gap
+  if (state === 'idle') return detailDialog;
+
   return (
     <div className='flex flex-col gap-3'>
-      {/* 指示器行：非 idle 时展示，整行可点开详情弹窗 */}
-      {state !== 'idle' && (
-        <button
-          type='button'
-          onClick={() => setDetailOpen(true)}
-          className='flex w-full items-center gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] px-3 py-2 text-left'
-        >
-          {isRunning && (
-            <span className='inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-[var(--md-sys-color-primary)] border-t-transparent' />
-          )}
-          {state === 'finished' && (
-            <M3eIcon
-              name='check_circle'
-              className='shrink-0 text-[var(--md-sys-color-primary)]'
-            />
-          )}
-          {state === 'error' && (
-            <M3eIcon
-              name='error'
-              className='shrink-0 text-[var(--md-sys-color-error)]'
-            />
-          )}
-          <span className='min-w-0 flex-1 truncate text-sm'>
-            {isRunning
-              && (lastLog?.message ?? t('dashboard.scan.waiting-logs'))}
-            {state === 'finished'
-              && (resultMessage
-                ? t(resultMessage.key, resultMessage.values)
-                : t('dashboard.scan.finish-scan-short'))}
-            {state === 'error' && t('dashboard.scan.error')}
-          </span>
-          {tasks.length > 0 && (
-            <span className='shrink-0 text-xs opacity-60'>
-              {t('dashboard.scan.in-progress', { n: tasks.length })}
-            </span>
-          )}
-          {failedTasks.length > 0 && (
-            <span className='shrink-0 text-xs text-[var(--md-sys-color-error)]'>
-              {t('dashboard.scan.failed-count', { n: failedTasks.length })}
-            </span>
-          )}
-          {/* 纯装饰箭头，避免读屏念出 ligature 文本 */}
+      {/* 指示器行：整行可点开详情弹窗 */}
+      <button
+        type='button'
+        onClick={() => setDetailOpen(true)}
+        className='flex w-full items-center gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] px-3 py-2 text-left'
+      >
+        {isRunning && (
+          <span className='inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-[var(--md-sys-color-primary)] border-t-transparent' />
+        )}
+        {state === 'finished' && (
           <M3eIcon
-            name='chevron_right'
-            aria-hidden='true'
-            className='shrink-0 opacity-60'
+            name='check_circle'
+            className='shrink-0 text-[var(--md-sys-color-primary)]'
           />
-        </button>
-      )}
+        )}
+        {state === 'error' && (
+          <M3eIcon
+            name='error'
+            className='shrink-0 text-[var(--md-sys-color-error)]'
+          />
+        )}
+        <span className='min-w-0 flex-1 truncate text-sm'>
+          {isRunning && (lastLog?.message ?? t('dashboard.scan.waiting-logs'))}
+          {state === 'finished'
+            && (resultMessage
+              ? t(resultMessage.key, resultMessage.values)
+              : t('dashboard.scan.finish-scan-short'))}
+          {state === 'error' && t('dashboard.scan.error')}
+        </span>
+        {tasks.length > 0 && (
+          <span className='shrink-0 text-xs opacity-60'>
+            {t('dashboard.scan.in-progress', { n: tasks.length })}
+          </span>
+        )}
+        {failedTasks.length > 0 && (
+          <span className='shrink-0 text-xs text-[var(--md-sys-color-error)]'>
+            {t('dashboard.scan.failed-count', { n: failedTasks.length })}
+          </span>
+        )}
+        {/* 纯装饰箭头，避免读屏念出 ligature 文本 */}
+        <M3eIcon
+          name='chevron_right'
+          aria-hidden='true'
+          className='shrink-0 opacity-60'
+        />
+      </button>
 
-      <ScanDetailDialog
-        open={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        logs={mainLogs}
-        tasks={tasks}
-        failedTasks={failedTasks}
-        state={state}
-        resultMessage={resultMessage}
-        completedCount={ev.completedCount}
-      />
+      {detailDialog}
     </div>
   );
 }
