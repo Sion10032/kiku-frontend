@@ -96,7 +96,9 @@ export default function DashboardLayout() {
         ))}
       </M3eTabs>
 
-      <main className='flex-1 overflow-y-auto p-6'>
+      {/* 内容区只提供定高容器：内边距与滚动由各管理页自行决定（见
+          DashboardPage），页面因此可以自行划分「固定区 + 滚动区」 */}
+      <main className='min-h-0 flex-1 overflow-hidden'>
         <Outlet />
       </main>
     </div>

@@ -76,7 +76,9 @@ export default function AudioManage() {
   };
 
   return (
-    <DashboardPage>
+    // 固定头尾布局：scroll 关掉（外层只给高度，列由 DashboardPage 撑满），
+    // 只有表体所在容器滚动，扫描器 / 搜索行 / 已选栏 / 分页常驻可见
+    <DashboardPage scroll={false} className='flex flex-col gap-4'>
       {/* 合并页上半部分：扫描器面板（SSE 实时状态 + 详情弹窗） */}
       <ScannerPanel />
 
@@ -109,17 +111,23 @@ export default function AudioManage() {
         </M3eButton>
       </div>
 
+      {/* 表格区：flex-1 吃掉剩余高度，纵横溢出都交给本容器滚动 */}
       {worksQuery.isLoading ? (
-        <div className='py-8 text-center opacity-60'>{t('common.loading')}</div>
+        <div className='flex min-h-0 flex-1 items-center justify-center opacity-60'>
+          {t('common.loading')}
+        </div>
       ) : works.length === 0 ? (
-        <div className='py-8 text-center opacity-60'>
+        <div className='flex min-h-0 flex-1 items-center justify-center opacity-60'>
           {t('dashboard.metadata.no-results')}
         </div>
       ) : (
-        <div className='overflow-x-auto'>
-          <table className='w-full text-sm'>
-            <thead>
-              <tr className='border-b border-[var(--md-sys-color-outline-variant)] text-left text-xs uppercase opacity-60'>
+        <div className='min-h-0 flex-1 overflow-auto rounded-md border border-[var(--md-sys-color-outline-variant)]'>
+          {/* border-collapse：默认 separate 模型下 tr 的边框不会被绘制 */}
+          <table className='w-full border-collapse text-sm'>
+            {/* 表头吸顶：背景必须不透明，否则行会从表头下透出
+                （故文字用 on-surface-variant 而非 opacity） */}
+            <thead className='sticky top-0 z-10 bg-[var(--md-sys-color-surface)]'>
+              <tr className='border-b border-[var(--md-sys-color-outline-variant)] text-left text-xs uppercase text-[var(--md-sys-color-on-surface-variant)]'>
                 <th className='w-10 px-2 py-2'>
                   <M3eCheckbox
                     checked={allPageSelected}
@@ -184,7 +192,7 @@ export default function AudioManage() {
 
       {/* 已选栏：本期仅计数占位，不接批量接口 */}
       {selectedIds.size > 0 && (
-        <div className='mt-2 text-sm opacity-80'>
+        <div className='text-sm opacity-80'>
           {t('dashboard.audio.selected-count', { n: selectedIds.size })}
         </div>
       )}

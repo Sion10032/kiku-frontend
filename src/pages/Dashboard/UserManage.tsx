@@ -108,14 +108,14 @@ export default function UserManage() {
 
   if (isPending) {
     return (
-      <DashboardPage>
+      <DashboardPage className='flex flex-col gap-4'>
         <p className='opacity-70'>{t('common.loading')}</p>
       </DashboardPage>
     );
   }
 
   return (
-    <DashboardPage>
+    <DashboardPage className='flex flex-col gap-4'>
       {/* 用户列表 */}
       <h2 className='m-0 text-lg font-normal'>
         {t('dashboard.users.list', { n: users.length })}

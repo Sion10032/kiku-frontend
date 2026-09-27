@@ -34,13 +34,13 @@ export default function Advanced() {
 
   if (isPending)
     return (
-      <DashboardPage>
+      <DashboardPage className='flex flex-col gap-4'>
         <p className='opacity-70'>{t('common.loading')}</p>
       </DashboardPage>
     );
   if (!cfg)
     return (
-      <DashboardPage>
+      <DashboardPage className='flex flex-col gap-4'>
         <p className='text-[var(--md-sys-color-error)]'>
           {t('dashboard.load-failed')}
         </p>
@@ -116,7 +116,7 @@ export default function Advanced() {
   };
 
   return (
-    <DashboardPage>
+    <DashboardPage className='flex flex-col gap-4'>
       {SETTINGS_SECTIONS.map((section) => (
         <SettingsSection
           key={section.title}
