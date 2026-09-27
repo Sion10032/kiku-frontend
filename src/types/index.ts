@@ -11,6 +11,8 @@ export interface Circle {
   /** DLsite maker_id（RG/VG + 5 或 8 位）；旧库迁移未知时为 "unknown" */
   id: string;
   name: string;
+  /** 实体列表端点内联的当前用户收藏状态（作品详情里的 circle 不带） */
+  favourited?: boolean;
 }
 
 export interface Tag {
@@ -26,12 +28,16 @@ export interface Va {
   name: string;
   /** 管理员覆盖新增（原始项缺省，对齐后端 formattedWorkSchema） */
   overridden?: boolean;
+  /** 实体列表端点内联的当前用户收藏状态 */
+  favourited?: boolean;
 }
 
 export interface Series {
   /** 系列 id（后端为 string） */
   id: string;
   name: string;
+  /** 实体列表端点内联的当前用户收藏状态 */
+  favourited?: boolean;
 }
 
 /**

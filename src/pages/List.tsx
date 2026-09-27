@@ -11,19 +11,14 @@ import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/label';
 import '@m3e/icons/outlined/mic';
 import '@m3e/icons/outlined/library_books';
-import {
-  useCirclesQuery,
-  useSeriesQuery,
-  useTagsQuery,
-  useVasQuery,
-} from '../queries/useListQuery';
+import { useEntityListQuery, type ListType } from '../queries/useListQuery';
 import { fieldQuery } from '../utils/query';
 import PageContainer from '../components/common/PageContainer';
 import FavButton from '../components/favourites/FavButton';
-import { useFavouriteStatus } from '../queries/useFavouritesQuery';
-import type { FavouriteTargetType } from '../types';
+import { useUserStore } from '../stores/userStore';
+import type { Circle, FavouriteTargetType, Series, Tag, Va } from '../types';
 
-export type ListType = 'circles' | 'tags' | 'vas' | 'series';
+export type { ListType };
 
 /** 列表类型 → i18n label key（works.list-*，渲染处 t()）。 */
 const LABELS: Record<
@@ -52,13 +47,16 @@ type EntitySearch = { q: string };
 interface Entry {
   key: string;
   name: string;
+  /** 列表响应内联的收藏状态；tag 恒为 undefined（不支持收藏 → 隐藏红心） */
+  favourited: boolean | undefined;
   search: EntitySearch;
 }
 
 /**
- * 社团 / 标签 / 声优 / 系列 列表页（步骤 9）。
+ * 社团 / 标签 / 声优 / 系列 列表页。
  *
- * - 按路由 type 选择查询（getCircles / getTags / getVas / getSeries，均返回裸数组）
+ * - useEntityListQuery(type) 按 type 只发一个请求（其余类型不请求），
+ *   circles/vas/series 响应内联当前用户 favourited（匿名全 false）
  * - m3e SearchBar 输入即筛（客户端按名称过滤）
  * - 点击项跳转 /works 并携带筛选参数：q = fieldQuery(field, name) 生成的 LQL 查询文本
  *
@@ -70,53 +68,58 @@ export default function List({ type }: { type: ListType }) {
   const navigate = useNavigate();
   const label = t(LABELS[type]);
   const [keyword, setKeyword] = useState('');
+  const auth = useUserStore((s) => s.auth);
 
-  const circles = useCirclesQuery();
-  const tags = useTagsQuery();
-  const vas = useVasQuery();
-  const series = useSeriesQuery();
+  const query = useEntityListQuery(type);
 
   // 列表项 + 跳转 search 参数（按 type 构建；导航用 onClick，见组件注释）
   const entries = useMemo<Entry[]>(() => {
     const kw = keyword.trim().toLowerCase();
     const match = (name: string) => !kw || name.toLowerCase().includes(kw);
+    const rows = query.data;
+    if (!rows) return [];
+    // 按类型分支收窄联合类型（rows 的类型随 queryKey 变化，TS 无法自动关联）
     if (type === 'circles') {
-      return (circles.data ?? [])
+      return (rows as Circle[])
         .filter((c) => match(c.name))
         .map((c) => ({
-          key: String(c.id),
+          key: c.id,
           name: c.name,
+          favourited: c.favourited,
           search: { q: fieldQuery('circle', c.name) },
         }));
     }
     if (type === 'tags') {
-      return (tags.data ?? [])
+      return (rows as Tag[])
         .filter((t) => match(t.name))
         .map((t) => ({
           key: String(t.id),
           name: t.name,
+          favourited: undefined, // 标签不支持收藏
           search: { q: fieldQuery('tag', t.name) },
         }));
     }
     if (type === 'series') {
-      return (series.data ?? [])
+      return (rows as Series[])
         .filter((s) => match(s.name))
         .map((s) => ({
-          key: String(s.id),
+          key: s.id,
           name: s.name,
+          favourited: s.favourited,
           search: { q: fieldQuery('series', s.name) },
         }));
     }
-    return (vas.data ?? [])
+    return (rows as Va[])
       .filter((v) => match(v.name))
       .map((v) => ({
         key: v.id,
         name: v.name,
+        favourited: v.favourited,
         search: { q: fieldQuery('va', v.name) },
       }));
-  }, [type, circles.data, tags.data, vas.data, series.data, keyword]);
+  }, [type, query.data, keyword]);
 
-  // 标签不支持收藏；其余三类批量查询收藏状态（未登录自动 disabled）
+  // 标签不支持收藏； favourited 已内联在列表响应里，未登录传 undefined 隐藏红心
   const favType: FavouriteTargetType | null =
     type === 'circles'
       ? 'circle'
@@ -125,37 +128,9 @@ export default function List({ type }: { type: ListType }) {
         : type === 'series'
           ? 'series'
           : null;
-  const favStatus = useFavouriteStatus(
-    favType ?? 'work',
-    entries.map((e) => e.key),
-  );
 
-  const loading =
-    type === 'circles'
-      ? circles.isLoading
-      : type === 'tags'
-        ? tags.isLoading
-        : type === 'series'
-          ? series.isLoading
-          : vas.isLoading;
-
-  const isError =
-    type === 'circles'
-      ? circles.isError
-      : type === 'tags'
-        ? tags.isError
-        : type === 'series'
-          ? series.isError
-          : vas.isError;
-
-  const total =
-    type === 'circles'
-      ? (circles.data?.length ?? 0)
-      : type === 'tags'
-        ? (tags.data?.length ?? 0)
-        : type === 'series'
-          ? (series.data?.length ?? 0)
-          : (vas.data?.length ?? 0);
+  const { isLoading: loading, isError, data } = query;
+  const total = data?.length ?? 0;
 
   return (
     <PageContainer base='narrow'>
@@ -229,7 +204,7 @@ export default function List({ type }: { type: ListType }) {
                     size='sm'
                     targetType={favType}
                     targetId={entry.key}
-                    favourited={favStatus.data?.[entry.key]}
+                    favourited={auth ? entry.favourited : undefined}
                   />
                 )}
                 <M3eIcon name='chevron_right' />

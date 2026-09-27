@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as api from '../api/favourite';
 import { useUserStore } from '../stores/userStore';
+import type { Circle, Series, Va } from '../types';
 import type { FavouriteTargetType } from '../types';
 
 /**
@@ -37,10 +38,27 @@ export function useFavouriteStatus(
 }
 
 /**
+ * 实体列表缓存 key → favourited 已内联（useEntityListQuery），
+ * 收藏/取消时同步打补丁；work 走分页列表不在其列（仍走 status 查询）。
+ */
+const ENTITY_LIST_KEYS: Record<
+  'circle' | 'va' | 'series',
+  readonly ['circles' | 'vas' | 'series']
+> = {
+  circle: ['circles'],
+  va: ['vas'],
+  series: ['series'],
+};
+
+type EntityListRow = Circle | Series | Va;
+
+/**
  * 收藏 / 取消收藏（乐观更新）。
  *
  * onMutate 把 ['favourites','status',targetType] 下所有缓存映射打补丁，
- * 红心即时切换；onSettled 失效 ['favourites'] 让列表查询对齐服务端。
+ * 并同步 patch ['circles']/['vas']/['series'] 列表缓存里对应条目的
+ * favourited（列表页红心即时翻转）；onSettled 失效 ['favourites'] 让
+ * status 查询对齐服务端（详情页/全局搜索仍在用）。
  */
 export function useFavouriteMutation() {
   const queryClient = useQueryClient();
@@ -69,12 +87,32 @@ export function useFavouriteMutation() {
           [input.targetId]: input.favourited,
         });
       }
-      return { snapshots };
+      // 实体列表缓存同步打补丁（id 统一按 string 比对）
+      const listKey =
+        input.targetType === 'work'
+          ? undefined
+          : ENTITY_LIST_KEYS[input.targetType];
+      const listSnapshot = listKey
+        ? queryClient.getQueryData<EntityListRow[]>(listKey)
+        : undefined;
+      if (listKey && listSnapshot) {
+        queryClient.setQueryData<EntityListRow[]>(listKey, (rows) =>
+          rows?.map((r) =>
+            String(r.id) === input.targetId
+              ? { ...r, favourited: input.favourited }
+              : r,
+          ),
+        );
+      }
+      return { snapshots, listKey, listSnapshot };
     },
     onError: (_err, _input, ctx) => {
       ctx?.snapshots.forEach(([key, data]) => {
         queryClient.setQueryData(key, data);
       });
+      if (ctx?.listKey) {
+        queryClient.setQueryData(ctx.listKey, ctx.listSnapshot);
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['favourites'] });
