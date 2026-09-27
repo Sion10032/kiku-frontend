@@ -138,7 +138,7 @@ export function useScannerEvents() {
 
   useSSE('/api/scanner/events', handleEvent);
 
-  async function start(mode: ScanMode) {
+  async function start(mode: ScanMode, workIds?: string[]) {
     modeRef.current = mode;
     setTasks([]);
     setFailedTasks([]);
@@ -148,7 +148,7 @@ export function useScannerEvents() {
     setState('running');
     resultsRef.current = null;
     try {
-      await startScan(mode);
+      await startScan(mode, workIds);
     } catch (err) {
       setState('error');
       showApiError(

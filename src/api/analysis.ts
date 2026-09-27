@@ -43,13 +43,21 @@ export interface AnalysisInitState {
 /** GET /api/analysis/status 响应（与 ANALYSIS_INIT_STATE 同形状） */
 export type AnalysisStatus = AnalysisInitState;
 
-/** 触发响度分析（全量，或传 workId 插队单作品）：POST /api/analysis/start */
+/** 分析触发优先级：high = 作品页（已跑时插队）；low = 管理页（缺省，已跑时不干扰） */
+export type AnalysisPriority = 'high' | 'low';
+
+/**
+ * 触发响度分析：POST /api/analysis/start。
+ * workIds 缺省 = 全量 pending；priority 缺省 low。
+ * 已在跑时仅 priority=high 且带 workIds 会插队（响应 queued=true）。
+ */
 export function startAnalysis(
-  workId?: string,
+  workIds?: string[],
+  priority: AnalysisPriority = 'low',
 ): Promise<{ success: boolean; queued: boolean }> {
   return apiFetch<{ success: boolean; queued: boolean }>('analysis/start', {
     method: 'POST',
-    json: workId ? { workId } : {},
+    json: { priority, ...(workIds ? { workIds } : {}) },
   });
 }
 

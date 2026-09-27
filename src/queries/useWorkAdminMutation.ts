@@ -68,12 +68,12 @@ export function useSyncWorkTracksMutation() {
 }
 
 /**
- * 触发响度分析（单作品插队）：queued = 已进入优先队列（分析进行中），
- * 否则为立即启动。不做查询失效/进度绑定——分析耗时分钟级，进度看 Dashboard。
+ * 触发响度分析（单作品，高优先级）：分析已在跑时插队（queued=true），
+ * 否则立即启动该作品。不做查询失效/进度绑定——分析耗时分钟级，进度看 Dashboard。
  */
 export function useStartAnalysisMutation() {
   return useMutation({
-    mutationFn: (workId: string) => startAnalysis(workId),
+    mutationFn: (workId: string) => startAnalysis([workId], 'high'),
     onSuccess: (r) => {
       M3eSnackbar.open(
         i18next.t(

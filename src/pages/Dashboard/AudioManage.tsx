@@ -10,6 +10,7 @@ import '@m3e/icons/outlined/sync';
 import '@m3e/icons/outlined/stop';
 import { useTranslation } from 'react-i18next';
 import { getWorksList } from '../../api/works';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import DashboardPage from '../../components/dashboard/DashboardPage';
 import ScannerPanel from '../../components/dashboard/ScannerPanel';
 import AnalysisPanel from '../../components/dashboard/AnalysisPanel';
@@ -27,7 +28,9 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
  * 分页，行点击打开编辑弹窗（复用 MetadataEditDialog）。
  * 搜索复用公开 works 列表 API（LQL：标题/社团/标签/声优/裸词）；
  * 搜索框旁挂标题净化快捷入口：弹窗内范围只读套用当前搜索条件。
- * 多选仅记录当前页选中项，翻页 / 搜索词变化时清空；本期已选栏仅计数占位。
+ * 多选仅记录当前页选中项，翻页 / 搜索词变化时清空；已选栏仅计数占位。
+ * 刷新音声库信息 / 开始响度分析点击后先弹确认弹窗（ConfirmDialog）：
+ * 无选中 → 全局执行；有选中 → 仅对选中的作品执行（workIds 子集）。
  */
 export default function AudioManage() {
   const { t } = useTranslation();
@@ -40,6 +43,10 @@ export default function AudioManage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [sanitizeOpen, setSanitizeOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // 待确认的批量操作（确认弹窗）：null 关闭；确认时按选中与否决定全局 / 子集
+  const [pendingAction, setPendingAction] = useState<
+    'update' | 'analysis' | null
+  >(null);
 
   // 搜索词变化（防抖后）时回到第 1 页，并清空多选（多选仅当前页语义）。
   // 渲染期比较调整（react-hooks/set-state-in-effect：effect 内同步
@@ -106,7 +113,7 @@ export default function AudioManage() {
         <M3eButton
           variant='tonal'
           disabled={scanner.state === 'running'}
-          onClick={() => scanner.start('update')}
+          onClick={() => setPendingAction('update')}
         >
           <M3eIcon slot='leadingIcon' name='sync' />
           {t('dashboard.scan.start-update')}
@@ -128,7 +135,7 @@ export default function AudioManage() {
         <M3eButton
           variant='filled'
           disabled={analysis.state === 'running'}
-          onClick={analysis.start}
+          onClick={() => setPendingAction('analysis')}
         >
           <M3eIcon slot='leadingIcon' name='play_arrow' />
           {t('dashboard.analysis.start')}
@@ -278,6 +285,37 @@ export default function AudioManage() {
           />
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingAction !== null}
+        title={
+          pendingAction === 'analysis'
+            ? t('dashboard.audio.analysis-confirm-title')
+            : t('dashboard.audio.update-confirm-title')
+        }
+        message={
+          pendingAction === 'update'
+            ? selectedIds.size > 0
+              ? t('dashboard.audio.update-confirm-selected', {
+                  count: selectedIds.size,
+                })
+              : t('dashboard.audio.update-confirm-all')
+            : pendingAction === 'analysis'
+              ? selectedIds.size > 0
+                ? t('dashboard.audio.analysis-confirm-selected', {
+                    count: selectedIds.size,
+                  })
+                : t('dashboard.audio.analysis-confirm-all')
+              : ''
+        }
+        onConfirm={() => {
+          const ids = selectedIds.size > 0 ? [...selectedIds] : undefined;
+          if (pendingAction === 'update') scanner.start('update', ids);
+          else if (pendingAction === 'analysis') analysis.start(ids);
+          setPendingAction(null);
+        }}
+        onCancel={() => setPendingAction(null)}
+      />
 
       <TitleSanitizeDialog
         open={sanitizeOpen}

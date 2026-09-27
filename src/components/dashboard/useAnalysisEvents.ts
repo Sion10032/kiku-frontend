@@ -6,6 +6,7 @@ import {
   killAnalysis,
   startAnalysis,
   type AnalysisInitState,
+  type AnalysisPriority,
   type AnalysisSnapshot,
 } from '../../api/analysis';
 import { showApiError } from '../../utils/apiError';
@@ -143,14 +144,14 @@ export function useAnalysisEvents() {
 
   useSSE('/api/analysis/events', handleEvent);
 
-  async function start() {
+  async function start(workIds?: string[], priority?: AnalysisPriority) {
     setSnapshot(null);
     setResultMessage(null);
     setFfmpegMissing(false);
     setState('running');
     resultsRef.current = null;
     try {
-      await startAnalysis();
+      await startAnalysis(workIds, priority);
     } catch (err) {
       setState('error');
       showApiError(err, t('dashboard.analysis.start-failed'));
