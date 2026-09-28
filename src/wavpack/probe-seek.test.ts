@@ -245,6 +245,29 @@ describe('locateBlock：探测失败返回 null', () => {
     expect(entry).toBeNull();
   });
 
+  // 终审 I-1 边界：拖动进度到曲末算出的 sample == totalSamples，
+  // 命中条件（target < sampleIndex+blockSamples）对其恒不成立，必须快速失败
+  it('target = totalSamples（曲末）→ null', async () => {
+    const entry = await locateBlock(
+      memRead(fixture),
+      FILE_SIZE,
+      TOTAL_SAMPLES,
+      TOTAL_SAMPLES,
+    );
+    expect(entry).toBeNull();
+  });
+
+  it('target = totalSamples - 1（末帧）→ 末块命中', async () => {
+    const entry = await locateBlock(
+      memRead(fixture),
+      FILE_SIZE,
+      TOTAL_SAMPLES,
+      TOTAL_SAMPLES - 1,
+    );
+    expect(entry).not.toBeNull();
+    expect(entry!.sampleIndex).toBe(242550);
+  });
+
   it('纯垃圾文件（无 wvpk）→ null', async () => {
     const garbage = new Uint8Array(10000).fill(0xff);
     const entry = await locateBlock(

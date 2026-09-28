@@ -93,6 +93,9 @@ export async function locateBlock(
   targetSample: number,
 ): Promise<IndexEntry | null> {
   if (fileSize <= 0 || totalSamples <= 0) return null;
+  // 曲末快筛（终审 I-1）：命中条件对 target=totalSamples 恒不成立，
+  // 直接失败避免 8 次无谓探测（调用方应在到达前钳制，此处是防御）
+  if (targetSample >= totalSamples) return null;
   const density = fileSize / totalSamples;
   let est = Math.round(targetSample * density);
   let half = WINDOW_HALF;

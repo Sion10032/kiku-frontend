@@ -15,6 +15,7 @@ import {
   type AudioChunkSchedulerCallbacks,
 } from './audio-chunk-scheduler';
 import type { WorkerCmd, WorkerMsg } from './worker-protocol';
+import { wavpackErrorKey, type WavpackErrorCode } from './wavpack-errors';
 
 /** 播放后端接口：Howler 分支以适配器实现同一接口（usePlayer 消费）。 */
 export interface PlayerBackend {
@@ -105,6 +106,14 @@ export class WasmWvPlayer implements PlayerBackend {
     this.wantPlay = false;
     // meta 前不发指令（会作废 load）；此前的意图也不必落地（尚无声音输出）
     if (!this.metaReady || !this.isPlaying) return;
+    // 注（终审 I-2，controller 裁定：不实现，仅记录）：resume 走
+    // play(pausedAtSample)，而 pausedAtSample 是播放位置，暂停时调度队列通常还
+    // 残留已解码未播 PCM（最多 15s），故几乎总 ≠ worker 的 outputSample（已喂
+    // 位置）——resume 必然走完整 seek 重建：队列残留 PCM 作废，慢网络下 resume
+    // 有可感延迟。「续拉不重建」快路径仅在 pausedAtSample 恰好 == outputSample
+    // （队列恰好排空）时命中。ctx.suspend() 冻结调度链（时间轴停摆、已排定
+    // source 与缓冲保留，resume 即时出声）是候选 follow-up，需评估与
+    // overflow/seek/fail 路径的交互（后三者仍应 reset 排空 + ctx.resume()）。
     this.pausedAtSample = this.scheduler.pause();
     this.isPlaying = false;
     this.post({ type: 'pause' });
@@ -153,7 +162,7 @@ export class WasmWvPlayer implements PlayerBackend {
   }
 
   private seekInternal(t: number): void {
-    const sample = Math.max(0, Math.round(t * this.rate));
+    const sample = this.clampSample(Math.round(t * this.rate));
     this.pausedAtSample = sample;
     this.endedReceived = false;
     this.scheduler.reset(sample);
@@ -172,7 +181,7 @@ export class WasmWvPlayer implements PlayerBackend {
         if (this.pendingSeekSec != null) {
           const t = this.pendingSeekSec;
           this.pendingSeekSec = null;
-          this.pausedAtSample = Math.max(0, Math.round(t * this.rate));
+          this.pausedAtSample = this.clampSample(Math.round(t * this.rate));
           this.scheduler.reset(this.pausedAtSample);
         }
         this.onLoad(msg.durationSec);
@@ -203,9 +212,23 @@ export class WasmWvPlayer implements PlayerBackend {
     }
   }
 
-  private fail(code: 'DECODE' | 'NETWORK', message: string): void {
+  /** 曲末钳制（终审 I-1）：sample 钳到 [0, totalSamples-1]（totalSamples 未知
+   *  /0 时不钳上界）。拖动到曲末（t=duration）算出的 sample=totalSamples 会让
+   *  worker 定位恒失败（末块末样本排除），钳到末帧后曲末 seek 语义为「跳到
+   *  最后一帧」，播放自然走到 EOF 触发 ended，与 Howler 行为一致 */
+  private clampSample(sample: number): number {
+    if (this.durationSec <= 0 || this.rate <= 0) return Math.max(0, sample);
+    return Math.min(
+      Math.max(0, sample),
+      Math.max(0, Math.round(this.durationSec * this.rate) - 1),
+    );
+  }
+
+  private fail(code: WavpackErrorCode, message: string): void {
     console.warn(`[WasmWvPlayer] ${code}: ${message}`);
-    M3eSnackbar.open(i18next.t('player.wavpack-error', { message }));
+    // 已知错误收敛为 i18n 文案（原文仅 console 留档）；未知/动态 message
+    // 走 player.wavpack-error 的 {{message}} 插值兜底
+    M3eSnackbar.open(i18next.t(wavpackErrorKey(code, message), { message }));
     this.isPlaying = false;
     // 已排定的音频（最多 15s）立即停输出，与 UI 的暂停态一致；
     // 基线取当前音频位置，currentTime 不跳变

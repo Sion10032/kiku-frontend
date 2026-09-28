@@ -14,10 +14,14 @@ import {
 import { locateBlock } from './probe-seek';
 import { RangeFetcher } from './range-fetcher';
 import type { WorkerCmd, WorkerMsg } from './worker-protocol';
+import {
+  WAVPACK_SEEK_FAILED_PREFIX,
+  WAVPACK_TRUNCATED_PREFIX,
+  WAVPACK_UNSUPPORTED_TEXT,
+} from './wavpack-errors';
 
 const PROBE_BYTES = 64; // load 首块头探测：Range bytes=0-63
 const CHUNK_BYTES = 64 * 1024; // 拉流循环每步读取量
-const ERROR_UNSUPPORTED = '该文件为不受支持的 WavPack 文件或已损坏';
 
 export type PostFn = (msg: WorkerMsg, transfer?: Transferable[]) => void;
 export type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
@@ -112,7 +116,7 @@ export function createWavpackWorker(
       if (myGen !== gen) return;
       const h = parseBlockHeader(head, 0);
       if (!h) {
-        fail('DECODE', ERROR_UNSUPPORTED);
+        fail('DECODE', WAVPACK_UNSUPPORTED_TEXT);
         return;
       }
       const fetcher = new RangeFetcher(url, fetchFn);
@@ -148,7 +152,7 @@ export function createWavpackWorker(
       if (ch.length === 0 || ch[0].length === 0) {
         fetcher.abort();
         dec.free();
-        fail('DECODE', ERROR_UNSUPPORTED);
+        fail('DECODE', WAVPACK_UNSUPPORTED_TEXT);
         return;
       }
       const frames = ch[0].length;
@@ -195,6 +199,13 @@ export function createWavpackWorker(
     if (!sess) {
       fail('DECODE', 'play before load');
       return;
+    }
+    // 曲末钳制（终审 I-1）：拖动进度到曲末 / 快进到底会发出 sample=totalSamples，
+    // 定位命中条件（target < sampleIndex+blockSamples）对其恒不成立（末块末样本
+    // 排除），必然走 seek 定位失败。钳到末帧后语义为「跳到最后一帧」，播放自然
+    // 走到 EOF 触发 ended；与主线程 seekInternal 的钳制互为两层防御
+    if (sess.totalSamples > 0 && fromSample >= sess.totalSamples) {
+      fromSample = sess.totalSamples - 1;
     }
     // 流式编码（totalSamples=0）时长未知：索引/探测 seek 均不可用。
     // controller 裁定：seek 请求降级为 play(0) 语义（从头播）——
@@ -246,7 +257,7 @@ export function createWavpackWorker(
       }
       if (myGen !== gen) return;
       if (!found) {
-        fail('DECODE', `seek 定位失败：sample ${fromSample}`);
+        fail('DECODE', `${WAVPACK_SEEK_FAILED_PREFIX}sample ${fromSample}`);
         return;
       }
       appendEntry(sess.index, found);
@@ -355,7 +366,7 @@ export function createWavpackWorker(
     if (sess.totalSamples > 0 && sess.outputSample < sess.totalSamples) {
       fail(
         'DECODE',
-        `流提前结束：输出 ${sess.outputSample} / 应有 ${sess.totalSamples} 帧`,
+        `${WAVPACK_TRUNCATED_PREFIX}：输出 ${sess.outputSample} / 应有 ${sess.totalSamples} 帧`,
       );
       return;
     }
