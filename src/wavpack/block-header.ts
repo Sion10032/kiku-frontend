@@ -11,7 +11,9 @@
 // 立体声单块组两位同时置位（0x1800）。
 export const INITIAL_BLOCK = 0x800;
 
-const MAX_BLOCK_SIZE = 1024 * 1024; // 1MB 上限
+// libwavpack WavPack 5 官方块上限（16MB）；真实高码率文件块可达 150KB+，
+// 旧 1MB 上限对合法大块误判为非法
+const MAX_BLOCK_SIZE = 16 * 1024 * 1024;
 const MIN_BLOCK_SIZE = 32;
 
 export interface WvBlockHeader {
@@ -32,7 +34,7 @@ export interface WvBlockHeader {
 
 /**
  * 解析 off 处的 WavPack 块头。
- * 返回 null：magic ≠ 'wvpk'、blockSize < 32 或 > 1MB、version < 0x402、
+ * 返回 null：magic ≠ 'wvpk'、blockSize < 32 或 > 16MB、version < 0x402、
  * 或剩余字节不足 32（截断头）。不抛错，供扫描器逐字节推进。
  */
 export function parseBlockHeader(

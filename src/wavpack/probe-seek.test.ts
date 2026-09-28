@@ -234,8 +234,59 @@ describe('locateBlock：组首回退', () => {
   });
 });
 
+describe('locateBlock：大块场景收敛（真实文件回归）', () => {
+  // 真实 DLsite 高码率文件块均 136KB、最大 158KB（24000 samples/块），远超 64KB
+  // 初始窗口。旧实现对这种情况会无限振荡：「扫到当前块头 → half 重置 →
+  // est 算回同一点」直至探测耗尽返回 null。回归断言：命中 + read 次数有上界。
+  // 5 个 128-160KB 大块，sampleIndex 每 24000 递增，总时长 120000 samples
+  const payloadSizes = [
+    128 * 1024,
+    136 * 1024,
+    150 * 1024,
+    158 * 1024,
+    140 * 1024,
+  ];
+  const blocks = payloadSizes.map((payloadBytes, k) =>
+    makeBlock({
+      sampleIndex: k * 24000,
+      blockSamples: 24000,
+      payloadBytes,
+      flags: 0x820, // INITIAL_BLOCK + 杂项
+      totalSamples: k === 0 ? 120000 : 0,
+    }),
+  );
+  const file = concatBlocks(...blocks);
+  const total = 5 * 24000;
+
+  it('seek 目标落在第二块中部：命中正确块（旧实现死循环失败）', async () => {
+    const { read, calls } = countingRead(file);
+    const entry = await locateBlock(read, file.length, total, 36000);
+    expect(entry).not.toBeNull();
+    expect(entry!.sampleIndex).toBe(24000);
+    expect(entry!.offset).toBe(blocks[0].length);
+    expect(entry!.blockSamples).toBe(24000);
+    // 大块场景收敛约需 4-5 次探测，上界防回归成低效收敛
+    expect(calls.length).toBeLessThanOrEqual(6);
+  });
+
+  it('seek 目标在第一块内：正常命中', async () => {
+    const { read, calls } = countingRead(file);
+    const entry = await locateBlock(read, file.length, total, 12000);
+    expect(entry).not.toBeNull();
+    expect(entry!.sampleIndex).toBe(0);
+    expect(entry!.offset).toBe(0);
+    expect(calls.length).toBeLessThanOrEqual(6);
+  });
+
+  it('seek 目标在末块内：命中末块', async () => {
+    const entry = await locateBlock(memRead(file), file.length, total, 110000);
+    expect(entry).not.toBeNull();
+    expect(entry!.sampleIndex).toBe(96000);
+  });
+});
+
 describe('locateBlock：探测失败返回 null', () => {
-  it('target 超出 totalSamples → 8 次内收敛失败返回 null', async () => {
+  it('target 超出 totalSamples → 曲末快筛直接返回 null', async () => {
     const entry = await locateBlock(
       memRead(fixture),
       FILE_SIZE,

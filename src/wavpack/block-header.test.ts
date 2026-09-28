@@ -94,12 +94,18 @@ describe('parseBlockHeader：null 条件', () => {
     expect(parseBlockHeader(makeBlock({ ckSize: 23 }), 0)).toBeNull();
   });
 
-  it('blockSize > 1MB 返回 null', () => {
-    // ckSize = 0x100000 → blockSize = 0x100008 > 1MB
-    expect(parseBlockHeader(makeBlock({ ckSize: 0x100000 }), 0)).toBeNull();
+  it('blockSize > 16MB 返回 null', () => {
+    // ckSize = 0x1000000 (16MB) → blockSize = 0x1000008 > 16MB
+    expect(parseBlockHeader(makeBlock({ ckSize: 0x1000000 }), 0)).toBeNull();
   });
 
-  it('blockSize 恰好 1MB 合法', () => {
+  it('blockSize 恰好 16MB 合法（WavPack 5 官方块上限）', () => {
+    const h = parseBlockHeader(makeBlock({ ckSize: 0xfffff8 }), 0);
+    expect(h).not.toBeNull();
+    expect(h!.blockSize).toBe(0x1000000);
+  });
+
+  it('blockSize 1MB 仍合法（远低于上限）', () => {
     const h = parseBlockHeader(makeBlock({ ckSize: 0xffff8 }), 0);
     expect(h).not.toBeNull();
     expect(h!.blockSize).toBe(0x100000);

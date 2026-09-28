@@ -7,7 +7,7 @@ import type { IndexEntry } from './block-index';
 export type RangeRead = (start: number, end: number) => Promise<Uint8Array>;
 
 const WINDOW_HALF = 32 * 1024; // 中心窗口半径：64KB 窗口对 ~25KB 块必含 ≥2 个块头
-const MAX_PROBES = 8; // 探测次数上限（实测 ≤2）
+const MAX_PROBES = 12; // 探测次数上限（小块实测 ≤2；真实大块文件收敛约 4-5 次，留余量）
 const GROUP_BACKTRACK_LIMIT = 1024 * 1024; // 组首回拉上限 1MB
 
 interface CandidateHeader {
@@ -84,7 +84,9 @@ async function resolveGroupHead(
  * ③ sampleIndex ≤ target < sampleIndex+blockSamples → 命中
  * ④ 未命中：est = 最近块offset − (块sampleIndex − target) × 密度（差值平移）
  *    窗口内无块头：扩窗重试（不可只向右扩窗，估算超前时看不到前面的块头）
- * ⑤ 上限 8 次；失败返回 null（交 error 路径）
+ *    扩窗一旦发生就保持窗口大小；平移后 est 未变化（新块头未提供新信息，
+ *    大块场景下平移点常落回同一位置）时强制扩窗，避免无限振荡耗尽探测次数
+ * ⑤ 上限 12 次；失败返回 null（交 error 路径）
  */
 export async function locateBlock(
   read: RangeRead,
@@ -130,10 +132,18 @@ export async function locateBlock(
           nearest = h;
         }
       }
-      est = Math.round(
+      const shifted = Math.round(
         nearest.offset - (nearest.sampleIndex - targetSample) * density,
       );
-      half = WINDOW_HALF;
+      if (shifted === est) {
+        // 平移失效：新块头推回同一点（大块场景下窗口只见到当前块的头部，
+        // 平移又算回原处）。保持 est 不变，强制扩窗以覆盖前一块头
+        half *= 2;
+      } else {
+        est = shifted;
+      }
+      // 注意：不再重置 half——扩窗进度必须保持，否则大块场景会在
+      // 「扫到块头 → half 重置 → est 不变」间无限振荡
     } else {
       // 窗口落在块中间（无魔数）：向两侧扩窗重试
       half *= 2;
