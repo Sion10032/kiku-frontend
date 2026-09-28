@@ -283,6 +283,55 @@ describe('locateBlock：大块场景收敛（真实文件回归）', () => {
     expect(entry).not.toBeNull();
     expect(entry!.sampleIndex).toBe(96000);
   });
+
+  // blockSizeHint 窗口先验：真实大块文件（均 136KB）下 32KB 初始窗口首窗
+  // 必不命中，需 3-4 次 RTT 收敛；传观测均值后 2×hint（~272KB）首窗即可
+  // 覆盖命中块，read 次数降为 1（+组首回退最多 2）——一次大窗口换 RTT
+  it('blockSizeHint 生效：首窗覆盖命中块，read ≤ 2', async () => {
+    const { read, calls } = countingRead(file);
+    const entry = await locateBlock(read, file.length, total, 36000, {
+      blockSizeHint: 136 * 1024,
+    });
+    expect(entry).not.toBeNull();
+    expect(entry!.sampleIndex).toBe(24000);
+    expect(entry!.offset).toBe(blocks[0].length);
+    expect(calls.length).toBeLessThanOrEqual(2);
+  });
+
+  it('对照：同一文件无 hint 时维持现有行为（命中正确 + read 次数不劣化）', async () => {
+    const { read, calls } = countingRead(file);
+    const entry = await locateBlock(read, file.length, total, 36000);
+    expect(entry).not.toBeNull();
+    expect(entry!.sampleIndex).toBe(24000);
+    expect(entry!.offset).toBe(blocks[0].length);
+    expect(calls.length).toBeLessThanOrEqual(6);
+  });
+
+  it('hint 带小数（running mean）：返回的 entry.offset 必须是整数', async () => {
+    // 回归：hint 来自 running mean，必然带小数；不取整会透过
+    // start/end 污染窗口偏移，返回带小数的 offset，并以小数字节偏移
+    // 传进 HTTP Range 请求。真实文件验证（debug-seek3）曾暴露此缺陷
+    const entry = await locateBlock(memRead(file), file.length, total, 110000, {
+      blockSizeHint: 100 * 1024 + 0.5, // 首窗 start = est - half 为小数
+    });
+    expect(entry).not.toBeNull();
+    expect(Number.isInteger(entry!.offset)).toBe(true);
+    expect(entry!.sampleIndex).toBe(96000);
+  });
+
+  it('hint 异常值防御：0 / 负数 / NaN / Infinity 行为与无 hint 完全一致', async () => {
+    const noHint = countingRead(file);
+    await locateBlock(noHint.read, file.length, total, 36000);
+    for (const hint of [0, -136 * 1024, NaN, Infinity]) {
+      const { read, calls } = countingRead(file);
+      const entry = await locateBlock(read, file.length, total, 36000, {
+        blockSizeHint: hint,
+      });
+      expect(entry).not.toBeNull();
+      expect(entry!.sampleIndex).toBe(24000);
+      expect(calls.length).toBe(noHint.calls.length);
+    }
+  });
 });
 
 describe('locateBlock：探测失败返回 null', () => {

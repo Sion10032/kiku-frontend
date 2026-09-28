@@ -7,6 +7,7 @@ import type { IndexEntry } from './block-index';
 export type RangeRead = (start: number, end: number) => Promise<Uint8Array>;
 
 const WINDOW_HALF = 32 * 1024; // 中心窗口半径：64KB 窗口对 ~25KB 块必含 ≥2 个块头
+const HINT_HALF_MAX = 1024 * 1024; // hint 放大后的窗口半径上限，防御异常先验
 const MAX_PROBES = 12; // 探测次数上限（小块实测 ≤2；真实大块文件收敛约 4-5 次，留余量）
 const GROUP_BACKTRACK_LIMIT = 1024 * 1024; // 组首回拉上限 1MB
 
@@ -77,10 +78,38 @@ async function resolveGroupHead(
   return toEntry(candidate);
 }
 
+/** locateBlock 可选项 */
+export interface LocateOptions {
+  /** 已观测的音频块平均字节大小（无观测时省略）。有效时初始窗口半径取
+   *  2×hint（[WINDOW_HALF, 1MB] clamp）：中心点落在块内任意位置时，半径 ≥
+   *  块大小即可保证至少见到一个相邻块头，2× 提供余量。取舍：首窗多拉
+   *  几百 KB，换掉大块场景下 2-3 次额外的未命中探测 RTT（WAN 自托管下
+   *  seek 延迟可感）。异常值（≤0 / NaN / Infinity）忽略，与无 hint 一致 */
+  blockSizeHint?: number;
+}
+
+/** 初始窗口半径：hint 有效（有限正数）时 2×hint 夹在 [WINDOW_HALF, 1MB]，
+ *  否则固定 WINDOW_HALF。结果必须取整：running mean 形式的 hint 是小数，
+ *  不取整会透过 start/end 污染窗口偏移与返回的 entry.offset（且会以
+ *  小数字节偏移传进 HTTP Range 请求） */
+function initialHalf(blockSizeHint?: number): number {
+  if (
+    blockSizeHint !== undefined
+    && Number.isFinite(blockSizeHint)
+    && blockSizeHint > 0
+  ) {
+    return Math.round(
+      Math.min(Math.max(blockSizeHint * 2, WINDOW_HALF), HINT_HALF_MAX),
+    );
+  }
+  return WINDOW_HALF;
+}
+
 /**
  * 插值探测 targetSample 所在块，返回组首块 entry。
  * ① est = target × fileSize/totalSamples（全局平均密度）
- * ② 中心窗口 [est−32KB, est+32KB) 扫块头
+ * ② 中心窗口 [est−half, est+half) 扫块头（half 默认 32KB，传 blockSizeHint
+ *    时按观测块均值放大，见 LocateOptions）
  * ③ sampleIndex ≤ target < sampleIndex+blockSamples → 命中
  * ④ 未命中：est = 最近块offset − (块sampleIndex − target) × 密度（差值平移）
  *    窗口内无块头：扩窗重试（不可只向右扩窗，估算超前时看不到前面的块头）
@@ -93,6 +122,7 @@ export async function locateBlock(
   fileSize: number,
   totalSamples: number,
   targetSample: number,
+  opts?: LocateOptions,
 ): Promise<IndexEntry | null> {
   if (fileSize <= 0 || totalSamples <= 0) return null;
   // 曲末快筛（终审 I-1）：命中条件对 target=totalSamples 恒不成立，
@@ -100,7 +130,7 @@ export async function locateBlock(
   if (targetSample >= totalSamples) return null;
   const density = fileSize / totalSamples;
   let est = Math.round(targetSample * density);
-  let half = WINDOW_HALF;
+  let half = initialHalf(opts?.blockSizeHint);
   for (let attempt = 0; attempt < MAX_PROBES; attempt++) {
     est = Math.max(0, Math.min(est, fileSize - 1));
     const start = Math.max(0, est - half);

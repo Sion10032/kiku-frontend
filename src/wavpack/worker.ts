@@ -11,6 +11,7 @@ import {
   findBlockAt,
   type IndexEntry,
 } from './block-index';
+import { createBlockSizeTracker } from './block-size-stats';
 import { locateBlock } from './probe-seek';
 import { RangeFetcher } from './range-fetcher';
 import type { WorkerCmd, WorkerMsg } from './worker-protocol';
@@ -48,6 +49,8 @@ interface Session {
   outputSample: number;
   /** seek 重建后待裁剪的帧数（从组首块输出裁到目标 sample） */
   trimPending: number;
+  /** 已观测音频块均大小（seek 探测窗口先验，O(1) running mean） */
+  blockStats: ReturnType<typeof createBlockSizeTracker>;
   /** 缓存首块 PCM（play(0) 快路径；投递后置 null） */
   firstPcm: Float32Array[] | null;
   firstBlockSize: number;
@@ -169,6 +172,7 @@ export function createWavpackWorker(
         channels: ch.length,
         outputSample: 0,
         trimPending: 0,
+        blockStats: createBlockSizeTracker(),
         firstPcm: ch,
         firstBlockSize: h.blockSize,
         ended: false,
@@ -179,6 +183,8 @@ export function createWavpackWorker(
         blockSamples: h.blockSamples,
         flags: h.flags,
       });
+      // 首块观测初始化块均大小统计（后续拉流循环增量更新）
+      sess.blockStats.observe(h.blockSamples, h.blockSize);
       session = sess;
       // totalSamples=0（流式编码产物）：按平均码率粗估 duration，seek 禁用
       const durationSec =
@@ -249,6 +255,11 @@ export function createWavpackWorker(
           sess.fileSize,
           sess.totalSamples,
           fromSample,
+          // 探测窗口先验：有观测时用运行时块均大小放大首窗，
+          // 大块文件 seek 首窗即命中，省 2-3 次 RTT
+          sess.blockStats.count > 0
+            ? { blockSizeHint: sess.blockStats.mean }
+            : undefined,
         );
       } catch (e) {
         // 探测拉流异常（HTTP 5xx / 断网 / abort 拒绝）：按类型投递 error
@@ -340,6 +351,8 @@ export function createWavpackWorker(
         blockSamples: h.blockSamples,
         flags: h.flags,
       });
+      // 顺路增量更新块均大小（仅音频块，杂块会拉偏均值）
+      sess.blockStats.observe(h.blockSamples, h.blockSize);
       i += h.blockSize;
     }
   }
