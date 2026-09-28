@@ -14,4 +14,5 @@ export type WorkerMsg =
   | { type: 'meta'; sampleRate: number; channels: number; durationSec: number }
   | { type: 'pcm'; startSample: number; channels: Float32Array[] } // transferable
   | { type: 'ended' } // 拉流 EOF 且输出帧数达 totalSamples
+  | { type: 'seekfallback'; actualSample: number } // seek 被降级（totalSamples=0 等）时，投递该次播放的任何 pcm 前先发
   | { type: 'error'; message: string; code: 'DECODE' | 'NETWORK' };

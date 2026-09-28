@@ -7,6 +7,7 @@ import {
 } from '../stores/playerStore';
 import { streamUrl, fetchLyricsText } from '../api/media';
 import { attachGainChain } from '../utils/normalizer';
+import { WasmWvPlayer, type PlayerBackend } from '../wavpack/WasmWvPlayer';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 import {
   trackPlayback,
@@ -16,10 +17,16 @@ import {
 import { useCurrentGainDb } from './useCurrentGainDb';
 
 /**
- * 模块级 Howl 单例。
+ * 模块级播放后端单例（.wv → WasmWvPlayer，其余 → Howler 适配器）。
  *
  * 进度条等 UI（AudioPlayer）不重复挂载本 hook，
  * 通过导出的 seekTo 间接操作音频实例。
+ */
+let backend: PlayerBackend | null = null;
+
+/**
+ * Howler 分支专用：响度均衡增益链需要直达底层 HTMLAudioElement，
+ * PlayerBackend 接口不暴露元素，故单独保留引用（仅 attachGainChain 用）。
  */
 let howl: Howl | null = null;
 
@@ -48,12 +55,11 @@ function syncLyric(time: number): void {
  * 使 250ms 轮询与拖动显示保持一致。
  */
 export function seekTo(time: number): void {
-  const sound = howl;
-  if (!sound) return;
-  const dur = sound.duration();
+  if (!backend) return;
+  const dur = backend.duration();
   const clamped =
     dur > 0 ? Math.max(0, Math.min(time, dur)) : Math.max(0, time);
-  sound.seek(clamped);
+  backend.seek(clamped);
   usePlayerStore.getState().setCurrentTime(clamped);
   // 暂停时 250ms 轮询不跑，需在此同步歌词行（播放中轮询会兜底）
   syncLyric(clamped);
@@ -65,12 +71,63 @@ function resolveSrc(track: Track): string | undefined {
   return track.mediaStreamUrl;
 }
 
+/** .wv 曲目走 WasmWvPlayer（worker 解码 + AudioBuffer 调度），其余走 Howler。 */
+function isWv(track: Track): boolean {
+  return (track.hash ?? '').toLowerCase().endsWith('.wv');
+}
+
+/** Howler 适配为 PlayerBackend：方法签名对齐，双轨分流后统一驱动。 */
+function howlBackend(sound: Howl): PlayerBackend {
+  return {
+    play: () => sound.play(),
+    pause: () => sound.pause(),
+    seek: (t) => sound.seek(t),
+    volume: (v) => sound.volume(v),
+    duration: () => sound.duration() || 0,
+    currentTime: () => (sound.seek() as number) || 0,
+    playing: () => sound.playing(),
+    unload: () => sound.unload(),
+  };
+}
+
 /**
- * Howler 实例管理 hook：在 AudioElement 中挂载一次。
+ * 自然结束收尾（两种后端共用）：上报 position=duration（计入已听轨数）
+ * 后按播放模式继续；replay 封装后端的原地重播（repeatOne / shuffle
+ * 随机到当前曲目时调用）。
+ */
+function handleTrackEnd(track: Track, dur: number, replay: () => void): void {
+  reportTrackEnd(
+    {
+      workId: track.workId!,
+      hash: track.hash,
+      title: track.title,
+    },
+    dur,
+  );
+  const before = usePlayerStore.getState();
+  if (before.playMode === 'repeatOne') {
+    // 单曲循环：原地重播（currentUid 不变，不会触发重建）
+    replay();
+    before.setCurrentTime(0);
+    return;
+  }
+  before.nextTrack();
+  const after = usePlayerStore.getState();
+  // shuffle 随机到当前曲目：store 无变化、实例已结束 → 原地重播兜底
+  if (after.playing && after.currentUid === before.currentUid) {
+    replay();
+    after.setCurrentTime(0);
+  }
+}
+
+/**
+ * 播放实例管理 hook：在 AudioElement 中挂载一次。
  *
- * - store 为唯一数据源：Howl 由 playing/volume/muted 单向驱动，
+ * - .wv 曲目走 WasmWvPlayer（worker 解码 + AudioBuffer 链式调度），
+ *   其余走 Howler（适配为同一 PlayerBackend 接口）
+ * - store 为唯一数据源：播放实例由 playing/volume/muted 单向驱动，
  *   onplay/onpause 不回写 store（避免切曲时 unload 触发 onpause 干扰状态）
- * - 切曲（currentTrack 引用变化）时卸载重建 Howl，
+ * - 切曲（currentTrack 引用变化）时卸载重建实例，
  *   并按树节点歌词引用（lyrics）重新拉取原文：
  *   轮询中行号变化才写 currentLyric
  * - onend 按 playMode 处理：repeatOne 原地重播；order 到末尾 nextTrack
@@ -127,6 +184,47 @@ export function usePlayer(): void {
       muted: m,
     } = usePlayerStore.getState();
 
+    if (isWv(currentTrack)) {
+      // —— WavPack 分支：worker 解码 + AudioBuffer 链式调度 ——
+      const player = new WasmWvPlayer(src, {
+        onLoad: (dur) => {
+          usePlayerStore.getState().setDuration(dur);
+          // 「继续播放」：meta 到达后跳到上次位置（worker play 从该 sample 重建）
+          if (currentTrack.startAt != null && currentTrack.startAt > 0) {
+            const at = Math.min(
+              currentTrack.startAt,
+              dur > 0 ? dur : currentTrack.startAt,
+            );
+            player.seek(at);
+            usePlayerStore.getState().setCurrentTime(at);
+          }
+        },
+        onEnd: () => {
+          // 切曲后 terminate 在途的 stale ended 不驱动旧闭包收尾（防多跳一首）
+          if (backend !== player) return;
+          handleTrackEnd(currentTrack, player.duration(), () => {
+            player.seek(0);
+            player.play();
+          });
+        },
+      });
+      backend = player;
+      // 初始音量：WasmWvPlayer 构造不接收音量（GainNode 默认 1），
+      // 音量同步 effect 依赖 [volume, muted]，切曲时不重跑 → 构造后立即设初值
+      player.volume(m ? 0 : Math.min(1, Math.max(0, v)));
+
+      if (initialPlaying) player.play();
+
+      return () => {
+        lyricCancelled = true;
+        // 切曲/卸载前先把旧曲进度发出
+        flushProgress();
+        player.unload();
+        if (backend === player) backend = null;
+      };
+    }
+
+    // —— Howler 分支（非 .wv） ——
     const sound = new Howl({
       src: [src],
       html5: true, // 流式播放，避免大文件全量下载
@@ -146,34 +244,14 @@ export function usePlayer(): void {
         }
       },
       onend: () => {
-        // 自然结束：上报 position=duration（计入已听轨数）后按播放模式继续
-        const dur = sound.duration() || 0;
-        reportTrackEnd(
-          {
-            workId: currentTrack.workId!,
-            hash: currentTrack.hash,
-            title: currentTrack.title,
-          },
-          dur,
-        );
-        const before = usePlayerStore.getState();
-        if (before.playMode === 'repeatOne') {
-          // 单曲循环：原地重播（currentUid 不变，不会触发重建）
+        handleTrackEnd(currentTrack, sound.duration() || 0, () => {
           sound.seek(0);
           sound.play();
-          before.setCurrentTime(0);
-          return;
-        }
-        before.nextTrack();
-        const after = usePlayerStore.getState();
-        // shuffle 随机到当前曲目：store 无变化、Howl 已结束 → 原地重播
-        if (after.playing && after.currentUid === before.currentUid) {
-          sound.seek(0);
-          sound.play();
-          after.setCurrentTime(0);
-        }
+        });
       },
     });
+    const howlerBackend = howlBackend(sound);
+    backend = howlerBackend;
     howl = sound;
 
     // 音量均衡：html5 元素接 WebAudio 增益链（Howler volume 上限 1，无法提升）
@@ -191,6 +269,7 @@ export function usePlayer(): void {
       // 切曲/卸载前先把旧曲进度发出
       flushProgress();
       sound.unload();
+      if (backend === howlerBackend) backend = null;
       if (howl === sound) howl = null;
     };
     // 依赖曲目身份；音量/播放态变化不应重建音频
@@ -199,11 +278,10 @@ export function usePlayer(): void {
   // —— 播放/暂停同步（含切曲后新实例的启动） ——
 
   useEffect(() => {
-    const sound = howl;
-    if (!sound || !currentTrack) return;
-    if (playing && !sound.playing()) sound.play();
-    else if (!playing && sound.playing()) {
-      sound.pause();
+    if (!backend || !currentTrack) return;
+    if (playing && !backend.playing()) backend.play();
+    else if (!playing && backend.playing()) {
+      backend.pause();
       // 暂停即 flush 进度（页面可能一直停在暂停态）
       flushProgress();
     }
@@ -212,10 +290,11 @@ export function usePlayer(): void {
   // —— 音量/静音同步 ——
 
   useEffect(() => {
-    howl?.volume(muted ? 0 : Math.min(1, Math.max(0, volume)));
+    backend?.volume(muted ? 0 : Math.min(1, Math.max(0, volume)));
   }, [volume, muted]);
 
   // —— 增益均衡：gainDb 变化（设置调整/切曲/开关）后应用到实例的元素 ——
+  // 仅 Howler 分支有底层 audio 元素；.wv 无 HTMLAudioElement，响度增益不生效
 
   useEffect(() => {
     const el = howl as unknown as {
@@ -231,15 +310,14 @@ export function usePlayer(): void {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const sound = howl;
-      if (sound?.playing()) {
-        const t = sound.seek() as number;
+      if (backend?.playing()) {
+        const t = backend.currentTime();
         usePlayerStore.getState().setCurrentTime(t);
         syncLyric(t);
         // 动态进度上报（内部 10s 节流；仅登录且带 workId 的音轨生效）
         const track = selectCurrentTrack(usePlayerStore.getState());
         if (track?.workId) {
-          const dur = sound.duration();
+          const dur = backend.duration();
           trackPlayback(
             { workId: track.workId, hash: track.hash, title: track.title },
             t,
@@ -257,14 +335,13 @@ export function usePlayer(): void {
   useEffect(() => {
     if (lastRewind.current === rewindSeekMode) return;
     lastRewind.current = rewindSeekMode;
-    const sound = howl;
-    if (!sound) return;
-    // 用 howl 实时值，store 里的 currentTime 可能过期
+    if (!backend) return;
+    // 用后端实时值，store 里的 currentTime 可能过期
     const next = Math.max(
       0,
-      (sound.seek() as number) - usePlayerStore.getState().rewindSeekTime,
+      backend.currentTime() - usePlayerStore.getState().rewindSeekTime,
     );
-    sound.seek(next);
+    backend.seek(next);
     usePlayerStore.getState().setCurrentTime(next);
     syncLyric(next);
   }, [rewindSeekMode]);
@@ -275,14 +352,13 @@ export function usePlayer(): void {
   useEffect(() => {
     if (lastForward.current === forwardSeekMode) return;
     lastForward.current = forwardSeekMode;
-    const sound = howl;
-    if (!sound) return;
-    const dur = sound.duration();
+    if (!backend) return;
+    const dur = backend.duration();
     const next = Math.min(
       dur > 0 ? dur : Infinity,
-      (sound.seek() as number) + usePlayerStore.getState().forwardSeekTime,
+      backend.currentTime() + usePlayerStore.getState().forwardSeekTime,
     );
-    sound.seek(next);
+    backend.seek(next);
     usePlayerStore.getState().setCurrentTime(next);
     syncLyric(next);
   }, [forwardSeekMode]);

@@ -327,6 +327,7 @@
   "works.sanitize.failed": "标题净化失败：{{message}}",
   "player.play": "播放",
   "player.pause": "暂停",
+  "player.wavpack-error": "WavPack 音轨播放失败：{{message}}",
   "player.previous-track": "上一首",
   "player.next-track": "下一首",
   "player.rewind_other": "快退 {{count}} 秒",

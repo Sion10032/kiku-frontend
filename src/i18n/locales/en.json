@@ -340,6 +340,7 @@
   "works.sanitize.failed": "Sanitization failed: {{message}}",
   "player.play": "Play",
   "player.pause": "Pause",
+  "player.wavpack-error": "Failed to play WavPack track: {{message}}",
   "player.previous-track": "Previous track",
   "player.next-track": "Next track",
   "player.rewind_one": "Rewind {{count}} second",

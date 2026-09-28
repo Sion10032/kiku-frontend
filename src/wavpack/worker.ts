@@ -196,6 +196,15 @@ export function createWavpackWorker(
       fail('DECODE', 'play before load');
       return;
     }
+    // 流式编码（totalSamples=0）时长未知：索引/探测 seek 均不可用。
+    // controller 裁定：seek 请求降级为 play(0) 语义（从头播）——
+    // 静默 return 会让 UI 显示播放中但永远无声（卡死）。
+    // 降级后实际起点与请求的 fromSample 不同，先通知主线程对齐调度器基线
+    // （投递该次播放的任何 pcm 之前），否则主线程衔接校验会把后续块全部丢弃
+    if (sess.totalSamples === 0 && fromSample !== sess.outputSample) {
+      fromSample = 0;
+      post({ type: 'seekfallback', actualSample: 0 });
+    }
     // play(0) 快路径：投递 load 缓存的首块 PCM，decoder 已定位在块尾，直接续拉
     if (fromSample === 0 && sess.firstPcm && sess.outputSample === 0) {
       const channels = sess.firstPcm.map((c) => c.slice());
@@ -214,7 +223,6 @@ export function createWavpackWorker(
       void pullLoop(sess, myGen);
       return;
     }
-    if (sess.totalSamples === 0) return; // 流式时长未知：seek 禁用
     // seek：索引命中直接用，未命中插值探测并 append 进索引
     const hit = findBlockAt(sess.index, fromSample);
     let entry: IndexEntry;
