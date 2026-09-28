@@ -31,6 +31,9 @@ const h = vi.hoisted(() => ({
     start: vi.fn(),
     kill: vi.fn(),
   },
+  batchDelete: {
+    mutate: vi.fn(),
+  },
   works: [] as Array<{
     id: string;
     title: string;
@@ -47,11 +50,17 @@ vi.mock('../../components/dashboard/useAnalysisEvents', () => ({
   useAnalysisEvents: () => h.analysis,
 }));
 
+// 批量软删除 mutation：只用到 mutate，mock 记录调用供断言
+vi.mock('../../queries/useWorkAdminMutation', () => ({
+  useBatchSoftDeleteWorksMutation: () => h.batchDelete,
+}));
+
 vi.mock('../../api/works', () => ({
   getWorksList: vi.fn(async () => ({
     works: h.works,
     pagination: { currentPage: 1, pageSize: 50, totalCount: h.works.length },
   })),
+  softDeleteWorks: vi.fn(async () => ({ success: true, deleted: 0 })),
 }));
 
 // t 返回「key:count」便于断言插值分支；无插值返回 key 本身
@@ -117,6 +126,7 @@ vi.mock('@m3e/icons/outlined/title', () => ({}));
 vi.mock('@m3e/icons/outlined/warning', () => ({}));
 vi.mock('@m3e/icons/outlined/family_restroom', () => ({}));
 vi.mock('@m3e/icons/outlined/close', () => ({}));
+vi.mock('@m3e/icons/outlined/delete', () => ({}));
 
 vi.mock('../../components/dashboard/DashboardPage', () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -176,6 +186,11 @@ beforeEach(() => {
   h.scanner.kill.mockReset();
   h.analysis.start.mockReset();
   h.analysis.kill.mockReset();
+  h.batchDelete.mutate.mockReset();
+  // 模拟真实 mutation：mutate 成功后触发组件层 onSuccess（清空选中）
+  h.batchDelete.mutate.mockImplementation(
+    (_ids: string[], opts?: { onSuccess?: () => void }) => opts?.onSuccess?.(),
+  );
   h.works = [
     {
       id: 'RJ00000001',
@@ -477,5 +492,49 @@ describe('AudioManage 搜索提交（回车触发）', () => {
     );
     await flushAsync();
     expect(vi.mocked(getWorksList).mock.calls.length).toBe(callsBefore);
+  });
+});
+
+describe('AudioManage 批量软删除', () => {
+  /** 取「删除选中」按钮（文本 = i18n key） */
+  function deleteButton(container: HTMLElement) {
+    const btn = [...container.querySelectorAll('button')].find(
+      (b) => b.textContent === 'dashboard.audio.delete-selected',
+    );
+    if (!btn) throw new Error('delete button not found');
+    return btn;
+  }
+
+  it('未选中：删除按钮禁用', async () => {
+    const { container } = renderPage();
+    await flushAsync();
+    expect(deleteButton(container).disabled).toBe(true);
+  });
+
+  it('选中 → 点删除 → 确认：以选中 ids 调用批量删除并清空选中', async () => {
+    const { container, getByTestId } = renderPage();
+    await flushAsync();
+
+    await checkRow(container, 'RJ00000001');
+    await checkRow(container, 'RJ00000002');
+    expect(deleteButton(container).disabled).toBe(false);
+
+    fireEvent.click(deleteButton(container));
+    expect(getByTestId('confirm-message').textContent).toBe(
+      'dashboard.audio.delete-confirm-selected:2',
+    );
+
+    await act(async () => {
+      fireEvent.click(getByTestId('confirm-ok'));
+    });
+    expect(h.batchDelete.mutate).toHaveBeenCalledTimes(1);
+    expect(h.batchDelete.mutate).toHaveBeenCalledWith(
+      ['RJ00000001', 'RJ00000002'],
+      expect.anything(),
+    );
+    // onSuccess 清空选中：已选计数不再显示
+    expect(container.textContent).not.toContain(
+      'dashboard.audio.selected-count',
+    );
   });
 });

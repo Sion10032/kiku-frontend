@@ -115,3 +115,34 @@ export function useSoftDeleteWorkMutation() {
     },
   });
 }
+
+/**
+ * 批量软删除（音声管理页多选）：一次请求返回实际删除数，Snackbar 反馈；
+ * 失效 works/favourites。清空选中由组件层 onSuccess 回调处理（同单删的跳转模式）。
+ */
+export function useBatchSoftDeleteWorksMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => api.softDeleteWorks(ids),
+    onMutate: (ids) => {
+      M3eSnackbar.open(
+        i18next.t('works.admin.batch-deleting', { count: ids.length }),
+      );
+    },
+    onSettled: (data, error) => {
+      if (error) {
+        M3eSnackbar.open(
+          i18next.t('works.admin.batch-delete-failed', {
+            message: apiErrorMessage(error),
+          }),
+        );
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ['works'] });
+      queryClient.invalidateQueries({ queryKey: ['favourites'] });
+      M3eSnackbar.open(
+        i18next.t('works.admin.batch-deleted', { count: data?.deleted ?? 0 }),
+      );
+    },
+  });
+}

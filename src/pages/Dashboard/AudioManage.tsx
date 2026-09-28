@@ -10,6 +10,7 @@ import { type M3eMenuElement, M3eMenu, M3eMenuItem } from '@m3e/react/menu';
 import '@m3e/icons/outlined/cleaning_services';
 import '@m3e/icons/outlined/check';
 import '@m3e/icons/outlined/close';
+import '@m3e/icons/outlined/delete';
 import '@m3e/icons/outlined/edit_note';
 import '@m3e/icons/outlined/explicit';
 import '@m3e/icons/outlined/family_restroom';
@@ -31,6 +32,7 @@ import { useAnalysisEvents } from '../../components/dashboard/useAnalysisEvents'
 import Paginator from '../../components/common/Paginator';
 import MetadataEditDialog from '../../components/work/MetadataEditDialog';
 import TitleSanitizeDialog from '../../components/work/TitleSanitizeDialog';
+import { useBatchSoftDeleteWorksMutation } from '../../queries/useWorkAdminMutation';
 
 /**
  * 音声管理页（合并页）：顶部一行操作按钮（扫描器组 | 响度分析组 | 标题净化，
@@ -43,9 +45,12 @@ import TitleSanitizeDialog from '../../components/work/TitleSanitizeDialog';
  * 回车才提交（guard IME 组合中的选词回车）；快捷筛选 / 清空按钮点击即
  * 提交。搜索复用公开 works 列表 API（LQL：标题/社团/标签/声优/裸词）；
  * 标题净化弹窗范围只读套用当前搜索条件。
- * 多选仅记录当前页选中项，翻页 / 搜索词变化时清空；已选栏仅计数占位。
+ * 多选仅记录当前页选中项，翻页 / 搜索词变化时清空；已选计数显示在底部行
+ * 左侧，分页居右同排。
  * 刷新音声库信息 / 开始响度分析点击后先弹确认弹窗（ConfirmDialog）：
  * 无选中 → 全局执行；有选中 → 仅对选中的作品执行（workIds 子集）。
+ * 批量软删除（顶部操作行第三组）无全局语义：无选中时禁用；有选中 →
+ * 确认后 POST /works/batch-delete，成功清空选中并刷新列表。
  */
 
 /**
@@ -98,6 +103,7 @@ export default function AudioManage() {
   // 扫描器 / 响度分析的 SSE 状态与动作（按钮行在本页渲染，面板只负责展示）
   const scanner = useScannerEvents();
   const analysis = useAnalysisEvents();
+  const batchDelete = useBatchSoftDeleteWorksMutation();
   // q = 输入框草稿；committedQ = 生效搜索词（回车 / 快捷筛选 / 清空按钮提交）
   const [q, setQ] = useState('');
   const [committedQ, setCommittedQ] = useState('');
@@ -105,9 +111,10 @@ export default function AudioManage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [sanitizeOpen, setSanitizeOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  // 待确认的批量操作（确认弹窗）：null 关闭；确认时按选中与否决定全局 / 子集
+  // 待确认的批量操作（确认弹窗）：null 关闭；update/analysis 按选中与否
+  // 决定全局 / 子集；delete 无全局语义，仅子集（按钮无选中时已禁用）
   const [pendingAction, setPendingAction] = useState<
-    'update' | 'analysis' | null
+    'update' | 'analysis' | 'delete' | null
   >(null);
   // 快捷筛选菜单：{ anchor } 对象每次点击都新建，确保重复点击也会重新 show
   // （同 WorkDetails 管理菜单）
@@ -261,6 +268,18 @@ export default function AudioManage() {
         >
           <M3eIcon slot='leadingIcon' name='cleaning_services' />
           {t('dashboard.metadata.sanitize')}
+        </M3eButton>
+
+        {/* 批量软删除组：无全局语义，仅对选中生效（无选中禁用） */}
+        <M3eDivider vertical className='mx-1 h-6' />
+        <M3eButton
+          variant='outlined'
+          className='text-[var(--md-sys-color-error)]'
+          disabled={selectedIds.size === 0}
+          onClick={() => setPendingAction('delete')}
+        >
+          <M3eIcon slot='leadingIcon' name='delete' />
+          {t('dashboard.audio.delete-selected')}
         </M3eButton>
       </div>
 
@@ -416,36 +435,46 @@ export default function AudioManage() {
         </div>
       )}
 
-      {/* 已选栏：本期仅计数占位，不接批量接口 */}
-      {selectedIds.size > 0 && (
-        <div className='text-sm opacity-80'>
-          {t('dashboard.audio.selected-count', { n: selectedIds.size })}
-        </div>
-      )}
-
-      {/* 分页（有结果时显示；翻页请求进行中禁用，同 Works.tsx 用法）。
-          多选仅当前页语义，翻页时清空 */}
-      {!worksQuery.isLoading && pagination && pagination.totalCount > 0 && (
-        <div className='flex items-center justify-center gap-2'>
-          <Paginator
-            length={pagination.totalCount}
-            pageSize={pagination.pageSize}
-            pageIndex={page - 1}
-            disabled={worksQuery.isFetching}
-            onPage={(index) => {
-              setPage(index + 1);
-              setSelectedIds(new Set());
-            }}
-          />
+      {/* 底部行：左侧已选计数（有选中才显示），右侧分页居右（ml-auto）。
+          两者都无内容时整行不渲染，避免多余 gap */}
+      {(selectedIds.size > 0
+        || (!worksQuery.isLoading
+          && pagination
+          && pagination.totalCount > 0)) && (
+        <div className='flex items-center gap-2'>
+          {selectedIds.size > 0 && (
+            <div className='text-sm opacity-80'>
+              {t('dashboard.audio.selected-count', { n: selectedIds.size })}
+            </div>
+          )}
+          {/* 分页（有结果时显示；翻页请求进行中禁用，同 Works.tsx 用法）。
+              多选仅当前页语义，翻页时清空 */}
+          {!worksQuery.isLoading && pagination && pagination.totalCount > 0 && (
+            <div className='ml-auto flex items-center gap-2'>
+              <Paginator
+                length={pagination.totalCount}
+                pageSize={pagination.pageSize}
+                pageIndex={page - 1}
+                disabled={worksQuery.isFetching}
+                onPage={(index) => {
+                  setPage(index + 1);
+                  setSelectedIds(new Set());
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 
       <ConfirmDialog
         open={pendingAction !== null}
+        destructive={pendingAction === 'delete'}
         title={
           pendingAction === 'analysis'
             ? t('dashboard.audio.analysis-confirm-title')
-            : t('dashboard.audio.update-confirm-title')
+            : pendingAction === 'update'
+              ? t('dashboard.audio.update-confirm-title')
+              : t('dashboard.audio.delete-confirm-title')
         }
         message={
           pendingAction === 'update'
@@ -460,12 +489,19 @@ export default function AudioManage() {
                     count: selectedIds.size,
                   })
                 : t('dashboard.audio.analysis-confirm-all')
-              : ''
+              : t('dashboard.audio.delete-confirm-selected', {
+                  count: selectedIds.size,
+                })
         }
         onConfirm={() => {
           const ids = selectedIds.size > 0 ? [...selectedIds] : undefined;
           if (pendingAction === 'update') scanner.start('update', ids);
           else if (pendingAction === 'analysis') analysis.start(ids);
+          else if (pendingAction === 'delete' && ids) {
+            batchDelete.mutate(ids, {
+              onSuccess: () => setSelectedIds(new Set()),
+            });
+          }
           setPendingAction(null);
         }}
         onCancel={() => setPendingAction(null)}

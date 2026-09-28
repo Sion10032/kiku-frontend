@@ -89,3 +89,13 @@ export function syncWorkTracks(id: string): Promise<{ tracks: TrackStats }> {
 export function softDeleteWork(id: string): Promise<{ success: boolean }> {
   return apiFetch(`work/${id}`, { method: 'DELETE' });
 }
+
+/** 批量软删除作品：POST /api/works/batch-delete（管理员）。返回本次删除数（已删 id 幂等跳过）。 */
+export function softDeleteWorks(
+  ids: string[],
+): Promise<{ success: boolean; deleted: number }> {
+  return apiFetch<{ success: boolean; deleted: number }>('works/batch-delete', {
+    method: 'POST',
+    json: { ids },
+  });
+}
