@@ -47,6 +47,8 @@ type EntitySearch = { q: string };
 interface Entry {
   key: string;
   name: string;
+  /** 生效口径在库作品数（实体列表响应内联，无作品为 0） */
+  workCount: number;
   /** 列表响应内联的收藏状态；tag 恒为 undefined（不支持收藏 → 隐藏红心） */
   favourited: boolean | undefined;
   search: EntitySearch;
@@ -85,6 +87,7 @@ export default function List({ type }: { type: ListType }) {
         .map((c) => ({
           key: c.id,
           name: c.name,
+          workCount: c.workCount ?? 0,
           favourited: c.favourited,
           search: { q: fieldQuery('circle', c.name) },
         }));
@@ -95,6 +98,7 @@ export default function List({ type }: { type: ListType }) {
         .map((t) => ({
           key: String(t.id),
           name: t.name,
+          workCount: t.workCount ?? 0,
           favourited: undefined, // 标签不支持收藏
           search: { q: fieldQuery('tag', t.name) },
         }));
@@ -105,6 +109,7 @@ export default function List({ type }: { type: ListType }) {
         .map((s) => ({
           key: s.id,
           name: s.name,
+          workCount: s.workCount ?? 0,
           favourited: s.favourited,
           search: { q: fieldQuery('series', s.name) },
         }));
@@ -114,6 +119,7 @@ export default function List({ type }: { type: ListType }) {
       .map((v) => ({
         key: v.id,
         name: v.name,
+        workCount: v.workCount ?? 0,
         favourited: v.favourited,
         search: { q: fieldQuery('va', v.name) },
       }));
@@ -194,7 +200,10 @@ export default function List({ type }: { type: ListType }) {
               >
                 <M3eIcon name={LEADING_ICONS[type]} />
               </span>
-              <span className='block truncate'>{entry.name}</span>
+              <span className='block truncate'>
+                {entry.name}
+                <span className='opacity-50 mx-2'>({entry.workCount})</span>
+              </span>
               <span
                 slot='trailing'
                 className='flex items-center gap-1 opacity-50'

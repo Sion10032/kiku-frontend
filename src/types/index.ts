@@ -13,6 +13,8 @@ export interface Circle {
   name: string;
   /** 实体列表端点内联的当前用户收藏状态（作品详情里的 circle 不带） */
   favourited?: boolean;
+  /** 实体列表端点内联的生效口径在库作品数（作品详情里的 circle 不带） */
+  workCount?: number;
 }
 
 export interface Tag {
@@ -20,6 +22,8 @@ export interface Tag {
   name: string;
   /** 管理员覆盖新增（原始项缺省，对齐后端 formattedWorkSchema） */
   overridden?: boolean;
+  /** 实体列表端点（/tags）内联的生效口径在库作品数（作品详情里的 tag 不带） */
+  workCount?: number;
 }
 
 export interface Va {
@@ -30,6 +34,8 @@ export interface Va {
   overridden?: boolean;
   /** 实体列表端点内联的当前用户收藏状态 */
   favourited?: boolean;
+  /** 实体列表端点内联的生效口径在库作品数（作品详情里的 va 不带） */
+  workCount?: number;
 }
 
 export interface Series {
@@ -38,6 +44,8 @@ export interface Series {
   name: string;
   /** 实体列表端点内联的当前用户收藏状态 */
   favourited?: boolean;
+  /** 实体列表端点内联的生效口径在库作品数（作品详情里的 series 不带） */
+  workCount?: number;
 }
 
 /**
