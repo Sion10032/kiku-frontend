@@ -174,14 +174,6 @@ export interface LoudnessInfo {
 
 // ---------- 评价 ----------
 
-/** 收听进度（reviewSchema.progress） */
-export type Progress =
-  | 'marked'
-  | 'listening'
-  | 'listened'
-  | 'replay'
-  | 'postponed';
-
 /** 评价项（reviewResponseSchema） */
 export interface Review {
   userName: string;
@@ -189,7 +181,6 @@ export interface Review {
   workId: string;
   rating: number | null;
   reviewText: string | null;
-  progress: Progress | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -200,9 +191,7 @@ export interface SubmitReviewInput {
   work_id: string;
   rating?: number;
   review_text?: string;
-  progress?: Progress;
   starOnly?: boolean;
-  progressOnly?: boolean;
 }
 
 // ---------- 收藏 ----------
