@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useState } from 'react';
 import { useBlocker } from '@tanstack/react-router';
 import { M3eButton } from '@m3e/react/button';
@@ -20,6 +21,7 @@ import { InputRow } from '../../components/dashboard/SettingRows';
  * 高级设置页面：SETTINGS_SECTIONS 驱动的表单。
  * - react-query 读写；dirty 时保存按钮可点、离开路由有确认。
  * - md5secret 只写不回显。
+ * - outerClassName='pb-0'：取消外层底部留白，sticky 保存栏贴住滚动容器底缘。
  */
 export default function Advanced() {
   const { t } = useTranslation();
@@ -116,7 +118,7 @@ export default function Advanced() {
   };
 
   return (
-    <DashboardPage className='flex flex-col gap-4'>
+    <DashboardPage outerClassName='pb-0' className='flex flex-col gap-4'>
       {SETTINGS_SECTIONS.map((section) => (
         <SettingsSection
           key={section.title}
@@ -131,7 +133,16 @@ export default function Advanced() {
       {/* 安全：secret 只写不回显 */}
       <SecretCard secret={secret} onSecretChange={setSecret} />
 
-      <div className='flex items-center justify-end gap-3'>
+      {/* sticky：滚动中保存栏常驻视口底部；背景不透明，内容从下方滑过不透出 */}
+      <div
+        className={clsx(
+          'sticky bottom-0 z-10',
+          'flex items-center justify-end gap-3',
+          'border-t border-(--md-sys-color-outline-variant)',
+          'bg-(--md-sys-color-surface)',
+          'py-3',
+        )}
+      >
         {isDirty && (
           <span className='text-xs opacity-60'>
             {t('dashboard.advanced.unsaved')}

@@ -11,6 +11,7 @@ afterEach(() => {
 
 interface Props {
   className?: string;
+  outerClassName?: string;
   base?: 'narrow' | 'form' | 'wide';
   scroll?: boolean;
 }
@@ -41,6 +42,16 @@ describe('DashboardPage 页壳', () => {
     expect(outer).toContain('overflow-hidden');
     expect(outer).not.toContain('overflow-y-auto');
     expect(inner).toContain('h-full');
+  });
+
+  it('outerClassName 附加到外层容器，className 仍在限宽列', () => {
+    const { outer, inner } = renderPage({
+      outerClassName: 'pb-0',
+      className: 'flex flex-col gap-4',
+    });
+    expect(outer).toContain('pb-0');
+    expect(inner).toContain('flex flex-col gap-4');
+    expect(inner).not.toContain('pb-0');
   });
 
   it('不预设块间布局：gap / flex / 滚动类都不含', () => {

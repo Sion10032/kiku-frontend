@@ -11,6 +11,9 @@ interface DashboardPageProps {
    * 传 false 则外层不滚动，限宽列撑满高度，由页面自行划分固定区 / 滚动区。
    */
   scroll?: boolean;
+  /** 附加到外层全宽容器（内边距 / 滚动所在层），如 `pb-0` 取消底部留白，
+   *  让页内 sticky 底栏贴住滚动容器底缘（吸附线受容器 padding-bottom 内缩）。 */
+  outerClassName?: string;
   /** 附加到限宽列：页面在此声明 flex / gap 等块间布局 */
   className?: string;
   children: ReactNode;
@@ -34,6 +37,7 @@ interface DashboardPageProps {
 export default function DashboardPage({
   base = 'form',
   scroll = true,
+  outerClassName,
   className,
   children,
 }: DashboardPageProps) {
@@ -42,6 +46,7 @@ export default function DashboardPage({
       className={clsx(
         'h-full p-6',
         scroll ? 'overflow-y-auto' : 'overflow-hidden',
+        outerClassName,
       )}
     >
       <PageContainer
