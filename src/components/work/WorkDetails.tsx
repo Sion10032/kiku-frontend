@@ -30,6 +30,7 @@ import WorkChips from '../common/WorkChips';
 import { useUserStore } from '../../stores/userStore';
 import { useFavouriteStatus } from '../../queries/useFavouritesQuery';
 import { useReadStateMutation } from '../../queries/useProgressMutation';
+import { classifyWorkSource } from '../../utils/workId';
 import {
   useRefreshWorkMetadataMutation,
   useSoftDeleteWorkMutation,
@@ -298,15 +299,18 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
 
       {isAdmin && (
         <M3eMenu ref={menuRef}>
-          <M3eMenuItem
-            disabled={refreshMutation.isPending}
-            onClick={() => refreshMutation.mutate(work.id)}
-          >
-            <span slot='icon'>
-              <M3eIcon name='sync' />
-            </span>
-            {t('works.menu-refresh-metadata')}
-          </M3eMenuItem>
+          {/* 重抓元数据仅 DLsite 作品有意义（人工作品后端返回 409） */}
+          {classifyWorkSource(work.id) !== 'manual' && (
+            <M3eMenuItem
+              disabled={refreshMutation.isPending}
+              onClick={() => refreshMutation.mutate(work.id)}
+            >
+              <span slot='icon'>
+                <M3eIcon name='sync' />
+              </span>
+              {t('works.menu-refresh-metadata')}
+            </M3eMenuItem>
+          )}
           <M3eMenuItem
             disabled={syncTracksMutation.isPending}
             onClick={() => syncTracksMutation.mutate(work.id)}

@@ -218,6 +218,7 @@
   "works.mark-unread": "标记未读",
   "works.mark-read": "标记已读",
   "works.admin-actions": "管理操作",
+  "works.manual-badge": "手动",
   "works.menu-refresh-metadata": "更新元数据",
   "works.menu-sync-tracks": "更新音轨时长",
   "works.menu-edit-metadata": "编辑元数据",
