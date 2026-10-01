@@ -85,7 +85,7 @@ export interface Work {
   userProgress: UserWorkProgress | null;
   /** 当前用户已读标记（独立于进度；未登录恒 false） */
   read: boolean;
-  /** 作品总时长（秒，后端 SUM(t_track.duration_sec)）；无音轨/全未知为 null（对齐 formattedWorkSchema.duration） */
+  /** 作品总时长（秒）；无音轨/全未知为 null */
   duration: number | null;
   /** 作品整合响度（LUFS，已分析音轨按时长加权）；未分析为 null */
   loudnessLufs: number | null;
