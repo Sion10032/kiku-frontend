@@ -1,15 +1,8 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { M3eFormField } from '@m3e/react/form-field';
-import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
-import { M3eOption } from '@m3e/react/option';
-import { M3eIconButton } from '@m3e/react/icon-button';
-import { M3eIcon } from '@m3e/react/icon';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import { M3eList } from '@m3e/react/list';
-import '@m3e/icons/outlined/apps';
-import '@m3e/icons/outlined/view_list';
 import { worksRoute } from '../routes/works';
 import { useWorksPage, useWorksInfinite } from '../queries/useWorksQuery';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -24,11 +17,21 @@ import {
   saveSortOption,
   DEFAULT_SORT,
 } from '../utils/sort';
+import {
+  loadQuickFilters,
+  mergeWorksQuery,
+  type QuickFilterAge,
+  type QuickFilterProgress,
+  saveQuickFilters,
+} from '../utils/query';
 import PageContainer from '../components/common/PageContainer';
 import Paginator from '../components/common/Paginator';
 import WorkCard from '../components/works/WorkCard';
 import WorkListItem from '../components/works/WorkListItem';
 import HistoryStrip from '../components/works/HistoryStrip';
+import WorksToolbar, {
+  type WorksViewMode,
+} from '../components/works/WorksToolbar';
 import type { Work } from '../types';
 
 const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'
@@ -37,6 +40,8 @@ const VIEW_KEY = 'kiku-works-view'; // 'grid' | 'list'
  * 作品库页面。
  *
  * - URL search params（类型安全）：order/sort/page/seed + q（LQL 查询文本）
+ *   + 快速筛选（分级/收听状态）：纯前端偏好（localStorage 持久化，不进 URL），
+ *   请求时编译为 LQL 片段附加到 q，见 mergeWorksQuery
  * - 筛选与无筛选统一分页端点；翻页方式（分页/无限滚动）由设置控制
  * - 分页模式下 title 同步筛选名与页码
  * - 搜索输入在顶栏（GlobalSearchBar），写 URL q（支持 tag:xxx、circle:xxx 等语法）
@@ -58,7 +63,7 @@ export default function Works() {
   const page = search.page ?? 1;
 
   // 视图模式（state 驱动，初始读 localStorage）
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+  const [viewMode, setViewMode] = useState<WorksViewMode>(() => {
     try {
       return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid';
     } catch {
@@ -82,20 +87,35 @@ export default function Works() {
   const seed = search.seed ?? 7;
 
   const isFiltered = !!search.q;
+  // 快速筛选生效值：纯前端偏好（localStorage 持久化），不进 URL——不参与
+  // 链接分享，前进/后退也不改变。挂载时从 localStorage 初始化，跨会话记住
+  // 上次选择；变更经 setState 驱动列表刷新（不依赖 navigate，无 no-op 问题）。
+  const [quickFilters, setQuickFilters] = useState(loadQuickFilters);
+  const quickAge = quickFilters.age;
+  const quickProgress = quickFilters.progress;
+  // 快速筛选（分级/状态）激活时与搜索同样隐藏最近收听条带
+  const hasQuickFilter = quickAge != null || quickProgress != null;
 
   const authed = useUserStore((s) => s.auth);
   const showHistoryStrip =
-    worksHistoryStrip && authed && !isFiltered && (page === 1 || !isPaginated);
+    worksHistoryStrip
+    && authed
+    && !isFiltered
+    && !hasQuickFilter
+    && (page === 1 || !isPaginated);
 
-  // 筛选与排序参数：统一走 /works?q= 端点
-  const filterParams = { q: search.q };
+  // 筛选与排序参数：统一走 /works?q= 端点；快速筛选编译为 LQL 片段附加
+  const filterParams = {
+    q: mergeWorksQuery({
+      q: search.q,
+      age: quickAge,
+      progress: quickProgress,
+    }),
+  };
   const sortParams = {
     order: sortOption.order,
     sort: sortOption.sort,
-    seed:
-      sortOption.order === 'random' || sortOption.order === 'betterRandom'
-        ? seed
-        : undefined,
+    seed: sortOption.order === 'random' ? seed : undefined,
   };
 
   // 查询：分页模式按页拉取（keepPreviousData 防翻页闪 loading），无限模式滚动追加
@@ -143,9 +163,30 @@ export default function Works() {
     });
   }
 
+  // 快速筛选变更：持久化偏好 + 同步 state；页码归位（已在第 1 页时
+  // resetPage 不导航，刷新由 setState 驱动）。「全部」为空串 = 不限。
+  function onAgeChange(value: string) {
+    const next = {
+      ...loadQuickFilters(),
+      age: value === '' ? undefined : (value as QuickFilterAge),
+    };
+    saveQuickFilters(next);
+    setQuickFilters(next);
+    resetPage();
+  }
+
+  function onProgressChange(value: string) {
+    const next = {
+      ...loadQuickFilters(),
+      progress: value === '' ? undefined : (value as QuickFilterProgress),
+    };
+    saveQuickFilters(next);
+    setQuickFilters(next);
+    resetPage();
+  }
+
   // 排序变更：写 URL（search params，重置页码）+ 持久化
-  function onSortChange(e: Event) {
-    const value = (e.target as M3eSelectElement).value as string;
+  function onSortChange(value: string) {
     const opt = SORT_OPTIONS.find((o) => `${o.order}:${o.sort}` === value);
     if (!opt) return;
     saveSortOption(opt);
@@ -187,10 +228,7 @@ export default function Works() {
 
   // 切到随机排序时若未设 seed，生成一个
   useEffect(() => {
-    if (
-      (sortOption.order === 'random' || sortOption.order === 'betterRandom')
-      && search.seed == null
-    ) {
+    if (sortOption.order === 'random' && search.seed == null) {
       navigate({
         search: (prev) => ({ ...prev, seed: Math.floor(Math.random() * 100) }),
       });
@@ -239,45 +277,18 @@ export default function Works() {
       {/* 最近收听条带 */}
       {showHistoryStrip && <HistoryStrip />}
 
-      {/* 顶部工具栏 */}
-      <div className='mb-4 flex flex-wrap items-center gap-3'>
-        <h1 className='m-0 text-xl'>
-          {t('works.title')}
-          {totalCount != null && (
-            <span className='ml-2 text-base opacity-60'>({totalCount})</span>
-          )}
-        </h1>
-
-        <div className='ms-auto flex items-center gap-2'>
-          <M3eFormField
-            variant='outlined'
-            hideSubscript='always'
-            className='min-w-48 [--m3e-form-field-width:12rem] density-3'
-          >
-            <M3eSelect onChange={onSortChange}>
-              {SORT_OPTIONS.map((o) => {
-                const v = `${o.order}:${o.sort}`;
-                return (
-                  <M3eOption
-                    key={v}
-                    value={v}
-                    selected={v === `${sortOption.order}:${sortOption.sort}`}
-                  >
-                    {t(o.label)}
-                  </M3eOption>
-                );
-              })}
-            </M3eSelect>
-          </M3eFormField>
-
-          <M3eIconButton
-            onClick={toggleView}
-            aria-label={t('works.view-toggle')}
-          >
-            <M3eIcon name={viewMode === 'grid' ? 'view_list' : 'apps'} />
-          </M3eIconButton>
-        </div>
-      </div>
+      {/* 顶部工具栏：标题计数 + 快速筛选 + 排序 + 视图切换 */}
+      <WorksToolbar
+        totalCount={totalCount}
+        quickAge={quickAge}
+        quickProgress={quickProgress}
+        onAgeChange={onAgeChange}
+        onProgressChange={onProgressChange}
+        sortOption={sortOption}
+        onSortChange={onSortChange}
+        viewMode={viewMode}
+        onToggleView={toggleView}
+      />
 
       {/* 筛选状态提示 */}
       {isFiltered && (

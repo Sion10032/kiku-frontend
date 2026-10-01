@@ -7,20 +7,18 @@ export interface SortOption {
     | 'works.sort-release-asc'
     | 'works.sort-id-desc'
     | 'works.sort-id-asc'
-    | 'works.sort-random'
-    | 'works.sort-better-random';
+    | 'works.sort-random';
   order: WorksOrder;
   sort: WorksSort;
 }
 
-/** 作品库排序选项（对齐后端 schema）。 */
+/** 作品库排序选项（对齐后端 schema；betterRandom 与 random 实现相同，已合并）。 */
 export const SORT_OPTIONS: SortOption[] = [
   { label: 'works.sort-release-desc', order: 'release', sort: 'desc' },
   { label: 'works.sort-release-asc', order: 'release', sort: 'asc' },
   { label: 'works.sort-id-desc', order: 'id', sort: 'desc' },
   { label: 'works.sort-id-asc', order: 'id', sort: 'asc' },
   { label: 'works.sort-random', order: 'random', sort: 'desc' },
-  { label: 'works.sort-better-random', order: 'betterRandom', sort: 'desc' },
 ];
 
 export const DEFAULT_SORT: SortOption = SORT_OPTIONS[0];
