@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import clsx from 'clsx';
 import { Outlet } from '@tanstack/react-router';
 import { M3eAppBar } from '@m3e/react/app-bar';
@@ -12,6 +12,7 @@ import AudioElement from '../components/player/AudioElement';
 import AudioPlayer from '../components/player/AudioPlayer';
 import PlayerBar from '../components/player/PlayerBar';
 import { useUiStore } from '../stores/uiStore';
+import { MainScrollProvider } from '../contexts/mainScroll';
 
 /** 视口 ≥64rem（lg 断点）视为宽屏；窄屏时侧栏自动收起。
  *
@@ -59,6 +60,9 @@ export default function MainLayout() {
     () => false,
   );
   const [overlayOpen, setOverlayOpen] = useState(false);
+
+  // 主内容区滚动容器：页面滚动发生在这里（非 window），ref 经 MainScrollProvider 下发
+  const mainScrollRef = useRef<HTMLElement | null>(null);
 
   // 回到宽屏时关掉可能残留的浮层抽屉（渲染期调整 state，替代 effect 中 setState）
   const [prevIsNarrow, setPrevIsNarrow] = useState(isNarrow);
@@ -127,8 +131,14 @@ export default function MainLayout() {
           </div>
         </M3eAppBar>
 
-        <main className='[grid-area:content] overflow-y-auto p-4 px-6'>
-          <Outlet />
+        <main
+          ref={mainScrollRef}
+          className='[grid-area:content] overflow-y-auto p-4 px-6'
+        >
+          {/* 向路由页面下发滚动容器 ref（分页页翻页后回顶用，见 useScrollTopOnPageChange） */}
+          <MainScrollProvider scrollRef={mainScrollRef}>
+            <Outlet />
+          </MainScrollProvider>
         </main>
 
         {/* 迷你播放条（队列为空时自渲染 null，行高为 0） */}

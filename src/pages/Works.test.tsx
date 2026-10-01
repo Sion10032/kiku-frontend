@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUserStore } from '../stores/userStore';
 import Works from './Works';
+import { MainScrollProvider } from '../contexts/mainScroll';
 
 // ---- mock 状态（vi.hoisted 保证先于被提升的 vi.mock 工厂求值可用）----
 const h = vi.hoisted(() => ({
@@ -151,5 +152,41 @@ describe('Works 越界页码归位', () => {
       search: (prev: Record<string, unknown>) => Record<string, unknown>;
     };
     expect(opts.search({ page: 5 })).toEqual({ page: undefined });
+  });
+});
+
+describe('Works 翻页回顶', () => {
+  // 滚动容器 ref 由 MainScrollProvider 下发，测试直接构造注入
+  function renderWithScroll(ui: React.ReactElement, scrollTop = 500) {
+    const main = document.createElement('main');
+    main.scrollTop = scrollTop;
+    const scrollRef = { current: main };
+    return {
+      main,
+      ...render(
+        <MainScrollProvider scrollRef={scrollRef}>{ui}</MainScrollProvider>,
+      ),
+    };
+  }
+
+  it('翻页（page 2 → 3）→ 滚动容器回顶', async () => {
+    h.search = { page: 2 };
+    h.paged = pagedData(2, 100, 1500);
+
+    const { main, rerender } = renderWithScroll(<Works />);
+    await flushAsync();
+    expect(main.scrollTop).toBe(500); // 首屏挂载不滚动
+
+    h.search = { page: 3 };
+    h.paged = pagedData(3, 100, 1500);
+    await act(async () => {
+      rerender(
+        <MainScrollProvider scrollRef={{ current: main }}>
+          <Works />
+        </MainScrollProvider>,
+      );
+    });
+
+    expect(main.scrollTop).toBe(0);
   });
 });

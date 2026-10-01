@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUserStore } from '../stores/userStore';
 import History from './History';
+import { MainScrollProvider } from '../contexts/mainScroll';
 
 const h = vi.hoisted(() => ({
   search: {} as Record<string, unknown>,
@@ -111,5 +112,35 @@ describe('History 越界页码归位', () => {
 
     expect(h.navigate).toHaveBeenCalledTimes(1);
     expect(navigateSearch()).toEqual({ page: undefined });
+  });
+});
+
+describe('History 翻页回顶', () => {
+  // 滚动容器 ref 由 MainScrollProvider 下发，测试直接构造注入
+  it('翻页（page 2 → 3）→ 滚动容器回顶；首屏挂载不滚动', async () => {
+    const main = document.createElement('main');
+    main.scrollTop = 500;
+    h.search = { page: 2 };
+    h.result = historyData(2, 100, 1500);
+
+    const { rerender } = render(
+      <MainScrollProvider scrollRef={{ current: main }}>
+        <History />
+      </MainScrollProvider>,
+    );
+    await flushAsync();
+    expect(main.scrollTop).toBe(500); // 首屏挂载不滚动
+
+    h.search = { page: 3 };
+    h.result = historyData(3, 100, 1500);
+    await act(async () => {
+      rerender(
+        <MainScrollProvider scrollRef={{ current: main }}>
+          <History />
+        </MainScrollProvider>,
+      );
+    });
+
+    expect(main.scrollTop).toBe(0);
   });
 });

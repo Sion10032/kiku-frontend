@@ -17,6 +17,7 @@ import { useUserStore } from '../stores/userStore';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useResetPageOnPageSizeChange } from '../hooks/useResetPageOnPageSizeChange';
 import { useResetOutOfRangePage } from '../hooks/useResetOutOfRangePage';
+import { useScrollTopOnPageChange } from '../hooks/useScrollTopOnPageChange';
 import {
   SORT_OPTIONS,
   loadSortOption,
@@ -207,6 +208,9 @@ export default function Works() {
   useResetPageOnPageSizeChange(worksPageSize, resetPage);
   // 档位是在 /settings 改的（本页未挂载）或越界页码来自书签/刷新：依据回执兜底
   useResetOutOfRangePage(page, worksPageSize, pagination, resetPage);
+
+  // 翻页后把主布局滚动容器滚回顶部（详见 hook 注释）
+  useScrollTopOnPageChange(page);
 
   // title 同步筛选名与页码（分页模式）；卸载/切模式时恢复默认
   useEffect(() => {
