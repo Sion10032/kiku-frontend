@@ -17,8 +17,19 @@ export default function WorkRatingRow({ work }: WorkRatingRowProps) {
   const isManual = classifyWorkSource(work.id) === 'manual';
   return (
     <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-sm'>
-      {/* 平均评分 */}
-      {work.rate_average_2dp != null && (
+      {/* 用户评分主显（DLsite 平均降为小字附注） */}
+      {work.userRating != null && (
+        <span className='font-medium text-(--md-sys-color-primary)'>
+          {'★'.repeat(work.userRating)}
+        </span>
+      )}
+      {work.userRating != null && work.rate_average_2dp != null && (
+        <span className='font-normal opacity-60'>
+          ★ {work.rate_average_2dp.toFixed(1)} ({work.rate_count ?? 0})
+        </span>
+      )}
+      {/* 平均评分（无用户评分时的现状渲染） */}
+      {work.userRating == null && work.rate_average_2dp != null && (
         <span className='font-medium text-(--md-sys-color-primary)'>
           ★ {work.rate_average_2dp.toFixed(1)}
           <span className='font-normal opacity-60'>
