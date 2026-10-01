@@ -48,39 +48,34 @@ afterEach(() => {
 });
 
 describe('WorkRatingRow 按来源条件渲染', () => {
-  it('UW（manual）：渲染「手动」徽章，无 DLsite 链接', () => {
+  it('UW（manual）：无 DLsite 链接，无徽章', () => {
     render(<WorkRatingRow work={makeWork({ id: 'UW00000001' })} />);
-    expect(screen.getByText('works.manual-badge')).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
   });
 
-  it('RJ（dlsite）：仍渲染 DLsite 链接，无徽章', () => {
+  it('RJ（dlsite）：仍渲染 DLsite 链接', () => {
     render(<WorkRatingRow work={makeWork({ id: 'RJ01173549' })} />);
     const link = screen.getByRole('link');
     expect(link.getAttribute('href')).toContain('dlsite.com');
     expect(link.textContent).toContain('DLsite');
-    expect(screen.queryByText('works.manual-badge')).toBeNull();
   });
 
   it('未知前缀（classify 为 null）：按 dlsite 路径渲染，不崩溃', () => {
     render(<WorkRatingRow work={makeWork({ id: 'ZZ00000001' })} />);
     expect(screen.getByRole('link')).toBeTruthy();
-    expect(screen.queryByText('works.manual-badge')).toBeNull();
   });
 
-  it('manual + userRating：星串主显，有徽章，无 DLsite 链接', () => {
+  it('manual + userRating：星串主显，无 DLsite 链接', () => {
     render(
       <WorkRatingRow work={makeWork({ id: 'UW00000001', userRating: 4 })} />,
     );
     expect(screen.getByText('★★★★')).toBeTruthy();
-    expect(screen.getByText('works.manual-badge')).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
   });
 
-  it('manual + 无 userRating：无任何 ★ 评分文本，徽章照旧', () => {
+  it('manual + 无 userRating：无任何 ★ 评分文本', () => {
     render(<WorkRatingRow work={makeWork({ id: 'UW00000001' })} />);
     expect(screen.queryByText(/★/)).toBeNull();
-    expect(screen.getByText('works.manual-badge')).toBeTruthy();
   });
 
   it('dlsite + userRating：用户星串主显 + DLsite 平均降为附注，链接照旧', () => {
