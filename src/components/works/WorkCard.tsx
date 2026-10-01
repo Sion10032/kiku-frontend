@@ -18,7 +18,7 @@ interface WorkCardProps {
  * 作品卡片（网格视图）。
  *
  * 展示：封面（右上分级徽章、右下播放进度）、标题、社团 · 系列、
- * 评分（平均分 + 评分人数）、评论数、DLsite 链接、价格、售出数、标签、声优。
+ * 评分（平均分 + 评分人数）、评论数、DLsite 链接、价格、售出数、发售日、标签、声优。
  * 元信息行由 common/ 下的 Work* 共享组件提供（与 WorkDetails 一致）。
  */
 export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
@@ -55,8 +55,7 @@ export default function WorkCard({ work, thumbnail = false }: WorkCardProps) {
 
           <WorkRatingRow work={work} />
 
-          {/* 卡片不显示发售日（封面已有），详情页才显示 */}
-          <WorkFactsRow work={work} />
+          <WorkFactsRow work={work} release={work.release} />
 
           <WorkChips work={work} />
         </div>
