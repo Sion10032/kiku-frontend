@@ -163,7 +163,7 @@ export default function MainLayout() {
           />
           <div
             className={clsx(
-              'fixed inset-y-0 left-0 z-70 shadow-2xl transition-transform duration-200',
+              'fixed inset-y-0 left-0 z-70 transition-transform duration-200',
               overlayOpen
                 ? 'translate-x-0'
                 : 'pointer-events-none -translate-x-full',
