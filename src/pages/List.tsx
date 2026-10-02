@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { M3eSearchBar } from '@m3e/react/search';
 import { M3eIcon } from '@m3e/react/icon';
-import { M3eActionList, M3eListAction } from '@m3e/react/list';
+import { M3eListAction } from '@m3e/react/list';
 import { M3eCircularProgressIndicator } from '@m3e/react/progress-indicator';
 import '@m3e/icons/outlined/search';
 import '@m3e/icons/outlined/chevron_right';
@@ -11,6 +12,8 @@ import '@m3e/icons/outlined/group';
 import '@m3e/icons/outlined/label';
 import '@m3e/icons/outlined/mic';
 import '@m3e/icons/outlined/library_books';
+import { useMainScrollRef } from '../contexts/mainScroll';
+import { useScrollTopOnMount } from '../hooks/useScrollTopOnMount';
 import { useEntityListQuery, type ListType } from '../queries/useListQuery';
 import { fieldQuery } from '../utils/query';
 import PageContainer from '../components/common/PageContainer';
@@ -61,6 +64,11 @@ interface Entry {
  *   circles/vas/series 响应内联当前用户 favourited（匿名全 false）
  * - m3e SearchBar 输入即筛（客户端按名称过滤）
  * - 点击项跳转 /works 并携带筛选参数：q = fieldQuery(field, name) 生成的 LQL 查询文本
+ * - 列表虚拟滚动（@tanstack/react-virtual）：数据源无分页、可达数千条，
+ *   只挂载可视区±overscan 行，避免全量创建 Web Component（每行 m3e-list-action
+ *   内含 state-layer/focus-ring/ripple 子组件）导致的首渲卡顿与输入逐键全量重渲；
+ *   放弃 m3e-action-list 容器（roving tabindex 键盘导航对未挂载行无意义），
+ *   行圆角 shape 变量移到虚拟容器上（CSS 变量继承等效）
  *
  * 注意：M3eListItem 的 named slot（leading/trailing）只对直接子元素生效，
  * 因此导航用 onClick + useNavigate 而非把 slot 元素包进 <Link>。
@@ -125,6 +133,25 @@ export default function List({ type }: { type: ListType }) {
       }));
   }, [type, query.data, keyword]);
 
+  // 挂载/切换实体类型时把滚动容器归零：路由切换不重置 <main> scrollTop，
+  // 有缓存时列表瞬间撑高，残留位置会被钳到底部；须声明在 useVirtualizer
+  // 之前，让其初始化读到归零后的 offset（见 useScrollTopOnMount 注释）
+  useScrollTopOnMount(type);
+  // 虚拟滚动：页面滚动容器是 MainLayout 的 <main>（非 window），经 context 下发；
+  // 独立渲染（单测）时为 null，react-virtual 对 null 安全跳过（不渲染行）
+  const scrollRef = useMainScrollRef();
+  // 行高：单行 truncate，实测恒 56px；measureElement 动态校准（uiScale 等）
+  const ROW_HEIGHT = 56;
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual 官方 API 即如此（返回实例函数不可 memo），字面量 options 为官方推荐用法
+  const rowVirtualizer = useVirtualizer({
+    count: entries.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    // 偏大 overscan：列表上方有标题 + 搜索栏，滚动偏移按滚动容器顶计算，
+    // 多渲染十几行覆盖这段偏移，省去 scrollMargin 测量状态
+    overscan: 12,
+  });
+
   // 标签不支持收藏； favourited 已内联在列表响应里，未登录传 undefined 隐藏红心
   const favType: FavouriteTargetType | null =
     type === 'circles'
@@ -179,48 +206,71 @@ export default function List({ type }: { type: ListType }) {
         </div>
       )}
 
-      {/* 列表 */}
+      {/* 列表（虚拟滚动，见组件注释；行高由 measureElement 动态测量） */}
       {!loading && !isError && entries.length > 0 && (
-        <M3eActionList
+        <div
+          className='relative w-full'
           style={
             {
+              height: rowVirtualizer.getTotalSize(),
               '--m3e-list-item-container-shape': 'calc(infinity * 1px)',
               '--m3e-list-item-hover-container-shape': 'calc(infinity * 1px)',
             } as React.CSSProperties
           }
         >
-          {entries.map((entry) => (
-            <M3eListAction
-              key={entry.key}
-              onClick={() => navigate({ to: '/works', search: entry.search })}
-            >
-              <span
-                slot='leading'
-                className='me-3 flex items-center opacity-60'
+          {rowVirtualizer.getVirtualItems().map((vRow) => {
+            const entry = entries[vRow.index];
+            return (
+              <div
+                key={entry.key}
+                data-index={vRow.index}
+                ref={rowVirtualizer.measureElement}
+                className='absolute inset-x-0 top-0'
+                style={{
+                  transform: `translateY(${vRow.start}px)`,
+                  // 必须：m3e-list-action（Lit）shadow 异步渲染，挂载瞬间
+                  // wrapper 高度为 0，measureElement 读到 0 会触发
+                  // resizeItem(0) → notify → setState → ref 重跑 的无限循环
+                  // （Maximum update depth + translateY 跳底）；min-height 让
+                  // 首测读数即等于 ROW_HEIGHT（不 notify），渲染完成后由
+                  // ResizeObserver 报真值，至多一次更新后收敛
+                  minHeight: ROW_HEIGHT,
+                }}
               >
-                <M3eIcon name={LEADING_ICONS[type]} />
-              </span>
-              <span className='block truncate'>
-                {entry.name}
-                <span className='opacity-50 mx-2'>({entry.workCount})</span>
-              </span>
-              <span
-                slot='trailing'
-                className='flex items-center gap-1 opacity-50'
-              >
-                {favType && (
-                  <FavButton
-                    size='sm'
-                    targetType={favType}
-                    targetId={entry.key}
-                    favourited={auth ? entry.favourited : undefined}
-                  />
-                )}
-                <M3eIcon name='chevron_right' />
-              </span>
-            </M3eListAction>
-          ))}
-        </M3eActionList>
+                <M3eListAction
+                  onClick={() =>
+                    navigate({ to: '/works', search: entry.search })
+                  }
+                >
+                  <span
+                    slot='leading'
+                    className='me-3 flex items-center opacity-60'
+                  >
+                    <M3eIcon name={LEADING_ICONS[type]} />
+                  </span>
+                  <span className='block truncate'>
+                    {entry.name}
+                    <span className='opacity-50 mx-2'>({entry.workCount})</span>
+                  </span>
+                  <span
+                    slot='trailing'
+                    className='flex items-center gap-1 opacity-50'
+                  >
+                    {favType && (
+                      <FavButton
+                        size='sm'
+                        targetType={favType}
+                        targetId={entry.key}
+                        favourited={auth ? entry.favourited : undefined}
+                      />
+                    )}
+                    <M3eIcon name='chevron_right' />
+                  </span>
+                </M3eListAction>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* 空状态 */}
