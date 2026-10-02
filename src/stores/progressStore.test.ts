@@ -84,22 +84,40 @@ describe('selectResumeStartAt 续播边界', () => {
     expect(selectResumeStartAt(s, 'RJ1', 'a')).toBeUndefined();
   });
 
-  it('已听完（0.95）→ 仍返回 position（seek 到末尾由 ended 自然衔接下一轨）', () => {
-    useProgressStore.getState().record('RJ1', 'a', 95, 100);
+  it('进度 ≥ 0.99 → undefined（从头重播）', () => {
+    useProgressStore.getState().record('RJ1', 'a', 99, 100);
     const s = useProgressStore.getState();
-    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBe(95);
+    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBeUndefined();
   });
 
-  it('position=duration（听完）→ 返回 position', () => {
+  it('position=duration（听完）→ undefined（从头重播）', () => {
     useProgressStore.getState().record('RJ1', 'a', 100, 100);
     const s = useProgressStore.getState();
-    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBe(100);
+    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBeUndefined();
   });
 
-  it('position/duration = 0.94（未听完）→ 返回 position', () => {
-    useProgressStore.getState().record('RJ1', 'a', 94, 100);
+  it('仅剩余 ≤10s 命中（0.91）→ undefined（从头重播）', () => {
+    useProgressStore.getState().record('RJ1', 'a', 91, 100);
     const s = useProgressStore.getState();
-    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBe(94);
+    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBeUndefined();
+  });
+
+  it('仅进度 ≥0.99 命中（0.9925、剩 15s）→ undefined（从头重播）', () => {
+    useProgressStore.getState().record('RJ1', 'a', 1985, 2000);
+    const s = useProgressStore.getState();
+    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBeUndefined();
+  });
+
+  it('进度 0.88 且剩余 >10s → 返回 position（续播）', () => {
+    useProgressStore.getState().record('RJ1', 'a', 88, 100);
+    const s = useProgressStore.getState();
+    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBe(88);
+  });
+
+  it('长轨未达阈值（0.98、剩 20s）→ 返回 position（续播）', () => {
+    useProgressStore.getState().record('RJ1', 'a', 980, 1000);
+    const s = useProgressStore.getState();
+    expect(selectResumeStartAt(s, 'RJ1', 'a')).toBe(980);
   });
 
   it('duration=null 且 position>0 → 返回 position', () => {

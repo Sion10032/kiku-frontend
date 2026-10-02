@@ -60,10 +60,16 @@ export const useProgressStore = create<ProgressState>()((set) => ({
     }),
 }));
 
+/** 听完判定：进度占比达到该值即视为听完（手动点击时从头重播）。 */
+export const RESTART_RATIO = 0.99;
+/** 听完判定：剩余时间不超过该秒数即视为听完（手动点击时从头重播）。 */
+export const RESTART_REMAINING_SEC = 10;
+
 /**
- * 续播策略：有历史且 position > 0 → 返回上次进度作为恢复起点；
- * 无历史或未开始 → undefined（从头）。已听完轨 seek 到末尾后由 ended
- * 自然触发 nextTrack 衔接下一轨（order 队尾停止为已知接受行为）。
+ * 续播策略（手动点击路径）：有未完历史 → 返回上次进度作为恢复起点；
+ * 已听完（进度 ≥ RESTART_RATIO 或剩余 ≤ RESTART_REMAINING_SEC）、
+ * 无历史或未开始 → undefined（从头）。duration 未知时无法判定听完，
+ * 有进度即视为未听完。
  */
 export function selectResumeStartAt(
   state: Pick<ProgressState, 'byWork'>,
@@ -72,5 +78,11 @@ export function selectResumeStartAt(
 ): number | undefined {
   const p = state.byWork[workId]?.[hash];
   if (!p || p.position <= 0) return undefined;
+  if (p.duration != null && p.duration > 0) {
+    const finished =
+      p.position / p.duration >= RESTART_RATIO
+      || p.duration - p.position <= RESTART_REMAINING_SEC;
+    if (finished) return undefined;
+  }
   return p.position;
 }
