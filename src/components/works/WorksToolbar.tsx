@@ -61,7 +61,7 @@ export default function WorksToolbar({
         )}
       </h1>
 
-      <div className='ms-auto flex flex-wrap items-center gap-2'>
+      <div className='ms-auto flex flex-wrap items-center gap-2 zoom-80'>
         {/* 快速筛选：分级 */}
         <M3eFormField
           variant='outlined'
@@ -124,7 +124,7 @@ export default function WorksToolbar({
         <M3eFormField
           variant='outlined'
           hideSubscript='always'
-          className='min-w-32 [--m3e-form-field-width:8rem] density-3'
+          className='min-w-34 [--m3e-form-field-width:8rem] density-3'
         >
           <M3eSelect onChange={(e) => onSortChange(selectValue(e))}>
             {SORT_OPTIONS.map((o) => {
