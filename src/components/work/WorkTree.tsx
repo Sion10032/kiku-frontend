@@ -377,6 +377,13 @@ const contentStyle = {
     flex: '1 !important',
     minWidth: 0,
   },
+  // 标题两行使部分行进入 three-line 状态（M3 规范此时 leading 媒体
+  // 顶部对齐），统一改回垂直居中
+  '.base': { alignItems: 'center !important' },
+  '.indicator': {
+    alignSelf: 'center !important',
+    marginTop: '0 !important',
+  },
 } satisfies CssInput;
 
 /** 返回上一层目录的行（子目录顶部显示 ".."）。 */
@@ -421,7 +428,7 @@ function TrackFolderListItem({
       <span slot='leading' className='me-3'>
         <M3eIcon name='folder' />
       </span>
-      <span className='min-w-0 flex-1 truncate'>{node.title}</span>
+      <span className='min-w-0 flex-1 line-clamp-2'>{node.title}</span>
       <span slot='supporting-text' className='truncate text-xs opacity-60'>
         {t('works.item-count', { count: node.children.length })}
       </span>
@@ -462,7 +469,7 @@ function TrackLeafListItem({
       <span slot='leading' className='me-3'>
         <M3eIcon name={leafIcon(node.type)} />
       </span>
-      <span className='min-w-0 flex-1 truncate'>{node.title}</span>
+      <span className='min-w-0 flex-1 line-clamp-2'>{node.title}</span>
       {node.type === 'audio' && (
         <span
           slot='supporting-text'
