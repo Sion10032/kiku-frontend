@@ -238,11 +238,14 @@ export interface UserWorkProgress {
   /** 上次播放的音轨（media index = 文件相对路径） */
   mediaIndex: string;
   trackTitle: string | null;
-  /** 上次播放到的时间（秒） */
+  /** 上次播放到的时间（秒，音轨内） */
   position: number;
+  /** 上次播放音轨的时长（秒）；未知为 null */
   duration: number | null;
   /** 已听完的轨数（position/duration ≥ 0.95） */
   listenedCount: number;
+  /** 整体收听进度百分比（0-100，后端聚合）；无已知时长音轨时为 null */
+  progressPercent: number | null;
   updatedAt: string;
 }
 

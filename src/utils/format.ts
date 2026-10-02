@@ -54,11 +54,10 @@ export function formatTotalDuration(
 }
 
 /**
- * 格式化作品播放进度角标文本：有音轨时长为整百分比（"42%"），
- * 无时长但有记录为「正在听」。
- *
- * 百分比是「上次播放音轨内」的进度（position/duration），
- * 不是整部作品的进度（缺少总时长/总轨数）。
+ * 格式化作品播放进度角标文本：优先后端聚合的整体收听百分比（"42%"，
+ * 含已听完轨 + 当前轨位置 ÷ 作品总时长，见后端 WorkProgressSummary）；
+ * 后端显式 null（作品无已知时长，算不出整体）为「正在听」；旧响应缺失
+ * 该字段时回退轨内百分比（position/duration），无轨时长亦为「正在听」。
  *
  * @param progress 播放进度聚合；null/undefined（未听/未登录）返回 null（调用方不渲染）
  */
@@ -66,6 +65,10 @@ export function formatProgress(
   progress: UserWorkProgress | null | undefined,
 ): string | null {
   if (progress == null) return null;
+  // 运行时旧响应可能缺失该键（undefined，类型上不可见），先拓宽再三分支
+  const overall: number | null | undefined = progress.progressPercent;
+  if (overall === null) return i18next.t('works.now-listening');
+  if (overall != null) return `${overall}%`;
   const { position, duration } = progress;
   if (duration != null && Number.isFinite(duration) && duration > 0) {
     const percent = Math.min(100, Math.round((position / duration) * 100));

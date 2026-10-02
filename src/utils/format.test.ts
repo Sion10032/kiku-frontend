@@ -16,19 +16,30 @@ beforeAll(async () => {
   await i18next.changeLanguage('zh-CN');
 });
 
-/** 构造最小合法进度记录（测试用） */
+/**
+ * 构造最小合法进度记录（测试用）。
+ *
+ * progressPercent 传 undefined（缺省）→ 模拟旧响应缺失该键（运行时剔除）；
+ * 传 null → 后端明确返回 null（作品无已知时长）。
+ */
 function makeProgress(
   position: number,
   duration: number | null,
+  progressPercent?: number | null,
 ): UserWorkProgress {
-  return {
+  const progress: UserWorkProgress = {
     mediaIndex: 'folder/track01.mp3',
     trackTitle: null,
     position,
     duration,
     listenedCount: 0,
+    progressPercent: progressPercent ?? null,
     updatedAt: '2024-01-01T00:00:00Z',
   };
+  if (progressPercent === undefined) {
+    delete (progress as Partial<UserWorkProgress>).progressPercent;
+  }
+  return progress;
 }
 
 describe('formatRemaining', () => {
@@ -88,10 +99,20 @@ describe('formatTotalDuration', () => {
 });
 
 describe('formatProgress', () => {
-  it('有音轨时长时返回整百分比（clamp 100）', () => {
+  it('有 progressPercent 时优先返回整体收听进度（非轨内 position/duration）', () => {
+    // 轨内进度 50%，整体进度 12%：若回退旧逻辑会得 '50%'，有区分度
+    expect(formatProgress(makeProgress(300, 600, 12))).toBe('12%');
+    expect(formatProgress(makeProgress(0, 1000, 100))).toBe('100%');
+  });
+
+  it('progressPercent 缺失时回退轨内进度（兼容旧响应）', () => {
     expect(formatProgress(makeProgress(500, 1000))).toBe('50%');
     expect(formatProgress(makeProgress(0, 1000))).toBe('0%');
     expect(formatProgress(makeProgress(2000, 1000))).toBe('100%');
+  });
+
+  it('progressPercent 为 null（作品无已知时长）显示「正在听」而非轨内百分比', () => {
+    expect(formatProgress(makeProgress(300, 600, null))).toBe('正在听');
   });
 
   it('无音轨时长但有记录时返回「正在听」', () => {
