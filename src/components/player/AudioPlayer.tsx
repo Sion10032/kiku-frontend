@@ -181,7 +181,7 @@ export default function AudioPlayer() {
 
       {/* 底部：进度条 + 控制区（不随歌词滚动）；窄屏覆盖按钮 token 缩为
           medium 40px，宽度经 leading/trailing space 保持方形 */}
-      <div className='flex shrink-0 flex-col items-center gap-2 p-4 max-sm:[--m3e-icon-button-medium-container-height:2.5rem] max-sm:[--m3e-icon-button-medium-default-leading-space:0.5rem] max-sm:[--m3e-icon-button-medium-default-trailing-space:0.5rem]'>
+      <div className='flex shrink-0 flex-col items-center gap-3 p-4 max-sm:[--m3e-icon-button-medium-container-height:2.5rem] max-sm:[--m3e-icon-button-medium-default-leading-space:0.5rem] max-sm:[--m3e-icon-button-medium-default-trailing-space:0.5rem]'>
         <div className='flex w-full max-w-xl items-center gap-3'>
           <span className='shrink-0 text-xs tabular-nums opacity-70'>
             {formatDuration(currentTime)}
@@ -204,15 +204,6 @@ export default function AudioPlayer() {
 
         {/* 传输控制 */}
         <div className='flex items-center gap-2'>
-          {/* ⏪⏩ glyph 天生比 ⏮⏭ 宽 ~50%（808/753 vs 520 网格），
-              scale 2/3 拉齐视觉宽度（盒尺寸不变） */}
-          <M3eIconButton
-            className='[&>m3e-icon]:scale-2/3'
-            aria-label={t('player.rewind', { count: rewindSeekTime })}
-            onClick={triggerRewind}
-          >
-            <M3eIcon name='fast_rewind' />
-          </M3eIconButton>
           <M3eIconButton
             aria-label={t('player.previous-track')}
             onClick={previousTrack}
@@ -220,25 +211,30 @@ export default function AudioPlayer() {
             <M3eIcon name='skip_previous' />
           </M3eIconButton>
           <M3eIconButton
+            aria-label={t('player.rewind', { count: rewindSeekTime })}
+            onClick={triggerRewind}
+          >
+            <M3eIcon name='fast_rewind' />
+          </M3eIconButton>
+          <M3eIconButton
+            className='zoom-150'
             variant='filled'
             aria-label={playing ? t('player.pause') : t('player.play')}
             onClick={togglePlaying}
-            size='medium'
           >
             <M3eIcon name={playing ? 'pause' : 'play_arrow'} />
+          </M3eIconButton>
+          <M3eIconButton
+            aria-label={t('player.forward', { count: forwardSeekTime })}
+            onClick={triggerForward}
+          >
+            <M3eIcon name='fast_forward' />
           </M3eIconButton>
           <M3eIconButton
             aria-label={t('player.next-track')}
             onClick={nextTrack}
           >
             <M3eIcon name='skip_next' />
-          </M3eIconButton>
-          <M3eIconButton
-            className='[&>m3e-icon]:scale-2/3'
-            aria-label={t('player.forward', { count: forwardSeekTime })}
-            onClick={triggerForward}
-          >
-            <M3eIcon name='fast_forward' />
           </M3eIconButton>
         </div>
 
