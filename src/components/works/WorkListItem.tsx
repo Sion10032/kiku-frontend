@@ -2,11 +2,11 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { M3eListAction } from '@m3e/react/list';
 import type { Work } from '../../types';
+import AgeRatingBadge from '../common/AgeRatingBadge';
 import CoverThumbnail from '../common/CoverThumbnail';
 import { useM3eListActionStyle } from '../../hooks/useM3eListActionStyle';
-import { UnreadDot, ReadDot } from '../common/WorkProgress';
-import { useUserStore } from '../../stores/userStore';
 import { fieldQuery } from '../../utils/query';
+import { formatProgress } from '../../utils/format';
 import clsx from 'clsx';
 
 interface WorkListItemProps {
@@ -18,7 +18,7 @@ interface WorkListItemProps {
 /**
  * 作品列表项（列表视图）。
  *
- * 缩略图（sam）+ 标题 + 社团 / 声优 + 标签。
+ * 缩略图（sam，右下收听状态角标）+ workcode / 分级徽章 + 标题 + 社团 / 声优 + 标签。
  */
 export default function WorkListItem({
   work,
@@ -36,23 +36,39 @@ export default function WorkListItem({
     },
   });
 
-  // 状态角标仅登录用户显示（未登录时 userProgress 恒 null，无法区分）
-  const authed = useUserStore((s) => s.auth);
+  // 右下角收听状态角标（样式同 WorkCard 封面右下角，按需求省略总时长）：
+  // 已读 → 「已读」；有进度 → 百分比 / 「正在听」；未听/未登录（read=false、
+  // userProgress=null）不渲染，无需 authed 门控
+  const cornerText = work.read
+    ? t('common.read')
+    : formatProgress(work.userProgress);
 
   return (
     <M3eListAction ref={ref}>
       <div slot='leading' className='relative'>
         <CoverThumbnail workId={work.id} size='lg' />
-        {/* 状态角标：未读红点 / 已读主色点（仅登录显示） */}
-        {authed && (work.userProgress ? <ReadDot /> : <UnreadDot />)}
+        {/* 收听状态角标：已读 / 进度百分比 / 正在听 */}
+        {cornerText && (
+          <span className='absolute right-1 bottom-1 z-10 rounded-sm bg-(--md-sys-color-surface-container) px-1.5 py-0.5 text-xs text-(--md-sys-color-on-surface-container)'>
+            {cornerText}
+          </span>
+        )}
       </div>
 
       <div className='min-w-0 flex-1'>
+        {/* workcode / 分级徽章内联在标题行首：换行后标题回到左缘，不流空列；
+            徽章占据首行部分宽度，两行裁剪仍在 Link 上生效 */}
         <Link
           to='/work/$id'
           params={{ id: work.id }}
           className='line-clamp-2 text-base no-underline'
         >
+          <span className='mr-2 rounded-sm bg-(--md-sys-color-surface-container) px-1.5 py-0.5 text-xs text-(--md-sys-color-on-surface-container)'>
+            {work.id}
+          </span>
+          <span className='mr-2'>
+            <AgeRatingBadge rating={work.ageRating} />
+          </span>
           {work.title}
         </Link>
 
