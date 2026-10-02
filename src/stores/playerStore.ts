@@ -130,7 +130,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       currentUid: null,
       playMode: 'order',
       muted: false,
-      volume: 0.8,
+      volume: 1,
       currentLyric: '',
       lyricLines: [],
       activeLyricIndex: -1,
