@@ -81,22 +81,33 @@ export default function GlobalSearchBar() {
   const itemsRef = useRef<SearchItem[]>([]);
   // 高亮行 ref map：keydown 时直接 scrollIntoView，无需 effect
   const rowRefs = useRef<Map<number, M3eListItemElement | null>>(new Map());
-  // 最近一次清除按钮 click 的时间戳（wrapper onClickCapture 写入）：
-  // 下方 clear() 放行判别与 handleClear 的 URL q 移除判别共用
+  // 最近一次点击的时间戳与类别（wrapper onClickCapture 写入）：下方
+  // clear() 放行判别与 handleClear 的 URL q 移除判别共用。类别经
+  // composedPath 穿透 open shadow root 判别真实点击目标：仅 X 清除
+  // 按钮（shadow 内 class="clear"）记为 clear；「← 返回」（class=
+  // "close"）与其余区域记为 other——两者都是同步点击、都命中 8ms
+  // 时间窗，仅靠时间戳无法区分，← 误放行即「返回清空搜索词」bug
   const lastClickAtRef = useRef(0);
+  const lastClickKindRef = useRef<'clear' | 'other'>('other');
 
   // 覆盖组件 clear()：docked 失焦/ESC 会同步清空输入框 DOM（React 恢复渲染
   // 晚一拍，产生「先空后恢复」闪烁），组件又无开关可关，故 patch 实例方法——
-  // 仅放行「清除按钮点击」路径（click 与 clear 同一事件循环，间隔 <1ms；
-  // 失焦路径 clear 在 blur 后 40ms debounce，间隔远大于 8ms），其余 no-op：
+  // 仅放行「X 清除按钮点击」路径（类别判别见上方 ref 注释；时间上 click
+  // 与 clear 同一事件循环、间隔 <1ms；失焦路径 clear 在 blur 后 40ms
+  // debounce，间隔远大于 8ms），其余（← 返回/失焦/ESC）一律 no-op：
   // DOM 不动、面板照常收起，term 由下方 prevOpen 恢复逻辑拉回 urlQ。
-  // 注意：m3e 升级后需复查 #handleClearClick/#handleInputKeyDown 的 clear 调用点。
+  // 注意：m3e 升级后需复查 clear 的全部调用点（#handleClearClick/
+  // #handleCloseClick/#handleInputKeyDown/_handleFocusChange）及
+  // class="clear"/"close" 命名。
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
     const originalClear = view.clear.bind(view);
     view.clear = () => {
-      if (Date.now() - lastClickAtRef.current < 8) {
+      if (
+        lastClickKindRef.current === 'clear'
+        && Date.now() - lastClickAtRef.current < 8
+      ) {
         originalClear();
       }
     };
@@ -161,21 +172,27 @@ export default function GlobalSearchBar() {
     setHistory(removeSearchHistory(item));
   }
 
-  /** 清除（组件 clear() 派发 clear 事件）有三种触发源：清除按钮 click、
-   *  docked 模式失焦（内部 _handleFocusChange，40ms 防抖）、ESC（内部
-   *  #handleInputKeyDown / #handleKeyDown）。用户裁决：仅按钮点击移除
-   *  /works 的 URL q（保留 order/sort 等其余参数），失焦/ESC 只清输入框。
+  /** 清除（组件 clear() 派发 clear 事件）有四种触发源：X 清除按钮 click、
+   *  「← 返回」按钮 click（内部 #handleCloseClick）、docked 模式失焦
+   *  （内部 _handleFocusChange，40ms 防抖）、ESC（内部 #handleInputKeyDown
+   *  / #handleKeyDown）。用户裁决：仅 X 按钮点击移除 /works 的 URL q
+   *  （保留 order/sort 等其余参数），← 返回只收起面板，失焦/ESC 只清输入框。
    *
-   *  判别依据（时间戳）：wrapper 的 onClickCapture 记录 click 时刻，点击
-   *  与 clear() 在同一事件循环（#handleClearClick 同步调用，间隔 <1ms），
-   *  必命中 8ms 窗口；失焦路径 clear 在 blur 后 40ms 防抖、ESC 路径无
-   *  click，均不命中。顺带修复 Safari 不给点击的按钮焦点、旧 activeElement
-   *  判别失灵的例外。
+   *  判别依据（类别 + 时间戳）：wrapper 的 onClickCapture 经 composedPath
+   *  判别点击目标（仅 shadow 内 class="clear" 记为 clear）并记录时刻，
+   *  点击与 clear() 在同一事件循环（同步调用，间隔 <1ms），必命中 8ms
+   *  窗口；← 返回虽是同步点击但类别为 other、失焦路径 clear 在 blur 后
+   *  40ms 防抖、ESC 路径无 click，均不放行。顺带修复 Safari 不给点击的
+   *  按钮焦点、旧 activeElement 判别失灵的例外。
    *
    *  term 无需在此清空：clear() 内部先派发 query('')（onQuery 已置空）
    *  再派发 clear，两个事件同步先后到达。 */
   function handleClear() {
-    if (urlQ && Date.now() - lastClickAtRef.current < 8) {
+    if (
+      urlQ
+      && lastClickKindRef.current === 'clear'
+      && Date.now() - lastClickAtRef.current < 8
+    ) {
       navigate({
         to: '/works',
         search: (prev) => ({ ...prev, q: undefined }),
@@ -223,8 +240,15 @@ export default function GlobalSearchBar() {
 
   return (
     <div
-      onClickCapture={() => {
+      onClickCapture={(e) => {
         lastClickAtRef.current = Date.now();
+        // composedPath 可穿透 open shadow root 拿到真实按钮：仅
+        // class="clear"（X）算清除按钮点击，class="close"（← 返回）不算
+        lastClickKindRef.current = e.nativeEvent
+          .composedPath()
+          .some((n) => n instanceof Element && n.classList.contains('clear'))
+          ? 'clear'
+          : 'other';
       }}
     >
       <M3eSearchView
