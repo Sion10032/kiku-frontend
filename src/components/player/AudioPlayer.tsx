@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { M3eSwipeGesture } from '@m3e/react/gestures';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -31,6 +32,7 @@ import { usePlayerStore, selectCurrentTrack } from '../../stores/playerStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { mediaUrl } from '../../api/client';
 import { seekTo } from '../../hooks/usePlayer';
+import { useSwipeHide } from '../../hooks/useSwipeHide';
 import { formatDuration, formatRemaining } from '../../utils/format';
 
 /**
@@ -42,6 +44,7 @@ import { formatDuration, formatRemaining } from '../../utils/format';
  * - 中部宽屏封面/歌词双栏自动显示；窄屏点击封面↔歌词非中心行/空白
  *   处切换（交叉淡化 300ms）；歌词仅中心行可点击 seek（见 LyricsPanel）
  * - 窄屏（<640px）覆盖 M3E 按钮 token 缩小尺寸，防止控制行溢出
+ * - 封面区块下滑快扫收起播放器（useSwipeHide + m3e-swipe-gesture）
  * - 播放列表对话框（dnd-kit 拖拽排序）、睡眠定时器
  * - 首挂载自底部滑入；hide 时滑回底部但不卸载（translate 过渡 + inert）
  */
@@ -72,6 +75,9 @@ export default function AudioPlayer() {
 
   const [queueOpen, setQueueOpen] = useState(false);
   const [sleepOpen, setSleepOpen] = useState(false);
+  // 封面下滑收起 + 尾随 click 抑制（共享逻辑见 useSwipeHide）
+  const { handleGesture: handleSwipeGesture, swallowSwipeClick } =
+    useSwipeHide('down');
   /** 窄屏歌词视图（宽屏双栏常显，状态无效）；切曲自动回封面视图 */
   const [showLyrics, setShowLyrics] = useState(false);
   // 切曲时重置窄屏歌词视图（渲染期调整 state，替代 effect 中 setState）
@@ -120,12 +126,19 @@ export default function AudioPlayer() {
           切换（点封面→歌词，点歌词空白→封面；无歌词时仅封面）；
           ≥lg 恢复左右双栏常驻 */}
       <div className='relative flex min-h-0 flex-1 gap-4 overflow-hidden lg:flex-row lg:items-stretch lg:px-6'>
-        {/* 封面 + 曲目信息：窄屏为查看歌词热区（有歌词时整块可点） */}
+        {/* 封面 + 曲目信息：窄屏为查看歌词热区（有歌词时整块可点）
+            touch-none：阻止浏览器把下滑当作页面滚动（pointercancel 打断
+            手势识别并触发下拉刷新）；代价是本块自身 overflow-y-auto 滚动
+            失效（内容极少溢出，可接受）；固定 id 供下滑手势的 for 绑定
+            （querySelector 解析，不能用 useId） */}
         <div
+          id='player-cover'
           role={hasLyrics ? 'button' : undefined}
           tabIndex={hasLyrics ? 0 : undefined}
           aria-label={hasLyrics ? t('player.show-lyrics') : undefined}
-          onClick={hasLyrics ? () => setShowLyrics(true) : undefined}
+          onClick={swallowSwipeClick(() => {
+            if (hasLyrics) setShowLyrics(true);
+          })}
           onKeyDown={
             hasLyrics
               ? (e) => {
@@ -138,7 +151,7 @@ export default function AudioPlayer() {
           }
           className={clsx(
             // 窄屏叠放层：绝对定位 + 交叉淡化；≥lg 恢复正常流双栏
-            'absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-y-auto px-6 pb-6 transition-opacity duration-300',
+            'absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-y-auto px-6 pb-6 transition-opacity duration-300 touch-none',
             'lg:static lg:flex-1 lg:px-0 lg:pb-0',
             showLyrics
               ? 'pointer-events-none opacity-0 lg:pointer-events-auto lg:opacity-100'
@@ -161,6 +174,14 @@ export default function AudioPlayer() {
             <p className='mt-1 text-sm opacity-70'>{track.workTitle}</p>
           </div>
         </div>
+
+        {/* 封面下滑快扫识别（non-visual 元素，仅限 down 方向；
+            end 时收起播放器，与点按看歌词靠位移阈值区分；htmlFor 写入 for attribute） */}
+        <M3eSwipeGesture
+          htmlFor='player-cover'
+          directions={['down']}
+          onGesture={handleSwipeGesture}
+        />
 
         {/* 歌词面板：宽屏常驻（无歌词时隐藏）；窄屏点非中心行/空白处
             返回封面（中心行点击为 seek，见 LyricsPanel） */}

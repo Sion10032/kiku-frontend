@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
+import { M3eSwipeGesture } from '@m3e/react/gestures';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
 import '@m3e/icons/outlined/play_arrow';
 import '@m3e/icons/outlined/pause';
@@ -15,6 +16,7 @@ import '@m3e/icons/outlined/volume_up';
 import '@m3e/icons/outlined/volume_off';
 import { usePlayerStore, selectCurrentTrack } from '../../stores/playerStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useSwipeHide } from '../../hooks/useSwipeHide';
 import { mediaUrl } from '../../api/client';
 import { formatDuration, formatRemaining } from '../../utils/format';
 import LyricsBar from './LyricsBar';
@@ -36,7 +38,8 @@ function stopAnd(fn: () => void) {
  * 迷你播放条：常驻 MainLayout 底部（grid 第三行）。
  *
  * - 队列为空时渲染 null（对应 grid 行高度为 0）
- * - 信息区（封面/标题/作品名）整块点击 → toggleHide 展开全屏播放器
+ * - 信息区（封面/标题/作品名）整块点击或上滑快扫 → toggleHide 展开全屏
+ *   播放器（上滑热区 touch-none 防浏览器当作页面滚动）
  * - 进度条可拖拽 seek；标题溢出 hover 跑马灯
  * - 宽屏：上一首/播放/下一首 + 播放模式/音量/播放列表/展开
  * - 窄屏（<lg，与侧栏/全屏播放器同一分界）：仅播放/暂停 + 播放列表
@@ -58,6 +61,10 @@ export default function PlayerBar() {
 
   const [queueOpen, setQueueOpen] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
+  // 信息区上滑展开 + 尾随 click 抑制（不抑制的话 swipe up 展开后
+  // 尾随 click 立即又收起，与 toggleHide 相互抵消；共享逻辑见 useSwipeHide）
+  const { handleGesture: handleSwipeGesture, swallowSwipeClick } =
+    useSwipeHide('up');
 
   // 切曲后重置封面失败标记（渲染期调整 state，替代 effect 中 setState）
   const coverKey = track?.workId ?? track?.hash;
@@ -79,19 +86,21 @@ export default function PlayerBar() {
 
       {/* ── 主体：信息区 + 控制区 ── */}
       <div className='flex min-w-0 w-full items-center gap-3 px-4 py-2'>
-        {/* ── 信息区：整块 = 展开热区（div 而非 button） ── */}
+        {/* ── 信息区：整块 = 展开热区（div 而非 button）；touch-none
+            防上滑被浏览器当作页面滚动；固定 id 供上滑手势 for 绑定 ── */}
         <div
+          id='player-bar-info'
           role='button'
           tabIndex={0}
           aria-label={t('player.expand')}
-          onClick={toggleHide}
+          onClick={swallowSwipeClick(toggleHide)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.stopPropagation();
               toggleHide();
             }
           }}
-          className='group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left'
+          className='group flex min-w-0 flex-1 cursor-pointer touch-none items-center gap-3 text-left'
         >
           {/* 封面 48px：workId 缺失或加载失败用占位 */}
           {track.workId && !coverFailed ? (
@@ -112,6 +121,14 @@ export default function PlayerBar() {
             <div className='truncate text-xs opacity-70'>{track.workTitle}</div>
           </div>
         </div>
+
+        {/* 信息区上滑快扫识别（non-visual 元素，仅限 up 方向；end 时展开
+            全屏播放器；hide=false 时本条被全屏层覆盖，手势不可触） */}
+        <M3eSwipeGesture
+          htmlFor='player-bar-info'
+          directions={['up']}
+          onGesture={handleSwipeGesture}
+        />
 
         {/* ── 控制区 ── */}
         <div className='flex shrink-0 items-center'>
