@@ -39,8 +39,8 @@ import { formatDuration, formatRemaining } from '../../utils/format';
  * - 顶栏仅折叠按钮；底部控制区自上而下：进度条（M3eSlider，拖动实时
  *   seek）、传输控制（快退/上一首/播放/下一首/快进）、辅助开关
  *   （播放模式/播放列表/睡眠定时）、音量滑块 + 静音
- * - 中部宽屏封面/歌词双栏自动显示；窄屏点击封面↔点歌词空白处切换
- *   （交叉淡化 300ms）；歌词行两段式点击确认 seek（见 LyricsPanel）
+ * - 中部宽屏封面/歌词双栏自动显示；窄屏点击封面↔歌词非中心行/空白
+ *   处切换（交叉淡化 300ms）；歌词仅中心行可点击 seek（见 LyricsPanel）
  * - 窄屏（<640px）覆盖 M3E 按钮 token 缩小尺寸，防止控制行溢出
  * - 播放列表对话框（dnd-kit 拖拽排序）、睡眠定时器
  * - 首挂载自底部滑入；hide 时滑回底部但不卸载（translate 过渡 + inert）
@@ -162,7 +162,8 @@ export default function AudioPlayer() {
           </div>
         </div>
 
-        {/* 歌词面板：宽屏常驻（无歌词时隐藏）；窄屏点空白处返回封面 */}
+        {/* 歌词面板：宽屏常驻（无歌词时隐藏）；窄屏点非中心行/空白处
+            返回封面（中心行点击为 seek，见 LyricsPanel） */}
         <div
           onClick={() => setShowLyrics(false)}
           className={clsx(

@@ -359,6 +359,7 @@
   "player.collapse": "折叠播放器",
   "player.expand": "展开播放器",
   "player.show-lyrics": "查看歌词",
+  "player.seek-to": "跳转到 {{time}}",
   "player.sleep-timer": "睡眠定时器",
   "player.sleep-stop-at": "停止播放时间",
   "player.sleep-active": "当前定时：将于 {{time}} 停止播放",

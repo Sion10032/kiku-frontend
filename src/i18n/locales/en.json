@@ -374,6 +374,7 @@
   "player.collapse": "Collapse player",
   "player.expand": "Expand player",
   "player.show-lyrics": "Show lyrics",
+  "player.seek-to": "Seek to {{time}}",
   "player.sleep-timer": "Sleep timer",
   "player.sleep-stop-at": "Stop playback at",
   "player.sleep-active": "Timer active: playback stops at {{time}}",
