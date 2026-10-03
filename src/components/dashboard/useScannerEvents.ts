@@ -34,6 +34,8 @@ export function useScannerEvents() {
     updated: number;
     failed: number;
     skipped: number;
+    removed: number;
+    purged: number;
   } | null>(null);
   const modeRef = useRef<ScanMode>('scan'); // SCAN_FINISHED 时区分文案
 
@@ -99,6 +101,8 @@ export function useScannerEvents() {
             updated: number;
             failed: number;
             skipped: number;
+            removed: number;
+            purged: number;
           };
         };
         resultsRef.current = r.results;
@@ -119,6 +123,8 @@ export function useScannerEvents() {
                   values: {
                     added: r.added,
                     updated: r.updated,
+                    removed: r.removed,
+                    purged: r.purged,
                     failed: r.failed,
                     skipped: r.skipped,
                   },

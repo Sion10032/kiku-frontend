@@ -435,7 +435,7 @@
   "dashboard.scan.task-scanning": "Processing",
   "dashboard.scan.task-waiting": "Pending",
   "dashboard.scan.failed-count": "Failed ({{n}})",
-  "dashboard.scan.finish-scan": "Scan finished: {{added}} added, {{updated}} updated, {{failed}} failed, {{skipped}} skipped",
+  "dashboard.scan.finish-scan": "Scan finished: {{added}} added, {{updated}} updated, {{removed}} removed, {{purged}} purged, {{failed}} failed, {{skipped}} skipped",
   "dashboard.scan.finish-update": "Refresh finished: {{updated}} updated, {{failed}} failed",
   "dashboard.scan.finish-scan-short": "Scan finished",
   "dashboard.scan.finish-update-short": "Refresh finished",

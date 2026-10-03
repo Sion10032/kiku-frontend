@@ -418,7 +418,7 @@
   "dashboard.scan.task-scanning": "处理中",
   "dashboard.scan.task-waiting": "等待",
   "dashboard.scan.failed-count": "处理失败 ({{n}})",
-  "dashboard.scan.finish-scan": "扫描完成：新增 {{added}}，更新 {{updated}}，失败 {{failed}}，跳过 {{skipped}}",
+  "dashboard.scan.finish-scan": "扫描完成：新增 {{added}}，更新 {{updated}}，移除 {{removed}}，清除 {{purged}}，失败 {{failed}}，跳过 {{skipped}}",
   "dashboard.scan.finish-update": "刷新完成：更新 {{updated}}，失败 {{failed}}",
   "dashboard.scan.finish-scan-short": "扫描完成",
   "dashboard.scan.finish-update-short": "刷新完成",
