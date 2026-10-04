@@ -310,12 +310,6 @@
   "works.price-jpy": "{{price}} 日元",
   "works.dl-count_other": "售出 {{count}}",
   "works.now-listening": "正在听",
-  "works.admin.updating-metadata": "正在更新元数据…",
-  "works.admin.metadata-updated": "元数据已更新：《{{title}}》",
-  "works.admin.update-metadata-failed": "更新元数据失败：{{message}}",
-  "works.admin.syncing-tracks": "正在同步音轨时长…",
-  "works.admin.tracks-synced": "音轨时长已同步",
-  "works.admin.sync-tracks-failed": "同步音轨时长失败：{{message}}",
   "works.admin.deleting-work": "正在删除作品…",
   "works.admin.delete-failed": "删除失败：{{message}}",
   "works.admin.work-deleted": "作品已删除",
@@ -323,9 +317,6 @@
   "works.admin.batch-deleted_other": "已删除 {{count}} 个作品",
   "works.admin.batch-delete-failed": "批量删除失败：{{message}}",
   "works.admin.analyze-loudness": "分析响度",
-  "works.admin.loudness-queued": "已加入分析队列",
-  "works.admin.loudness-started": "响度分析已启动",
-  "works.admin.loudness-start-failed": "启动响度分析失败：{{message}}",
   "works.loudness.curve-title": "响度曲线",
   "works.loudness.curve-empty": "暂无响度曲线",
   "works.loudness.target": "目标 {{lufs}} LUFS",
@@ -553,5 +544,6 @@
   "tasks.manual": "手动任务",
   "tasks.logs": "日志",
   "tasks.logs-empty": "暂无日志",
-  "tasks.panel.active": "有 {{n}} 个任务正在进行，点击查看"
+  "tasks.panel.active": "有 {{n}} 个任务正在进行，点击查看",
+  "works.admin.queued": "已加入队列，完成后自动生效"
 }

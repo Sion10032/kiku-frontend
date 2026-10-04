@@ -10,6 +10,13 @@ import WorkDetails from './WorkDetails';
 // ---- mock 状态（vi.hoisted 保证先于被提升的 vi.mock 工厂求值可用）----
 const h = vi.hoisted(() => ({
   refreshMutate: vi.fn(),
+  pipeline: undefined as
+    | {
+        workId: string;
+        phases: Record<string, { status: string; changedAt: string }>;
+        updatedAt: string;
+      }
+    | undefined,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -31,6 +38,11 @@ vi.mock('../../queries/useFavouritesQuery', () => ({
 
 vi.mock('../../queries/useProgressMutation', () => ({
   useReadStateMutation: () => ({ isPending: false, mutate: vi.fn() }),
+}));
+
+vi.mock('../../hooks/useTasks', () => ({
+  usePipeline: (workId: string) =>
+    h.pipeline && h.pipeline.workId === workId ? h.pipeline : undefined,
 }));
 
 vi.mock('../../queries/useWorkAdminMutation', () => ({
@@ -80,7 +92,11 @@ vi.mock('@m3e/react/icon-button', () => ({
 }));
 vi.mock('@m3e/react/menu', () => ({
   M3eMenu: (props: { children?: ReactNode }) => <div>{props.children}</div>,
-  M3eMenuItem: (props: { children?: ReactNode }) => <div>{props.children}</div>,
+  M3eMenuItem: (props: { children?: ReactNode; disabled?: boolean }) => (
+    <div data-disabled={props.disabled ? 'true' : undefined}>
+      {props.children}
+    </div>
+  ),
 }));
 vi.mock('@m3e/react/dialog', () => ({ M3eDialog: () => null }));
 vi.mock('@m3e/react/button', () => ({
@@ -161,5 +177,35 @@ describe('WorkDetails 管理菜单按来源条件渲染', () => {
   it('未知前缀（classify 为 null）：仍渲染「更新元数据」，不崩溃', () => {
     renderAsAdmin(makeWork({ id: 'ZZ00000001' }));
     expect(screen.getByText('works.menu-refresh-metadata')).toBeTruthy();
+  });
+});
+
+describe('WorkDetails 任务中心投影', () => {
+  it('流水线活跃：菜单禁用 + 行内阶段点渲染', () => {
+    h.pipeline = {
+      workId: 'RJ01173549',
+      phases: { metadata: { status: 'running', changedAt: 't' } },
+      updatedAt: 't',
+    };
+    renderAsAdmin(makeWork());
+    const dot = screen.getByTitle('metadata: running');
+    expect(dot).toBeTruthy();
+    console.log('DEBUG DOM:', document.body.innerHTML.slice(0, 2000));
+    const items = document.querySelectorAll('[data-disabled]');
+    const refreshItem = [...items].find((el) =>
+      el.textContent?.includes('works.menu-refresh-metadata'),
+    );
+    expect(refreshItem?.getAttribute('data-disabled')).toBe('true');
+  });
+
+  it('无流水线：菜单不禁用、无阶段点', () => {
+    h.pipeline = undefined;
+    renderAsAdmin(makeWork());
+    expect(screen.queryByTitle('metadata: running')).toBeNull();
+    const items = document.querySelectorAll('[data-disabled]');
+    const refreshItem = [...items].find((el) =>
+      el.textContent?.includes('works.menu-refresh-metadata'),
+    );
+    expect(refreshItem).toBeUndefined();
   });
 });

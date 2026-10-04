@@ -37,6 +37,8 @@ import {
   useStartAnalysisMutation,
   useSyncWorkTracksMutation,
 } from '../../queries/useWorkAdminMutation';
+import { usePipeline } from '../../hooks/useTasks';
+import PhaseDots from '../tasks/PhaseDots';
 import FavDialog from '../favourites/FavDialog';
 import WriteReview from './WriteReview';
 import MetadataEditDialog from './MetadataEditDialog';
@@ -83,6 +85,11 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
   const refreshMutation = useRefreshWorkMetadataMutation();
   const syncTracksMutation = useSyncWorkTracksMutation();
   const startAnalysisMutation = useStartAnalysisMutation();
+  // 任务中心投影：本作品流水线活跃（pending/running）时菜单禁用并显示阶段点
+  const pipeline = usePipeline(work.id);
+  const opRunning = Object.values(pipeline?.phases ?? {}).some(
+    (ph) => ph.status === 'running' || ph.status === 'pending',
+  );
   const deleteMutation = useSoftDeleteWorkMutation();
 
   // 菜单打开：以 ⋮ 按钮为锚点（m3e-menu 自动翻转防溢出）
@@ -302,7 +309,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
           {/* 重抓元数据仅 DLsite 作品有意义（人工作品后端返回 409） */}
           {classifyWorkSource(work.id) !== 'manual' && (
             <M3eMenuItem
-              disabled={refreshMutation.isPending}
+              disabled={opRunning}
               onClick={() => refreshMutation.mutate(work.id)}
             >
               <span slot='icon'>
@@ -312,7 +319,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             </M3eMenuItem>
           )}
           <M3eMenuItem
-            disabled={syncTracksMutation.isPending}
+            disabled={opRunning}
             onClick={() => syncTracksMutation.mutate(work.id)}
           >
             <span slot='icon'>
@@ -321,7 +328,7 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             {t('works.menu-sync-tracks')}
           </M3eMenuItem>
           <M3eMenuItem
-            disabled={startAnalysisMutation.isPending}
+            disabled={opRunning}
             onClick={() => {
               setMenu(null);
               startAnalysisMutation.mutate(work.id);
@@ -345,6 +352,14 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             {t('works.delete')}
           </M3eMenuItem>
         </M3eMenu>
+      )}
+
+      {/* 任务中心投影：本作品流水线活跃时显示阶段点行 */}
+      {isAdmin && opRunning && pipeline && (
+        <div className='flex items-center gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] px-3 py-2 text-xs'>
+          <span className='opacity-60'>{work.id}</span>
+          <PhaseDots pipeline={pipeline} />
+        </div>
       )}
 
       {isAdmin && (

@@ -323,12 +323,6 @@
   "works.dl-count_one": "{{count}} sold",
   "works.dl-count_other": "{{count}} sold",
   "works.now-listening": "Listening",
-  "works.admin.updating-metadata": "Updating metadata…",
-  "works.admin.metadata-updated": "Metadata updated: \"{{title}}\"",
-  "works.admin.update-metadata-failed": "Failed to update metadata: {{message}}",
-  "works.admin.syncing-tracks": "Syncing track durations…",
-  "works.admin.tracks-synced": "Track durations synced",
-  "works.admin.sync-tracks-failed": "Failed to sync track durations: {{message}}",
   "works.admin.deleting-work": "Deleting work…",
   "works.admin.delete-failed": "Failed to delete: {{message}}",
   "works.admin.work-deleted": "Work deleted",
@@ -336,9 +330,6 @@
   "works.admin.batch-deleted_other": "Deleted {{count}} works",
   "works.admin.batch-delete-failed": "Batch delete failed: {{message}}",
   "works.admin.analyze-loudness": "Analyze loudness",
-  "works.admin.loudness-queued": "Queued for analysis",
-  "works.admin.loudness-started": "Loudness analysis started",
-  "works.admin.loudness-start-failed": "Failed to start analysis: {{message}}",
   "works.loudness.curve-title": "Loudness curve",
   "works.loudness.curve-empty": "No loudness curve yet",
   "works.loudness.target": "Target {{lufs}} LUFS",
@@ -570,5 +561,6 @@
   "tasks.manual": "Manual tasks",
   "tasks.logs": "Logs",
   "tasks.logs-empty": "No logs",
-  "tasks.panel.active": "{{n}} tasks in progress, click to view"
+  "tasks.panel.active": "{{n}} tasks in progress, click to view",
+  "works.admin.queued": "Queued — changes apply when the task completes"
 }

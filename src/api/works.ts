@@ -66,23 +66,19 @@ export function getSeries(): Promise<Series[]> {
 
 // ---------- 管理员单作品操作 ----------
 
-/** 音轨同步统计（added/updated/removed 与后端 syncWorkTracks 对齐）。 */
-interface TrackStats {
-  added: number;
-  updated: number;
-  removed: number;
-}
-
-/** 重抓 DLsite 元数据 + 音轨时长同步：POST /api/work/:id/refresh（管理员） */
-export function refreshWorkMetadata(
-  id: string,
-): Promise<{ title: string; tracks: TrackStats }> {
+/** 重抓 DLsite 元数据 + 封面 + 音轨时长同步（高优入队）：POST /api/work/:id/refresh → 202（管理员） */
+export function refreshWorkMetadata(id: string): Promise<{ workId: string }> {
   return apiFetch(`work/${id}/refresh`, { method: 'POST' });
 }
 
-/** 按磁盘内容同步音轨时长：POST /api/work/:id/sync-tracks（管理员） */
-export function syncWorkTracks(id: string): Promise<{ tracks: TrackStats }> {
+/** 按磁盘内容同步音轨时长（高优入队）：POST /api/work/:id/sync-tracks → 202（管理员） */
+export function syncWorkTracks(id: string): Promise<{ workId: string }> {
   return apiFetch(`work/${id}/sync-tracks`, { method: 'POST' });
+}
+
+/** 立即响度分析（高优入队，cpu 池内插队）：POST /api/work/:id/analyze → 202（管理员） */
+export function analyzeWork(id: string): Promise<{ workId: string }> {
+  return apiFetch(`work/${id}/analyze`, { method: 'POST' });
 }
 
 /** 软删除作品（读路径已过滤 deletedAt，删除后立即不可见）：DELETE /api/work/:id（管理员） */

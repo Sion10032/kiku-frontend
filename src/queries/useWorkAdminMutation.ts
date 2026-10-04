@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { M3eSnackbar } from '@m3e/react/snackbar';
 import i18next from 'i18next';
-import { startAnalysis } from '../api/analysis';
 import * as api from '../api/works';
 
 /** 提取给用户看的错误消息（apiFetch 已把后端 error 字段转成 ApiError.message）。 */
@@ -22,73 +21,42 @@ function apiErrorMessage(err: unknown): string {
  * onSuccess 会覆盖 hook 级 onSuccess（组件层用它做关闭弹窗 + 跳转）。
  */
 export function useRefreshWorkMetadataMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (workId: string) => api.refreshWorkMetadata(workId),
-    onMutate: () => {
-      M3eSnackbar.open(i18next.t('works.admin.updating-metadata'));
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['work'] });
-      queryClient.invalidateQueries({ queryKey: ['works'] });
-      M3eSnackbar.open(
-        i18next.t('works.admin.metadata-updated', { title: data.title }),
-      );
+    // 202 = 已入队（后端本地化消息）；404/409 = 后端本地化错误直显
+    onSuccess: () => {
+      M3eSnackbar.open(i18next.t('works.admin.queued'));
     },
     onError: (err) => {
-      M3eSnackbar.open(
-        i18next.t('works.admin.update-metadata-failed', {
-          message: apiErrorMessage(err),
-        }),
-      );
+      M3eSnackbar.open(apiErrorMessage(err));
     },
   });
 }
 
 export function useSyncWorkTracksMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (workId: string) => api.syncWorkTracks(workId),
-    onMutate: () => {
-      M3eSnackbar.open(i18next.t('works.admin.syncing-tracks'));
-    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work'] });
-      queryClient.invalidateQueries({ queryKey: ['tracks'] });
-      M3eSnackbar.open(i18next.t('works.admin.tracks-synced'));
+      M3eSnackbar.open(i18next.t('works.admin.queued'));
     },
     onError: (err) => {
-      M3eSnackbar.open(
-        i18next.t('works.admin.sync-tracks-failed', {
-          message: apiErrorMessage(err),
-        }),
-      );
+      M3eSnackbar.open(apiErrorMessage(err));
     },
   });
 }
 
 /**
- * 触发响度分析（单作品，高优先级）：分析已在跑时插队（queued=true），
- * 否则立即启动该作品。不做查询失效/进度绑定——分析耗时分钟级，进度看 Dashboard。
+ * 触发响度分析（单作品，高优先级入队）：进度走任务中心。
+ * 不做查询失效/进度绑定——分析耗时分钟级，完成后任务中心可见。
  */
 export function useStartAnalysisMutation() {
   return useMutation({
-    mutationFn: (workId: string) => startAnalysis([workId], 'high'),
-    onSuccess: (r) => {
-      M3eSnackbar.open(
-        i18next.t(
-          r.queued
-            ? 'works.admin.loudness-queued'
-            : 'works.admin.loudness-started',
-        ),
-      );
+    mutationFn: (workId: string) => api.analyzeWork(workId),
+    onSuccess: () => {
+      M3eSnackbar.open(i18next.t('works.admin.queued'));
     },
     onError: (err) => {
-      M3eSnackbar.open(
-        i18next.t('works.admin.loudness-start-failed', {
-          message: apiErrorMessage(err),
-        }),
-      );
+      M3eSnackbar.open(apiErrorMessage(err));
     },
   });
 }
