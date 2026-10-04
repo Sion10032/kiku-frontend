@@ -552,5 +552,6 @@
   "tasks.collapse": "收起",
   "tasks.manual": "手动任务",
   "tasks.logs": "日志",
-  "tasks.logs-empty": "暂无日志"
+  "tasks.logs-empty": "暂无日志",
+  "tasks.panel.active": "有 {{n}} 个任务正在进行，点击查看"
 }

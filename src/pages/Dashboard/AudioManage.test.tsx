@@ -13,23 +13,13 @@ import AudioManage from './AudioManage';
 
 // ---- mock 状态（vi.hoisted 保证先于被提升的 vi.mock 工厂求值可用）----
 const h = vi.hoisted(() => ({
-  scanner: {
-    state: 'idle',
-    tasks: [],
-    failedTasks: [],
-    mainLogs: [],
-    completedCount: 0,
-    resultMessage: null,
-    start: vi.fn(),
-    kill: vi.fn(),
+  scannerApi: {
+    startScan: vi.fn(),
+    killScan: vi.fn(),
   },
-  analysis: {
-    state: 'idle',
-    snapshot: null,
-    resultMessage: null,
-    ffmpegMissing: false,
-    start: vi.fn(),
-    kill: vi.fn(),
+  analysisApi: {
+    startAnalysis: vi.fn(),
+    killAnalysis: vi.fn(),
   },
   batchDelete: {
     mutate: vi.fn(),
@@ -43,11 +33,13 @@ const h = vi.hoisted(() => ({
   }>,
 }));
 
-vi.mock('../../components/dashboard/useScannerEvents', () => ({
-  useScannerEvents: () => h.scanner,
+vi.mock('../../api/scanner', () => ({
+  startScan: h.scannerApi.startScan,
+  killScan: h.scannerApi.killScan,
 }));
-vi.mock('../../components/dashboard/useAnalysisEvents', () => ({
-  useAnalysisEvents: () => h.analysis,
+vi.mock('../../api/analysis', () => ({
+  startAnalysis: h.analysisApi.startAnalysis,
+  killAnalysis: h.analysisApi.killAnalysis,
 }));
 
 // 批量软删除 mutation：只用到 mutate，mock 记录调用供断言
@@ -69,6 +61,20 @@ vi.mock('react-i18next', () => ({
     t: (key: string, vals?: { count?: number }) =>
       vals?.count !== undefined ? `${key}:${vals.count}` : key,
   }),
+}));
+
+// M3eSnackbar Web Component 在 jsdom 无法注册（import 时炸）
+vi.mock('@m3e/react/snackbar', () => ({
+  M3eSnackbar: { open: vi.fn() },
+}));
+
+// 任务中心面板与弹窗：既有测试钉住页面按钮行为，任务展示由 B3 组件测试覆盖
+vi.mock('../../components/tasks/TaskPanel', () => ({ default: () => <div /> }));
+vi.mock('../../components/tasks/TaskCenterDialog', () => ({
+  default: () => <div />,
+}));
+vi.mock('../../hooks/useTasks', () => ({
+  useBatches: () => [],
 }));
 
 // @m3e/web 组件在 jsdom 无法注册 custom elements，mock 成轻量转发组件
@@ -182,10 +188,10 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  h.scanner.start.mockReset();
-  h.scanner.kill.mockReset();
-  h.analysis.start.mockReset();
-  h.analysis.kill.mockReset();
+  h.scannerApi.startScan.mockReset();
+  h.scannerApi.killScan.mockReset();
+  h.analysisApi.startAnalysis.mockReset();
+  h.analysisApi.killAnalysis.mockReset();
   h.batchDelete.mutate.mockReset();
   // 模拟真实 mutation：mutate 成功后触发组件层 onSuccess（清空选中）
   h.batchDelete.mutate.mockImplementation(
@@ -238,7 +244,7 @@ describe('AudioManage 执行前确认弹窗', () => {
     await flushAsync();
 
     clickButton(container, 'dashboard.scan.start-update');
-    expect(h.scanner.start).not.toHaveBeenCalled();
+    expect(h.scannerApi.startScan).not.toHaveBeenCalled();
 
     const dialog = getByTestId('confirm');
     expect(dialog.getAttribute('data-open')).toBe('true');
@@ -249,8 +255,8 @@ describe('AudioManage 执行前确认弹窗', () => {
     await act(async () => {
       fireEvent.click(getByTestId('confirm-ok'));
     });
-    expect(h.scanner.start).toHaveBeenCalledTimes(1);
-    expect(h.scanner.start).toHaveBeenCalledWith('update', undefined);
+    expect(h.scannerApi.startScan).toHaveBeenCalledTimes(1);
+    expect(h.scannerApi.startScan).toHaveBeenCalledWith('update', undefined);
   });
 
   it('有选中：点「刷新音声库信息」弹选中文案，确认后 start(update, 选中 IDs)', async () => {
@@ -268,7 +274,7 @@ describe('AudioManage 执行前确认弹窗', () => {
     await act(async () => {
       fireEvent.click(getByTestId('confirm-ok'));
     });
-    expect(h.scanner.start).toHaveBeenCalledWith('update', [
+    expect(h.scannerApi.startScan).toHaveBeenCalledWith('update', [
       'RJ00000001',
       'RJ00000002',
     ]);
@@ -279,7 +285,7 @@ describe('AudioManage 执行前确认弹窗', () => {
     await flushAsync();
 
     clickButton(container, 'dashboard.analysis.start');
-    expect(h.analysis.start).not.toHaveBeenCalled();
+    expect(h.analysisApi.startAnalysis).not.toHaveBeenCalled();
     expect(getByTestId('confirm-message').textContent).toBe(
       'dashboard.audio.analysis-confirm-all',
     );
@@ -287,8 +293,8 @@ describe('AudioManage 执行前确认弹窗', () => {
     await act(async () => {
       fireEvent.click(getByTestId('confirm-ok'));
     });
-    expect(h.analysis.start).toHaveBeenCalledTimes(1);
-    expect(h.analysis.start).toHaveBeenCalledWith(undefined);
+    expect(h.analysisApi.startAnalysis).toHaveBeenCalledTimes(1);
+    expect(h.analysisApi.startAnalysis).toHaveBeenCalledWith(undefined, 'low');
   });
 
   it('有选中：点「开始响度分析」弹选中文案，确认后 start(选中 IDs)', async () => {
@@ -305,7 +311,10 @@ describe('AudioManage 执行前确认弹窗', () => {
     await act(async () => {
       fireEvent.click(getByTestId('confirm-ok'));
     });
-    expect(h.analysis.start).toHaveBeenCalledWith(['RJ00000001']);
+    expect(h.analysisApi.startAnalysis).toHaveBeenCalledWith(
+      ['RJ00000001'],
+      'low',
+    );
   });
 });
 

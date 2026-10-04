@@ -22,13 +22,15 @@ import '@m3e/icons/outlined/title';
 import '@m3e/icons/outlined/stop';
 import '@m3e/icons/outlined/warning';
 import { useTranslation } from 'react-i18next';
+import { M3eSnackbar } from '@m3e/react/snackbar';
 import { getWorksList } from '../../api/works';
+import { killScan, startScan } from '../../api/scanner';
+import { killAnalysis, startAnalysis } from '../../api/analysis';
+import { showApiError } from '../../utils/apiError';
+import TaskPanel from '../../components/tasks/TaskPanel';
+import { useBatches } from '../../hooks/useTasks';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import DashboardPage from '../../components/dashboard/DashboardPage';
-import ScannerPanel from '../../components/dashboard/ScannerPanel';
-import AnalysisPanel from '../../components/dashboard/AnalysisPanel';
-import { useScannerEvents } from '../../components/dashboard/useScannerEvents';
-import { useAnalysisEvents } from '../../components/dashboard/useAnalysisEvents';
 import Paginator from '../../components/common/Paginator';
 import MetadataEditDialog from '../../components/work/MetadataEditDialog';
 import TitleSanitizeDialog from '../../components/work/TitleSanitizeDialog';
@@ -100,9 +102,55 @@ const QUICK_FILTERS = [
 ] as const;
 export default function AudioManage() {
   const { t } = useTranslation();
-  // 扫描器 / 响度分析的 SSE 状态与动作（按钮行在本页渲染，面板只负责展示）
-  const scanner = useScannerEvents();
-  const analysis = useAnalysisEvents();
+  // 任务中心状态（单一状态源）：扫描/更新与响度分析是否在飞由活跃批次派生；
+  // 动作直调 api（409 由后端本地化消息兑，经 showApiError 提示）
+  const batches = useBatches();
+  const scanRunning = batches.some(
+    (b) => b.status === 'running' && (b.kind === 'scan' || b.kind === 'update'),
+  );
+  const analysisRunning = batches.some(
+    (b) => b.status === 'running' && b.kind === 'analysis',
+  );
+
+  async function startScanAction(mode: 'scan' | 'update', workIds?: string[]) {
+    try {
+      await startScan(mode, workIds);
+    } catch (err) {
+      showApiError(
+        err,
+        mode === 'update'
+          ? t('dashboard.scan.start-update-failed')
+          : t('dashboard.scan.start-scan-failed'),
+      );
+    }
+  }
+
+  async function killScanAction() {
+    try {
+      await killScan();
+      M3eSnackbar.open(t('dashboard.scan.kill-sent'));
+    } catch (err) {
+      showApiError(err, t('dashboard.scan.kill-failed'));
+    }
+  }
+
+  async function startAnalysisAction(workIds?: string[]) {
+    try {
+      await startAnalysis(workIds, 'low');
+    } catch (err) {
+      showApiError(err, t('dashboard.analysis.start-failed'));
+    }
+  }
+
+  async function killAnalysisAction() {
+    try {
+      await killAnalysis();
+      M3eSnackbar.open(t('dashboard.analysis.kill-sent'));
+    } catch (err) {
+      showApiError(err, t('dashboard.analysis.kill-failed'));
+    }
+  }
+
   const batchDelete = useBatchSoftDeleteWorksMutation();
   // q = 输入框草稿；committedQ = 生效搜索词（回车 / 快捷筛选 / 清空按钮提交）
   const [q, setQ] = useState('');
@@ -213,15 +261,15 @@ export default function AudioManage() {
         {/* 扫描器组 */}
         <M3eButton
           variant='filled'
-          disabled={scanner.state === 'running'}
-          onClick={() => scanner.start('scan')}
+          disabled={scanRunning}
+          onClick={() => void startScanAction('scan')}
         >
           <M3eIcon slot='leadingIcon' name='play_arrow' />
           {t('dashboard.scan.start-scan')}
         </M3eButton>
         <M3eButton
           variant='tonal'
-          disabled={scanner.state === 'running'}
+          disabled={scanRunning}
           onClick={() => setPendingAction('update')}
         >
           <M3eIcon slot='leadingIcon' name='sync' />
@@ -230,8 +278,8 @@ export default function AudioManage() {
         <M3eButton
           variant='outlined'
           className='text-[var(--md-sys-color-error)]'
-          disabled={scanner.state !== 'running'}
-          onClick={scanner.kill}
+          disabled={!scanRunning}
+          onClick={() => void killScanAction()}
         >
           <M3eIcon slot='leadingIcon' name='stop' />
           {t('dashboard.scan.kill')}
@@ -243,7 +291,7 @@ export default function AudioManage() {
         {/* 响度分析组 */}
         <M3eButton
           variant='filled'
-          disabled={analysis.state === 'running'}
+          disabled={analysisRunning}
           onClick={() => setPendingAction('analysis')}
         >
           <M3eIcon slot='leadingIcon' name='play_arrow' />
@@ -252,8 +300,8 @@ export default function AudioManage() {
         <M3eButton
           variant='outlined'
           className='text-[var(--md-sys-color-error)]'
-          disabled={analysis.state !== 'running'}
-          onClick={analysis.kill}
+          disabled={!analysisRunning}
+          onClick={() => void killAnalysisAction()}
         >
           <M3eIcon slot='leadingIcon' name='stop' />
           {t('dashboard.analysis.kill')}
@@ -283,8 +331,7 @@ export default function AudioManage() {
         </M3eButton>
       </div>
 
-      <ScannerPanel ev={scanner} />
-      <AnalysisPanel ev={analysis} />
+      <TaskPanel />
 
       {/* 搜索行：左侧快捷筛选下拉（写入/移除 LQL 片段）+ 搜索框。
           标题净化入口已上移至顶部操作行（第三组） */}
@@ -495,8 +542,8 @@ export default function AudioManage() {
         }
         onConfirm={() => {
           const ids = selectedIds.size > 0 ? [...selectedIds] : undefined;
-          if (pendingAction === 'update') scanner.start('update', ids);
-          else if (pendingAction === 'analysis') analysis.start(ids);
+          if (pendingAction === 'update') void startScanAction('update', ids);
+          else if (pendingAction === 'analysis') void startAnalysisAction(ids);
           else if (pendingAction === 'delete' && ids) {
             batchDelete.mutate(ids, {
               onSuccess: () => setSelectedIds(new Set()),

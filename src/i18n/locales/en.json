@@ -569,5 +569,6 @@
   "tasks.collapse": "Collapse",
   "tasks.manual": "Manual tasks",
   "tasks.logs": "Logs",
-  "tasks.logs-empty": "No logs"
+  "tasks.logs-empty": "No logs",
+  "tasks.panel.active": "{{n}} tasks in progress, click to view"
 }
