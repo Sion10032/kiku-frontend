@@ -101,6 +101,13 @@ export function fetchTaskSnapshot(): Promise<TaskSnapshot> {
   return apiFetch<TaskSnapshot>('tasks');
 }
 
+export interface SubscribeHooks {
+  /** 连接建立（含自动重连成功） */
+  onOpen?: () => void;
+  /** 连接错误（fetch-event-source 默认自动重连） */
+  onError?: (err: unknown) => void;
+}
+
 /**
  * 订阅任务事件流（GET /api/tasks/events，SSE）。
  *
@@ -109,6 +116,7 @@ export function fetchTaskSnapshot(): Promise<TaskSnapshot> {
  */
 export function subscribeTaskEvents(
   onEvent: (event: TaskEvent) => void,
+  hooks?: SubscribeHooks,
 ): () => void {
   const ctrl = new AbortController();
   const token = getToken();
@@ -116,12 +124,20 @@ export function subscribeTaskEvents(
     method: 'GET',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     signal: ctrl.signal,
+    async onopen(res) {
+      if (!res.ok) throw new Error(`SSE ${res.status}`);
+      hooks?.onOpen?.();
+    },
     onmessage(ev) {
       try {
         onEvent(JSON.parse(ev.data) as TaskEvent);
       } catch {
         // 非 JSON 帧忽略（保活注释等）
       }
+    },
+    onerror(err) {
+      hooks?.onError?.(err);
+      // 不抛出 → fetch-event-source 自动重连（对齐项目 useSSE 惯例）
     },
   });
   return () => ctrl.abort();
