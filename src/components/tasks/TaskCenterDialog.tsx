@@ -1,10 +1,9 @@
 import { clsx } from 'clsx';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { M3eButton } from '@m3e/react/button';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eExpansionPanel } from '@m3e/react/expansion-panel';
-import type { M3eExpansionPanelElement } from '@m3e/web/expansion-panel';
 import { cancelTask } from '../../api/tasks';
 import type { BatchInfo } from '../../api/tasks';
 import { useTasks } from '../../hooks/useTasks';
@@ -31,12 +30,8 @@ export default function TaskCenterDialog({
   const { t } = useTranslation();
   const { snapshot, connected } = useTasks();
   const [filter, setFilter] = useState<Filter>('all');
-  // 日志面板非受控（同 BatchCard：SSE 快照高频重渲染下受控 open 会被拉回旧值打断动画）
-  const logsPanelRef = useRef<M3eExpansionPanelElement>(null);
-  useEffect(() => {
-    // 日志默认展开
-    if (logsPanelRef.current) logsPanelRef.current.open = true;
-  }, []);
+  // 日志面板非受控（同 BatchCard：SSE 快照高频重渲染下受控 open 会被拉回旧值
+  // 打断动画）；不设初始 open，默认收起，用户点 header 展开
 
   // 倒序：最新批次在最上（批次快照按时间正序追加，同日志区倒序惯例）
   const filtered = [...snapshot.batches].reverse().filter((b) => {
@@ -154,7 +149,6 @@ export default function TaskCenterDialog({
         {/* 日志面板：m3e expansion panel（同 BatchCard），默认展开，展开时内容区占 2/3；
             滚动在面板内容包裹层；动画时长显式恢复（dialog 动画压制块继承外溢） */}
         <M3eExpansionPanel
-          ref={logsPanelRef}
           togglePosition='before'
           className={clsx(
             'shrink-0 rounded-md border border-[var(--md-sys-color-outline-variant)]',

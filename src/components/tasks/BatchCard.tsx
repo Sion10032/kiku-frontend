@@ -108,7 +108,7 @@ export default function BatchCard({
         // 显式恢复动画时长：TaskCenterDialog 所在的 index.css 压制了
         // --md-sys-motion-duration-*（dialog 自身动画），会继承给 dialog 内所有
         // m3e 组件；此变量是官方扩展点，短路时长链（fallback 250ms = medium1）
-        // '[--m3e-collapsible-animation-duration:250ms]',
+        '[--m3e-collapsible-animation-duration:250ms]',
         // 无流水线批次仅禁点击，不禁视觉（保持正常文字外观）
         !expandable && '[--m3e-expansion-panel-disabled-text-opacity:1]',
       )}
