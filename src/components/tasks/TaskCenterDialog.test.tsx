@@ -190,6 +190,66 @@ describe('TaskCenterDialog', () => {
     expect(screen.getByText('RJ2')).toBeTruthy();
   });
 
+  it('终态批次条目不漂移（workIds 固化名单优先于活流水线 batchId）', () => {
+    // scan 批次已收尾并固化 workIds；update 批次随后重跑同作品（活流水线
+    // phases[].batchId 已改指 update）——scan 卡仍应显示该作品
+    snapshotState.current = {
+      batches: [
+        {
+          batchId: 'scan-old',
+          kind: 'scan',
+          createdAt: 't',
+          counters: {
+            batchId: 'scan-old',
+            kind: 'scan',
+            total: 1,
+            running: 0,
+            completed: 1,
+            failed: 0,
+          },
+          status: 'completed',
+          workIds: ['RJ1'],
+        },
+        {
+          batchId: 'update-new',
+          kind: 'update',
+          createdAt: 't2',
+          counters: {
+            batchId: 'update-new',
+            kind: 'update',
+            total: 1,
+            running: 1,
+            completed: 0,
+            failed: 0,
+          },
+          status: 'running',
+        },
+      ],
+      pipelines: [
+        {
+          workId: 'RJ1',
+          phases: {
+            metadata: {
+              workId: 'RJ1',
+              phase: 'metadata',
+              status: 'running',
+              changedAt: 't2',
+              batchId: 'update-new',
+            },
+          },
+          updatedAt: 't2',
+        },
+      ],
+      logs: [],
+    };
+    renderDialog();
+    // RJ1 同时出现在 scan-old（固化名单）与 update-new（实时 batchId）两张卡
+    const scanCard = screen.getByTestId('batch-scan-old');
+    expect(scanCard.textContent).toContain('RJ1');
+    const updateCard = screen.getByTestId('batch-update-new');
+    expect(updateCard.textContent).toContain('RJ1');
+  });
+
   it('批次卡片倒序渲染（最新在最上）', () => {
     snapshotState.current = {
       batches: [

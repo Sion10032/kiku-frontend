@@ -6,6 +6,7 @@ import { M3eDialog } from '@m3e/react/dialog';
 import { M3eExpansionPanel } from '@m3e/react/expansion-panel';
 import type { M3eExpansionPanelElement } from '@m3e/web/expansion-panel';
 import { cancelTask } from '../../api/tasks';
+import type { BatchInfo } from '../../api/tasks';
 import { useTasks } from '../../hooks/useTasks';
 import BatchCard from './BatchCard';
 import TaskLogList from './TaskLogList';
@@ -47,10 +48,23 @@ export default function TaskCenterDialog({
   const manualPipelines = snapshot.pipelines.filter((p) =>
     Object.values(p.phases).every((ph) => !ph.batchId),
   );
-  const pipelinesOf = (batchId: string) =>
-    snapshot.pipelines.filter((p) =>
-      Object.values(p.phases).some((ph) => ph.batchId === batchId),
+  /**
+   * 批次条目：活流水线按 workId 全局唯一，后续批次重跑同作品会改写
+   * phases[].batchId（归属漂移）。终态批次用收尾固化的 workIds 名单
+   * 从活流水线取当前状态渲染（归属不变，状态反映最新）；运行中批次
+   * 仍按 batchId 实时匹配。
+   */
+  const pipelinesOf = (batch: BatchInfo) => {
+    if (batch.workIds && batch.workIds.length > 0) {
+      const byId = new Map(snapshot.pipelines.map((p) => [p.workId, p]));
+      return batch.workIds
+        .map((id) => byId.get(id))
+        .filter((p) => p !== undefined);
+    }
+    return snapshot.pipelines.filter((p) =>
+      Object.values(p.phases).some((ph) => ph.batchId === batch.batchId),
     );
+  };
 
   const filters: Array<{ key: Filter; label: string }> = [
     { key: 'all', label: t('tasks.filter.all') },
@@ -115,7 +129,7 @@ export default function TaskCenterDialog({
             <BatchCard
               key={b.batchId}
               batch={b}
-              pipelines={pipelinesOf(b.batchId)}
+              pipelines={pipelinesOf(b)}
               onCancel={(id) => void cancelTask(id)}
             />
           ))}
