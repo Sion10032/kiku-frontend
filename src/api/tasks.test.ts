@@ -24,9 +24,13 @@ describe('tasks api', () => {
     });
   });
 
-  it('fetchTaskSnapshot()：GET tasks', async () => {
-    await fetchTaskSnapshot();
+  it('fetchTaskSnapshot()：GET tasks 并解包 {snapshot} 包裹', async () => {
+    mockedApiFetch.mockResolvedValue({
+      snapshot: { batches: [{ batchId: 'scan-1' }], pipelines: [], logs: [] },
+    });
+    const snapshot = await fetchTaskSnapshot();
     expect(mockedApiFetch).toHaveBeenCalledWith('tasks');
+    expect(snapshot.batches[0]?.batchId).toBe('scan-1');
   });
 
   it('cancelTask(id)：DELETE tasks/:id', async () => {

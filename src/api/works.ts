@@ -64,6 +64,25 @@ export function getSeries(): Promise<Series[]> {
   return apiFetch<Series[]>('series/');
 }
 
+// ---------- 响度曲线（作品详情音轨查看） ----------
+
+export interface LoudnessCurve {
+  mediaIndex: string;
+  intervalSec: number;
+  /** short-term LUFS 按秒序列（1 点/秒，1 位小数；null = 窗口未满/静音）；未分析为 null */
+  curve: Array<number | null> | null;
+}
+
+/** 按需获取单条音轨响度曲线：GET /api/work/:id/loudness-curve?mediaIndex=...（mediaIndex 含子目录需 encode） */
+export function getLoudnessCurve(
+  workId: string,
+  mediaIndex: string,
+): Promise<LoudnessCurve> {
+  return apiFetch<LoudnessCurve>(
+    `work/${workId}/loudness-curve?mediaIndex=${encodeURIComponent(mediaIndex)}`,
+  );
+}
+
 // ---------- 管理员单作品操作 ----------
 
 /** 重抓 DLsite 元数据 + 封面 + 音轨时长同步（高优入队）：POST /api/work/:id/refresh → 202（管理员） */

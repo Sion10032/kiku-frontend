@@ -33,11 +33,9 @@ const h = vi.hoisted(() => ({
   }>,
 }));
 
-vi.mock('../../api/scanner', () => ({
+vi.mock('../../api/tasks', () => ({
   startScan: h.scannerApi.startScan,
   killScan: h.scannerApi.killScan,
-}));
-vi.mock('../../api/analysis', () => ({
   startAnalysis: h.analysisApi.startAnalysis,
   killAnalysis: h.analysisApi.killAnalysis,
 }));

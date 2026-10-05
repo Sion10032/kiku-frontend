@@ -5,7 +5,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { M3eDialog } from '@m3e/react/dialog';
-import { getLoudnessCurve } from '../../api/analysis';
+import { getLoudnessCurve } from '../../api/works';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 export interface CurvePoint {

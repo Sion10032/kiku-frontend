@@ -38,7 +38,10 @@ a {
 }
 
 /* m3e dialog 2.7.11 起的 M3 Expressive 开关动画（容器高度生长、内容分级淡入）
-   过于明显，全部置为瞬时。组件动画时长均读取 --md-sys-motion-duration-* 变量。 */
+   过于明显，全部置为瞬时。组件动画时长均读取 --md-sys-motion-duration-* 变量。
+   注意：CSS 自定义属性会继承给 dialog 内所有后代 m3e 组件（如任务中心的
+   expansion panel），需要动画的组件须自行显式恢复（如 BatchCard 设
+   --m3e-collapsible-animation-duration: 250ms）。 */
 m3e-dialog {
   --md-sys-motion-duration-long-2: 0s; /* 打开：面板位移/容器高度/遮罩 */
   --md-sys-motion-duration-short-3: 0s; /* 关闭：同上 */

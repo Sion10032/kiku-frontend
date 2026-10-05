@@ -562,5 +562,6 @@
   "tasks.logs": "Logs",
   "tasks.logs-empty": "No logs",
   "tasks.panel.active": "{{n}} tasks in progress, click to view",
-  "works.admin.queued": "Queued — changes apply when the task completes"
+  "works.admin.queued": "Queued — changes apply when the task completes",
+  "tasks.panel.recent": "View recent tasks"
 }

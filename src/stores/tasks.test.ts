@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { applyTaskEvent, emptyTaskSnapshot, useTasksStore } from './tasks';
-import type { PhaseEntry, TaskSnapshot } from '../api/tasks';
+import type { PhaseEntry, TaskEvent, TaskSnapshot } from '../api/tasks';
 
 function entry(
   partial: Partial<PhaseEntry> & { workId: string; phase: PhaseEntry['phase'] },
@@ -135,6 +135,18 @@ describe('applyTaskEvent（镜像后端 reducer）', () => {
       removed: 1,
       purged: 0,
     });
+  });
+
+  it('TASK_SNAPSHOT 缺 snapshot 字段（畸形帧）→ 不覆盖现有快照', () => {
+    const current: TaskSnapshot = {
+      batches: [],
+      pipelines: [{ workId: 'RJ1', phases: {}, updatedAt: 't' }],
+      logs: [],
+    };
+    const s = applyTaskEvent(current, {
+      type: 'TASK_SNAPSHOT',
+    } as unknown as TaskEvent);
+    expect(s).toEqual(current); // 防御：undefined 不得入 store
   });
 
   it('TASK_SNAPSHOT 整体替换快照', () => {

@@ -105,7 +105,8 @@ export function applyTaskEvent(
 ): TaskSnapshot {
   switch (event.type) {
     case 'TASK_SNAPSHOT':
-      return event.snapshot;
+      // 防御：畸形帧（snapshot 缺失）忽略该事件，不覆盖现有快照
+      return event.snapshot ?? snapshot;
     case 'TASK_DELTA': {
       let s = snapshot;
       for (const e of event.entries) s = upsertPipeline(s, e);

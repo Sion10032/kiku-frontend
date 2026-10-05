@@ -94,11 +94,48 @@ export type TaskEvent =
     }
   | { type: 'BATCH_LOG'; log: BatchLog };
 
+// ---------- 批次触发（原 api/scanner.ts、api/analysis.ts 的触发通道，B6 迁入） ----------
+
+/** 扫描模式：scan=扫盘新增；update=刷新库内作品元数据。 */
+export type ScanMode = 'scan' | 'update';
+
+/** 触发扫描/更新（入队编排）：POST /api/scanner/scan → { batchId }；在跑 409 */
+export function startScan(
+  mode: ScanMode = 'scan',
+  workIds?: string[],
+): Promise<{ success: boolean; batchId: string }> {
+  return apiFetch<{ success: boolean; batchId: string }>('scanner/scan', {
+    method: 'POST',
+    json: { mode, ...(workIds ? { workIds } : {}) },
+  });
+}
+
+/** 终止扫描/更新：POST /api/scanner/kill（按活跃 scan:all 批次取消） */
+export function killScan(): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('scanner/kill', { method: 'POST' });
+}
+
+/** 触发响度分析（全量 pending 或子集）：POST /api/analysis/start → { batchId } */
+export function startAnalysis(
+  workIds?: string[],
+  priority: 'low' | 'high' = 'low',
+): Promise<{ success: boolean; batchId: string }> {
+  return apiFetch<{ success: boolean; batchId: string }>('analysis/start', {
+    method: 'POST',
+    json: { priority, ...(workIds ? { workIds } : {}) },
+  });
+}
+
+/** 终止响度分析：POST /api/analysis/stop（按活跃 analysis 批次取消） */
+export function killAnalysis(): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('analysis/stop', { method: 'POST' });
+}
+
 // ---------- API ----------
 
-/** 权威快照（GET /api/tasks；重连补播与首屏数据源） */
+/** 权威快照（GET /api/tasks；重连补播与首屏数据源）。响应为 {snapshot} 包裹，此处解包。 */
 export function fetchTaskSnapshot(): Promise<TaskSnapshot> {
-  return apiFetch<TaskSnapshot>('tasks');
+  return apiFetch<{ snapshot: TaskSnapshot }>('tasks').then((r) => r.snapshot);
 }
 
 export interface SubscribeHooks {

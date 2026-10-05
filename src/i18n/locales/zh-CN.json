@@ -545,5 +545,6 @@
   "tasks.logs": "日志",
   "tasks.logs-empty": "暂无日志",
   "tasks.panel.active": "有 {{n}} 个任务正在进行，点击查看",
-  "works.admin.queued": "已加入队列，完成后自动生效"
+  "works.admin.queued": "已加入队列，完成后自动生效",
+  "tasks.panel.recent": "查看最近任务"
 }

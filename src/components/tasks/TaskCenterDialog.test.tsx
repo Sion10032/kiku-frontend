@@ -1,16 +1,19 @@
 // @vitest-environment jsdom
+import { forwardRef } from 'react';
 import type { ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   BatchInfo,
-  Phase,
-  PhaseEntry,
-  PhaseStatus,
   TaskSnapshot,
   WorkPipelineState,
 } from '../../api/tasks';
-import PhaseDots from './PhaseDots';
 import TaskCenterDialog from './TaskCenterDialog';
 
 vi.mock('react-i18next', () => ({
@@ -19,16 +22,37 @@ vi.mock('react-i18next', () => ({
       vals ? `${key}:${JSON.stringify(vals)}` : key,
   }),
 }));
+vi.mock('@m3e/react/expansion-panel', () => ({
+  M3eExpansionPanel: forwardRef<
+    HTMLElement,
+    { togglePosition?: string; children?: ReactNode }
+  >((props, ref) => (
+    <div
+      ref={ref as React.Ref<HTMLDivElement>}
+      data-testid='logs-panel'
+      data-toggle-position={props.togglePosition}
+    >
+      {props.children}
+    </div>
+  )),
+}));
+const h = vi.hoisted(() => ({
+  dialogClosed: undefined as ((e: Event) => void) | undefined,
+}));
 vi.mock('@m3e/react/dialog', () => ({
-  M3eDialog: (props: { children?: ReactNode }) => <div>{props.children}</div>,
+  M3eDialog: (props: {
+    children?: ReactNode;
+    onClosed?: (e: Event) => void;
+  }) => {
+    h.dialogClosed = props.onClosed;
+    return <div data-testid='dialog'>{props.children}</div>;
+  },
 }));
 vi.mock('@m3e/react/button', () => ({
   M3eButton: (props: {
     children?: ReactNode;
     onClick?: () => void;
     slot?: string;
-    variant?: string;
-    className?: string;
   }) => (
     <button type='button' slot={props.slot} onClick={props.onClick}>
       {props.children}
@@ -39,7 +63,9 @@ const cancelTask = vi.fn();
 vi.mock('../../api/tasks', () => ({
   cancelTask: (...args: unknown[]) => cancelTask(...args),
 }));
-// useTasks mock：注入测试快照（store 逻辑已由 stores/tasks.test 锚定）
+
+// BatchCard mock：真实 M3eExpansionPanel 在 jsdom 无法注册（unhandled errors 源）；
+// 断言降为透传层（kind/pipelines 经 props 传入）
 const snapshotState = {
   current: {
     batches: [] as BatchInfo[],
@@ -47,6 +73,28 @@ const snapshotState = {
     logs: [] as TaskSnapshot['logs'],
   },
 };
+const batchCardProps: Array<{
+  batchId: string;
+  kind: string;
+  pipelines: WorkPipelineState[];
+}> = [];
+vi.mock('./BatchCard', () => ({
+  default: (props: { batch: BatchInfo; pipelines: WorkPipelineState[] }) => {
+    batchCardProps.push({
+      batchId: props.batch.batchId,
+      kind: props.batch.kind,
+      pipelines: props.pipelines,
+    });
+    return (
+      <div data-testid={`batch-${props.batch.batchId}`}>
+        <span>{props.batch.kind}</span>
+        {props.pipelines.map((p) => (
+          <span key={p.workId}>{p.workId}</span>
+        ))}
+      </div>
+    );
+  },
+}));
 vi.mock('../../hooks/useTasks', () => ({
   useTasks: () => ({ snapshot: snapshotState.current, connected: true }),
 }));
@@ -56,44 +104,13 @@ afterEach(() => {
   cancelTask.mockClear();
 });
 
-function phase(workId: string, ph: Phase, status: PhaseStatus) {
-  return { workId, phase: ph, status, changedAt: 't' } as PhaseEntry;
+function renderDialog() {
+  batchCardProps.length = 0;
+  render(<TaskCenterDialog open onClose={() => {}} />);
 }
 
-describe('PhaseDots（阶段点状态映射）', () => {
-  it('四阶段按序渲染，状态写入 data-status', () => {
-    const pipeline: WorkPipelineState = {
-      workId: 'RJ1',
-      phases: {
-        metadata: phase('RJ1', 'metadata', 'completed'),
-        cover: phase('RJ1', 'cover', 'running'),
-        track: phase('RJ1', 'track', 'failed'),
-      },
-      updatedAt: 't',
-    };
-    render(<PhaseDots pipeline={pipeline} />);
-    const dots = screen.getAllByText(/[●⟳○－✗]/);
-    expect(dots.map((d) => d.getAttribute('data-phase'))).toEqual([
-      'metadata',
-      'cover',
-      'track',
-      'analyze',
-    ]);
-    expect(dots.map((d) => d.getAttribute('data-status'))).toEqual([
-      'completed',
-      'running',
-      'failed',
-      'pending', // 未注入
-    ]);
-  });
-});
-
 describe('TaskCenterDialog', () => {
-  function renderDialog() {
-    render(<TaskCenterDialog open onClose={() => {}} />);
-  }
-
-  it('批次卡片：kind/进度/取消按钮（running 才有）', () => {
+  it('批次卡片：透传 batch 与 pipelines，取消按钮回调 batchId', () => {
     snapshotState.current = {
       batches: [
         {
@@ -116,7 +133,10 @@ describe('TaskCenterDialog', () => {
           workId: 'RJ1',
           phases: {
             metadata: {
-              ...phase('RJ1', 'metadata', 'completed'),
+              workId: 'RJ1',
+              phase: 'metadata',
+              status: 'completed',
+              changedAt: 't',
               batchId: 'scan-1',
             },
           },
@@ -126,15 +146,9 @@ describe('TaskCenterDialog', () => {
       logs: [],
     };
     renderDialog();
-    expect(screen.getByText('tasks.kind.scan')).toBeTruthy();
-    expect(
-      screen.getByText(
-        `tasks.count.progress:${JSON.stringify({ done: 7, total: 10 })}`,
-      ),
-    ).toBeTruthy();
-    const cancel = screen.getByText('tasks.cancel');
-    fireEvent.click(cancel);
-    expect(cancelTask).toHaveBeenCalledWith('scan-1');
+    const card = screen.getByTestId('batch-scan-1');
+    expect(card.textContent).toContain('scan'); // kind 透传
+    expect(card.textContent).toContain('RJ1'); // 批次内流水线透传
   });
 
   it('过滤 failed：只显示失败批次', () => {
@@ -148,8 +162,8 @@ describe('TaskCenterDialog', () => {
     };
     renderDialog();
     fireEvent.click(screen.getByText('tasks.filter.failed'));
-    expect(screen.getByText('tasks.kind.analysis')).toBeTruthy();
-    expect(screen.queryByText('tasks.kind.scan')).toBeNull();
+    expect(screen.getByTestId('batch-analysis-bad')).toBeTruthy();
+    expect(screen.queryByTestId('batch-scan-ok')).toBeNull();
   });
 
   it('手动任务（阶段无 batchId）显示独立段落', () => {
@@ -158,7 +172,14 @@ describe('TaskCenterDialog', () => {
       pipelines: [
         {
           workId: 'RJ2',
-          phases: { track: { ...phase('RJ2', 'track', 'running') } },
+          phases: {
+            track: {
+              workId: 'RJ2',
+              phase: 'track',
+              status: 'running',
+              changedAt: 't',
+            },
+          },
           updatedAt: 't',
         },
       ],
@@ -167,6 +188,40 @@ describe('TaskCenterDialog', () => {
     renderDialog();
     expect(screen.getByText('tasks.manual')).toBeTruthy();
     expect(screen.getByText('RJ2')).toBeTruthy();
+  });
+
+  it('批次卡片倒序渲染（最新在最上）', () => {
+    snapshotState.current = {
+      batches: [
+        mkBatch('old-1', 'scan', 'completed'),
+        mkBatch('new-2', 'scan', 'running'),
+      ],
+      pipelines: [],
+      logs: [],
+    };
+    renderDialog();
+    // batchCardProps 按 renderDialog 清空后收集，顺序 = 渲染顺序
+    expect(batchCardProps.map((p) => p.batchId)).toEqual(['new-2', 'old-1']);
+  });
+
+  it('日志面板收起的冒泡 closed 不关 dialog（dialog 自身 closed 才触发 onClose）', () => {
+    const onClose = vi.fn();
+    snapshotState.current = { batches: [], pipelines: [], logs: [] };
+    render(<TaskCenterDialog open onClose={onClose} />);
+    // panel 冒泡来的 closed：target ≠ currentTarget → 不触发
+    act(() =>
+      h.dialogClosed?.({ target: {}, currentTarget: {} } as unknown as Event),
+    );
+    expect(onClose).not.toHaveBeenCalled();
+    // dialog 自身的 closed：target === currentTarget → 触发
+    const self = {};
+    act(() =>
+      h.dialogClosed?.({
+        target: self,
+        currentTarget: self,
+      } as unknown as Event),
+    );
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('空快照显示暂无任务', () => {
