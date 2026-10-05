@@ -16,7 +16,10 @@ export default function TaskLogList({ logs }: { logs: BatchLog[] }) {
           className='flex gap-2'
         >
           <time className='shrink-0 opacity-60'>
-            {l.timestamp.slice(11, 19)}
+            {/* 后端日志 timestamp 为 UTC ISO；转浏览器本地时区显示 */}
+            {new Date(l.timestamp).toLocaleTimeString(undefined, {
+              hour12: false,
+            })}
           </time>
           <span
             className={`w-14 shrink-0 ${
