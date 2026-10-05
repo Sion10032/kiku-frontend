@@ -66,6 +66,7 @@ function markBatchCompleted(
   kind: BatchKind,
   results: ScanSummaryResults | AnalysisSummaryResults,
   completedAt: string,
+  workIds: string[],
 ): TaskSnapshot {
   const idx = state.batches.findIndex((b) => b.batchId === batchId);
   const batches = [...state.batches];
@@ -85,11 +86,18 @@ function markBatchCompleted(
       status: 'completed',
       completedAt,
       results,
+      workIds,
     });
   } else {
     const prev = batches[idx];
     if (!prev) return state;
-    batches[idx] = { ...prev, status: 'completed', completedAt, results };
+    batches[idx] = {
+      ...prev,
+      status: 'completed',
+      completedAt,
+      results,
+      workIds,
+    };
   }
   return { ...state, batches };
 }
@@ -120,6 +128,7 @@ export function applyTaskEvent(
         event.kind,
         event.results,
         event.completedAt,
+        event.workIds,
       );
     case 'BATCH_LOG': {
       const logs = [...snapshot.logs, event.log];

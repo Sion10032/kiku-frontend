@@ -123,9 +123,11 @@ describe('applyTaskEvent（镜像后端 reducer）', () => {
         purged: 0,
       },
       completedAt: '2026-10-04T01:00:00.000Z',
+      workIds: ['RJ1', 'RJ2'],
     });
     const batch = s.batches.find((b) => b.batchId === 'b1');
     expect(batch?.status).toBe('completed');
+    expect(batch?.workIds).toEqual(['RJ1', 'RJ2']);
     expect(batch?.results).toEqual({
       total: 10,
       added: 3,
@@ -178,5 +180,49 @@ describe('useTasksStore', () => {
   it('setConnected 切换连接状态', () => {
     useTasksStore.getState().setConnected(true);
     expect(useTasksStore.getState().connected).toBe(true);
+  });
+
+  it('BATCH_SUMMARY 携带 workIds：事件流直接固化终态名单（免拉快照）', () => {
+    // 先靠 TASK_DELTA 防御创建 running 批次（无 workIds）
+    let s = emptyTaskSnapshot();
+    s = applyTaskEvent(s, {
+      type: 'TASK_DELTA',
+      entries: [
+        {
+          workId: 'RJ1',
+          phase: 'metadata',
+          status: 'completed',
+          changedAt: 't',
+          batchId: 'b1',
+        },
+      ],
+      counters: [
+        {
+          batchId: 'b1',
+          kind: 'scan',
+          total: 1,
+          running: 0,
+          completed: 1,
+          failed: 0,
+        },
+      ],
+    });
+    s = applyTaskEvent(s, {
+      type: 'BATCH_SUMMARY',
+      batchId: 'b1',
+      kind: 'scan',
+      results: {
+        total: 1,
+        added: 1,
+        updated: 0,
+        failed: 0,
+        skipped: 0,
+        removed: 0,
+        purged: 0,
+      },
+      completedAt: 't2',
+      workIds: ['RJ1'],
+    });
+    expect(s.batches[0]?.workIds).toEqual(['RJ1']);
   });
 });

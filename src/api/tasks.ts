@@ -97,6 +97,8 @@ export type TaskEvent =
       kind: BatchKind;
       results: ScanSummaryResults | AnalysisSummaryResults;
       completedAt: string;
+      /** 终态固化条目名单（与快照同步携带，事件流消费者免拉快照） */
+      workIds: string[];
     }
   | { type: 'BATCH_LOG'; log: BatchLog };
 
