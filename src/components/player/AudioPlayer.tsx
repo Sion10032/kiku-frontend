@@ -163,19 +163,22 @@ export default function AudioPlayer() {
               : 'opacity-100',
           )}
         >
-          {isVideo ? (
-            <VideoSurface workId={track.workId} />
-          ) : track.workId ? (
-            <img
-              src={mediaUrl(`/api/cover/${track.workId}/file`)}
-              alt={track.workTitle}
-              className='max-h-[38vh] w-auto max-w-[min(80vw,420px)] rounded-2xl object-contain lg:max-h-[60vh]'
-            />
-          ) : (
-            <div className='flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)'>
-              <M3eIcon name='music_note' />
-            </div>
-          )}
+          {/* 封面/视频：占标题以外全部高度（min-h-0 允许收缩） */}
+          <div className='flex min-h-0 w-full flex-1 items-center justify-center'>
+            {isVideo ? (
+              <VideoSurface workId={track.workId} />
+            ) : track.workId ? (
+              <img
+                src={mediaUrl(`/api/cover/${track.workId}/file`)}
+                alt={track.workTitle}
+                className='max-h-full max-w-full rounded-2xl object-contain'
+              />
+            ) : (
+              <div className='flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)'>
+                <M3eIcon name='music_note' />
+              </div>
+            )}
+          </div>
           <div className='max-w-full text-center'>
             <h2 className='truncate text-xl font-medium'>{track.title}</h2>
             <p className='mt-1 text-sm opacity-70'>{track.workTitle}</p>

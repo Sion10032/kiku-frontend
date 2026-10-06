@@ -52,7 +52,9 @@ export default function VideoSurface({ workId }: { workId?: string }) {
           togglePlaying();
         }
       }}
-      className='relative flex aspect-video w-[min(80vw,420px)] cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-black lg:w-auto lg:max-w-[min(60vw,720px)]'
+      // 高度驱动：h-full（确定性高度）+ aspect-ratio 推出宽度，内容 absolute 不塌缩；
+      // 容器过宽时 max-w-full 钳制，视频 object-contain 内部留黑边
+      className='relative flex aspect-video h-full w-auto max-w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-black'
     >
       {failed ? (
         <>
