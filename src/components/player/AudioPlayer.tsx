@@ -26,6 +26,7 @@ import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
 import GainIndicator from './GainIndicator';
 import QueueDialog from './QueueDialog';
+import VideoSurface from './VideoSurface';
 import './AudioPlayer.css';
 import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../../constants';
 import { usePlayerStore, selectCurrentTrack } from '../../stores/playerStore';
@@ -34,6 +35,7 @@ import { mediaUrl } from '../../api/client';
 import { seekTo } from '../../hooks/usePlayer';
 import { useSwipeHide } from '../../hooks/useSwipeHide';
 import { formatDuration, formatRemaining } from '../../utils/format';
+import { isVideoTrack } from '../../utils/track';
 
 /**
  * 全屏播放器覆盖层：hide=false 时显示。
@@ -89,7 +91,10 @@ export default function AudioPlayer() {
 
   if (!track) return null;
 
-  const hasLyrics = lyricLines.length > 0;
+  // 视频曲目：画面显示在封面位（VideoSurface），歌词整体不参与（面板
+  // 不显示、窄屏入口禁用——画面点击已被 toggle 播放占用）
+  const isVideo = isVideoTrack(track);
+  const hasLyrics = lyricLines.length > 0 && !isVideo;
 
   /** 进度条拖动：thumb 值实时写回（seekTo 内部 clamp）。 */
   function handleSeek(e: Event) {
@@ -158,7 +163,9 @@ export default function AudioPlayer() {
               : 'opacity-100',
           )}
         >
-          {track.workId ? (
+          {isVideo ? (
+            <VideoSurface workId={track.workId} />
+          ) : track.workId ? (
             <img
               src={mediaUrl(`/api/cover/${track.workId}/file`)}
               alt={track.workTitle}
