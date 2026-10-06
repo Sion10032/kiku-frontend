@@ -111,6 +111,21 @@ afterEach(() => {
   usePlayerStore.setState(initialStore, true);
 });
 
+describe('音量百分比显示', () => {
+  it('音量条右侧显示当前音量百分比（与左侧图标同宽容器）', () => {
+    seedTrack();
+    usePlayerStore.setState({ volume: 0.5 });
+    render(<AudioPlayer />);
+    expect(screen.getByText('50%')).not.toBeNull();
+  });
+
+  it('满音量显示 100%', () => {
+    seedTrack();
+    render(<AudioPlayer />);
+    expect(screen.getByText('100%')).not.toBeNull();
+  });
+});
+
 describe('AudioPlayer 封面下滑手势', () => {
   it('手势元素绑定封面 id 且仅识别 down 方向', () => {
     seedTrack();

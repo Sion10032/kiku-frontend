@@ -313,6 +313,12 @@ export default function AudioPlayer() {
           >
             <M3eSliderThumb value={Math.round(volume * 100)} />
           </M3eSlider>
+          <span
+            aria-hidden='true'
+            className='w-(--m3e-icon-button-medium-container-height) shrink-0 text-center text-xs tabular-nums opacity-70'
+          >
+            {Math.round(volume * 100)}%
+          </span>
           {/* 当前均衡增益（仅均衡开启且≠0 时显示） */}
           <GainIndicator className='shrink-0' />
         </div>
