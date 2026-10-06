@@ -342,6 +342,7 @@
   "player.play": "Play",
   "player.pause": "Pause",
   "player.wavpack-error": "Failed to play WavPack track: {{message}}",
+  "player.video-unsupported": "Your browser cannot play this format. Download it from the menu.",
   "player.wavpack-error-unsupported": "Failed to play WavPack track: this file is not a supported WavPack file or is corrupted",
   "player.wavpack-error-seek": "Failed to play WavPack track: could not locate the requested playback position",
   "player.wavpack-error-truncated": "Failed to play WavPack track: the audio stream ended prematurely",

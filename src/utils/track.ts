@@ -16,13 +16,21 @@ export function toTrack(work: Work, leaf: TrackLeaf): Track {
   };
 }
 
-/** 深度优先扁平化文件树,收集全部音频叶子(「继续播放」队列用)。 */
+/** 按扩展名判定视频音轨（mp4/webm/mkv；与后端 VIDEO_EXTENSIONS 对齐）。 */
+export function isVideoTrack(track: Pick<Track, 'hash'>): boolean {
+  const hash = (track.hash ?? '').toLowerCase();
+  return (
+    hash.endsWith('.mp4') || hash.endsWith('.webm') || hash.endsWith('.mkv')
+  );
+}
+
+/** 深度优先扁平化文件树,收集全部音频/视频叶子(「继续播放」队列用)。 */
 export function flattenAudioLeaves(nodes: TrackNode[]): TrackLeaf[] {
   const out: TrackLeaf[] = [];
   function walk(list: TrackNode[]): void {
     for (const n of list) {
       if (n.type === 'folder') walk(n.children);
-      else if (n.type === 'audio') out.push(n);
+      else if (n.type === 'audio' || n.type === 'video') out.push(n);
     }
   }
   walk(nodes);

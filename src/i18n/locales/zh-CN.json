@@ -329,6 +329,7 @@
   "player.play": "播放",
   "player.pause": "暂停",
   "player.wavpack-error": "WavPack 音轨播放失败：{{message}}",
+  "player.video-unsupported": "浏览器不支持此格式，可通过菜单下载播放",
   "player.wavpack-error-unsupported": "WavPack 音轨播放失败：该文件为不受支持的 WavPack 文件或已损坏",
   "player.wavpack-error-seek": "WavPack 音轨播放失败：无法定位到目标播放位置",
   "player.wavpack-error-truncated": "WavPack 音轨播放失败：音频流提前结束",

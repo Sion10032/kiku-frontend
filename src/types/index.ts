@@ -129,7 +129,13 @@ export interface WorksPage {
 // ---------- 文件树 ----------
 
 /** 文件树节点类型（对齐原 kikoeru-quasar 的 tracks 响应）。 */
-export type TrackItemType = 'folder' | 'audio' | 'text' | 'image' | 'other';
+export type TrackItemType =
+  | 'folder'
+  | 'audio'
+  | 'video'
+  | 'text'
+  | 'image'
+  | 'other';
 
 export interface TrackFolder {
   title: string;
