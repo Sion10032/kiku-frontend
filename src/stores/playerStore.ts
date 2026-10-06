@@ -37,6 +37,9 @@ export type PlayMode = 'order' | 'allRepeat' | 'repeatOne' | 'shuffle';
 interface PlayerState {
   /** 是否全屏播放器隐藏（隐藏时仅显示迷你条） */
   hide: boolean;
+  /** 当前曲目是否以视频后端加载（画面层渲染条件的唯一可信源；
+   *  由 usePlayer 曲目加载 effect 按设置的视频模式分流后写入） */
+  videoActive: boolean;
   playing: boolean;
   /** 当前播放时间（秒） */
   currentTime: number;
@@ -94,6 +97,7 @@ interface PlayerActions {
   setLyrics: (lines: LyricLine[]) => void;
   setActiveLyricIndex: (index: number) => void;
   toggleHide: () => void;
+  setVideoActive: (on: boolean) => void;
   setRewindSeekTime: (time: number) => void;
   setForwardSeekTime: (time: number) => void;
   /** 触发一次快退（toggle 值，供 useEffect 依赖）。 */
@@ -123,6 +127,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
   persist(
     (set, get) => ({
       hide: false,
+      videoActive: false,
       playing: false,
       currentTime: 0,
       duration: 0,
@@ -256,6 +261,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       setLyrics: (lines) => set({ lyricLines: lines, activeLyricIndex: -1 }),
       setActiveLyricIndex: (index) => set({ activeLyricIndex: index }),
       toggleHide: () => set((s) => ({ hide: !s.hide })),
+      setVideoActive: (on) => set({ videoActive: on }),
 
       setRewindSeekTime: (time) => set({ rewindSeekTime: time }),
       setForwardSeekTime: (time) => set({ forwardSeekTime: time }),

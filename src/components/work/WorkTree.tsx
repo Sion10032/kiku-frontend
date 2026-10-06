@@ -22,6 +22,7 @@ import '@m3e/icons/outlined/open_in_new';
 import '@m3e/icons/outlined/arrow_back';
 import '@m3e/icons/outlined/visibility';
 import { selectCurrentTrack, usePlayerStore } from '../../stores/playerStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import {
   selectResumeStartAt,
   useProgressStore,
@@ -114,14 +115,19 @@ export default function WorkTree({
     return nodes;
   }, [tree, path]);
 
-  // 当前目录的音频/视频队列（点击播放 / 下一首 / 添加到队列共用）
+  // 当前目录的音频/视频队列（点击播放 / 下一首 / 添加到队列共用）；
+  // 视频模式为 none 时视频文件不入队
+  const videoMode = useSettingsStore((s) => s.videoMode);
   const queueTracks = useMemo(
     () =>
       fatherFolder
         .filter((n): n is TrackLeaf => n.type !== 'folder')
-        .filter((n) => n.type === 'audio' || n.type === 'video')
+        .filter(
+          (n) =>
+            n.type === 'audio' || (n.type === 'video' && videoMode !== 'none'),
+        )
         .map((n) => toTrack(work, n)),
-    [fatherFolder, work],
+    [fatherFolder, work, videoMode],
   );
 
   // 预览状态：打开目录的可预览文件快照 + 当前下标
@@ -204,9 +210,13 @@ export default function WorkTree({
     });
   }
 
-  /** 行点击分流：音频/视频进播放队列；其余可预览文件开预览；不可预览无动作（走 ⋮ 下载）。 */
+  /** 行点击分流：音频播放；视频按播放模式（none 时无动作）；
+   *  其余可预览文件开预览；不可预览无动作（走 ⋮ 下载）。 */
   function handleLeafClick(leaf: TrackLeaf) {
-    if (leaf.type === 'audio' || leaf.type === 'video') {
+    if (
+      leaf.type === 'audio'
+      || (leaf.type === 'video' && videoMode !== 'none')
+    ) {
       playLeaf(leaf);
       return;
     }
@@ -311,30 +321,32 @@ export default function WorkTree({
             {t('works.menu-preview')}
           </M3eMenuItem>
         )}
-        {menu && (menu.node.type === 'audio' || menu.node.type === 'video') && (
-          <>
-            <M3eMenuItem onClick={() => addToQueue(toTrack(work, menu.node))}>
-              <span slot='icon'>
-                <M3eIcon name='play_arrow' />
-              </span>
-              {t('works.menu-add-to-queue')}
-            </M3eMenuItem>
-            <M3eMenuItem onClick={() => playNext(toTrack(work, menu.node))}>
-              <span slot='icon'>
-                <M3eIcon name='queue_music' />
-              </span>
-              {t('works.menu-play-next')}
-            </M3eMenuItem>
-            {menu.node.loudnessLufs != null && (
-              <M3eMenuItem onClick={() => openCurve(menu.node)}>
+        {menu
+          && (menu.node.type === 'audio'
+            || (menu.node.type === 'video' && videoMode !== 'none')) && (
+            <>
+              <M3eMenuItem onClick={() => addToQueue(toTrack(work, menu.node))}>
                 <span slot='icon'>
-                  <M3eIcon name='graphic_eq' />
+                  <M3eIcon name='play_arrow' />
                 </span>
-                {t('works.menu-loudness-curve')}
+                {t('works.menu-add-to-queue')}
               </M3eMenuItem>
-            )}
-          </>
-        )}
+              <M3eMenuItem onClick={() => playNext(toTrack(work, menu.node))}>
+                <span slot='icon'>
+                  <M3eIcon name='queue_music' />
+                </span>
+                {t('works.menu-play-next')}
+              </M3eMenuItem>
+              {menu.node.loudnessLufs != null && (
+                <M3eMenuItem onClick={() => openCurve(menu.node)}>
+                  <span slot='icon'>
+                    <M3eIcon name='graphic_eq' />
+                  </span>
+                  {t('works.menu-loudness-curve')}
+                </M3eMenuItem>
+              )}
+            </>
+          )}
         {menu && (menu.node.type === 'text' || menu.node.type === 'image') && (
           <M3eMenuItem onClick={() => openLeaf(menu.node)}>
             <span slot='icon'>

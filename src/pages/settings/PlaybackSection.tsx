@@ -10,6 +10,7 @@ import { SETTING_CONTROL_FILL, SETTING_ROW_LAYOUT } from '../../constants';
 import {
   useSettingsStore,
   type TimeDisplayMode,
+  type VideoMode,
 } from '../../stores/settingsStore';
 import { usePlayerStore } from '../../stores/playerStore';
 
@@ -21,6 +22,15 @@ const TIME_DISPLAY_MODES: {
   { value: 'remaining', label: 'settings.time-display-remaining' },
 ];
 
+const VIDEO_MODES: {
+  value: VideoMode;
+  label: `settings.video-mode-${VideoMode}`;
+}[] = [
+  { value: 'video', label: 'settings.video-mode-video' },
+  { value: 'audio', label: 'settings.video-mode-audio' },
+  { value: 'none', label: 'settings.video-mode-none' },
+];
+
 /**
  * 「播放器」分组行：时间显示 / 媒体通知 / 快退快进秒数（playerStore）/
  * 音量均衡（含目标响度、最大增益）。
@@ -28,6 +38,8 @@ const TIME_DISPLAY_MODES: {
  */
 export default function PlaybackSection() {
   const { t } = useTranslation();
+  const videoMode = useSettingsStore((s) => s.videoMode);
+  const setVideoMode = useSettingsStore((s) => s.setVideoMode);
   const timeDisplayMode = useSettingsStore((s) => s.timeDisplayMode);
   const setTimeDisplayMode = useSettingsStore((s) => s.setTimeDisplayMode);
   const mediaNotification = useSettingsStore((s) => s.mediaNotification);
@@ -51,6 +63,32 @@ export default function PlaybackSection() {
 
   return (
     <>
+      {/* 视频播放模式（视频/仅音频/无） */}
+      <div className={SETTING_ROW_LAYOUT}>
+        <span className='flex flex-col'>
+          <span>{t('settings.video-mode')}</span>
+          <span className='text-sm opacity-70'>
+            {t('settings.video-mode-desc')}
+          </span>
+        </span>
+        <M3eSegmentedButton
+          className={SETTING_CONTROL_FILL}
+          onInput={(e) =>
+            setVideoMode((e.target as HTMLInputElement).value as VideoMode)
+          }
+        >
+          {VIDEO_MODES.map((m) => (
+            <M3eButtonSegment
+              key={m.value}
+              value={m.value}
+              checked={videoMode === m.value}
+            >
+              {t(m.label)}
+            </M3eButtonSegment>
+          ))}
+        </M3eSegmentedButton>
+      </div>
+
       {/* 时间显示模式 */}
       <div className={SETTING_ROW_LAYOUT}>
         <span className='flex flex-col'>

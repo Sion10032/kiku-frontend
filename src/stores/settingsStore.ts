@@ -35,6 +35,9 @@ function clamp(n: number, min: number, max: number): number {
 /** 作品库每页条数可选档位（单一来源，后端 /api/works 的 pageSize 上限即最大值 100）。 */
 export const WORKS_PAGE_SIZES = [10, 20, 50, 100] as const;
 
+/** 视频播放模式：video 画面播放 / audio 仅播音轨（Howler）/ none 不入队；默认 audio。 */
+export type VideoMode = 'video' | 'audio' | 'none';
+
 /** 判断是否为合法档位（越界值会被后端 /api/works 以 400 拒绝）。 */
 function isWorksPageSize(v: unknown): v is (typeof WORKS_PAGE_SIZES)[number] {
   return (WORKS_PAGE_SIZES as readonly number[]).includes(v as number);
@@ -100,6 +103,8 @@ interface SettingsState {
   uiScale: number;
   /** 内容宽度档位（默认 wide）：standard 维持各页自身上限，wide/ultra 统一放宽上限，full 不限宽（见 PageContainer） */
   contentWidth: ContentWidth;
+  /** 视频播放模式（默认 audio）：决定视频文件入队与播放后端（见 VideoMode） */
+  videoMode: VideoMode;
   /** 是否在首次加载时按屏幕像素密度自动推断 uiScale（推断一次后置 false，内部标记不对外暴露） */
   uiScaleAuto: boolean;
   setDynamicColor: (on: boolean) => void;
@@ -118,6 +123,7 @@ interface SettingsState {
   setWorksPageSize: (v: number) => void;
   setUiScale: (scale: number) => void;
   setContentWidth: (v: ContentWidth) => void;
+  setVideoMode: (mode: VideoMode) => void;
 }
 
 /**
@@ -145,6 +151,7 @@ const SNAPSHOT_KEYS = [
   'worksPageSize',
   'uiScale',
   'contentWidth',
+  'videoMode',
 ] as const;
 
 type SnapshotKey = (typeof SNAPSHOT_KEYS)[number];
@@ -183,6 +190,8 @@ export const useSettingsStore = create<SettingsState>()(
       uiScale: 100,
       uiScaleAuto: true,
       contentWidth: 'wide',
+      videoMode: 'audio',
+      setVideoMode: (mode) => set({ videoMode: mode }),
       setFloatingLyrics: (patch) =>
         set((s) => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: (patch) =>

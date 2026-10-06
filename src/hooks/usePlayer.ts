@@ -9,6 +9,7 @@ import { streamUrl, fetchLyricsText } from '../api/media';
 import { attachGainChain } from '../utils/normalizer';
 import { WasmWvPlayer, type PlayerBackend } from '../wavpack/WasmWvPlayer';
 import { isVideoTrack } from '../utils/track';
+import { useSettingsStore } from '../stores/settingsStore';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 import {
   trackPlayback,
@@ -187,6 +188,9 @@ export function usePlayer(): void {
       return;
     }
 
+    // 默认非视频后端；视频分支命中再翻 true（封面层渲染条件的唯一可信源）
+    usePlayerStore.getState().setVideoActive(false);
+
     // 仅初始化用；后续音量变化由独立 effect 同步
     const {
       playing: initialPlaying,
@@ -234,8 +238,16 @@ export function usePlayer(): void {
       };
     }
 
-    // —— 视频分支（.mp4/.webm/.mkv）：模块级 <video> 单例，画面层挂载此元素 ——
-    if (isVideoTrack(currentTrack)) {
+    // —— 视频分支（.mp4/.webm/.mkv 且设置的视频模式为 video）：
+    // 模块级 <video> 单例，画面层挂载此元素。audio 模式下视频落 Howler
+    // 分支（html5 audio 元素只取音轨）；none 模式视频本就入不了队，
+    // 已在队内的残曲回退同 audio 播法。模式仅切曲生效（当前曲目不重建）——
+    // 封面层读 playerStore.videoActive 忠实反映实际后端 ——
+    if (
+      isVideoTrack(currentTrack)
+      && useSettingsStore.getState().videoMode === 'video'
+    ) {
+      usePlayerStore.getState().setVideoActive(true);
       const el = getVideoElement();
       el.src = src;
       const vBackend = videoBackend(el);
@@ -285,7 +297,7 @@ export function usePlayer(): void {
       };
     }
 
-    // —— Howler 分支（非 .wv、非视频） ——
+    // —— Howler 分支（非 .wv；视频仅在设置模式为 video 时才走视频分支） ——
     const sound = new Howl({
       src: [src],
       html5: true, // 流式播放，避免大文件全量下载
@@ -356,7 +368,7 @@ export function usePlayer(): void {
 
   // —— 增益均衡：gainDb 变化（设置调整/切曲/开关）后应用到实例的元素 ——
   // Howler 分支从 howl._sounds 取底层 audio 元素；.wv 无 HTMLAudioElement，
-  // 响度增益不生效；视频分支直接取模块级 <video> 单例
+  // 响度增益不生效；视频分支（videoActive=true）直接取模块级 <video> 单例
 
   useEffect(() => {
     const el = howl as unknown as {
@@ -366,7 +378,8 @@ export function usePlayer(): void {
     if (node instanceof HTMLAudioElement) {
       attachGainChain(node).setGainDb(gainDb);
     }
-    if (currentTrack && isVideoTrack(currentTrack)) {
+    // 曲目加载 effect 同轮已按分流写入 videoActive，此处读最新值
+    if (currentTrack && usePlayerStore.getState().videoActive) {
       attachGainChain(getVideoElement()).setGainDb(gainDb);
     }
   }, [gainDb, currentTrack]);

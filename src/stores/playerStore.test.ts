@@ -23,6 +23,19 @@ beforeEach(() => {
   });
 });
 
+describe('videoActive（当前曲目是否以视频后端加载）', () => {
+  it('默认 false', () => {
+    expect(usePlayerStore.getInitialState().videoActive).toBe(false);
+  });
+
+  it('setVideoActive 写入状态', () => {
+    usePlayerStore.getState().setVideoActive(true);
+    expect(usePlayerStore.getState().videoActive).toBe(true);
+    usePlayerStore.getState().setVideoActive(false);
+    expect(usePlayerStore.getState().videoActive).toBe(false);
+  });
+});
+
 describe('setQueue 入队分配条目 uid', () => {
   it('每条目 uid 唯一，currentUid 指向 index 条目', () => {
     usePlayerStore.getState().setQueue([t('a'), t('b'), t('c')], 1);

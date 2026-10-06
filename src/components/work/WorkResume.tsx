@@ -11,6 +11,7 @@ import type { TrackNode, Work } from '../../types';
 import { formatDuration } from '../../utils/format';
 import { toTrack, flattenAudioLeaves } from '../../utils/track';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { useDeleteProgressMutation } from '../../queries/useProgressMutation';
 import { suppressWorkProgress } from '../../utils/progressReporter';
 
@@ -44,7 +45,11 @@ export default function WorkResume({ work, tree }: WorkResumeProps) {
   const hasTree = tree.length > 0;
 
   function resume() {
-    const leaves = flattenAudioLeaves(tree);
+    // 视频模式为 none 时视频文件不入继续播放队列（与 WorkTree 入队口径一致）
+    const videoMode = useSettingsStore.getState().videoMode;
+    const leaves = flattenAudioLeaves(tree).filter(
+      (l) => l.type !== 'video' || videoMode !== 'none',
+    );
     if (leaves.length === 0) return;
     const idx = leaves.findIndex((l) => l.hash === progress!.mediaIndex);
     const index = idx === -1 ? 0 : idx;

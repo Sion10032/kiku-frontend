@@ -39,6 +39,7 @@ const SNAPSHOT_KEYS = [
   'worksPageSize',
   'uiScale',
   'contentWidth',
+  'videoMode',
 ] as const;
 
 /** 用全新模块实例跑「模块求值期真实水合」：localStorage 必须在动态 import 前种好。 */
@@ -59,6 +60,10 @@ async function hydrateFreshModule(blob: Record<string, unknown>) {
 // 不受同文件其他用例 setState / persist 水合影响（store 是模块单例），
 // 因此可独立于下方 beforeEach 的状态重置直接断言，避免「先 setState 再验默认值」的恒真问题。
 describe('settingsStore 默认值', () => {
+  it('videoMode 默认为 audio（仅音频）', () => {
+    expect(useSettingsStore.getInitialState().videoMode).toBe('audio');
+  });
+
   it('worksPaginationMode 默认为 paginate', () => {
     expect(useSettingsStore.getInitialState().worksPaginationMode).toBe(
       'paginate',

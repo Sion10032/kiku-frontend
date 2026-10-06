@@ -73,6 +73,7 @@ export default function AudioPlayer() {
   const triggerForward = usePlayerStore((s) => s.triggerForward);
   const toggleHide = usePlayerStore((s) => s.toggleHide);
   const lyricLines = usePlayerStore((s) => s.lyricLines);
+  const videoActive = usePlayerStore((s) => s.videoActive);
   const timeDisplayMode = useSettingsStore((s) => s.timeDisplayMode);
 
   const [queueOpen, setQueueOpen] = useState(false);
@@ -91,8 +92,9 @@ export default function AudioPlayer() {
 
   if (!track) return null;
 
-  // 视频曲目：画面显示在封面位（VideoSurface），歌词整体不参与（面板
-  // 不显示、窄屏入口禁用——画面点击已被 toggle 播放占用）
+  // 视频曲目：歌词整体不参与（所有播放模式下均如此——面板不显示、
+  // 窄屏入口禁用）；画面层按 videoActive 渲染（usePlayer 按视频模式
+  // 分流后写入，切曲生效——当前曲目不因设置变更重建后端）
   const isVideo = isVideoTrack(track);
   const hasLyrics = lyricLines.length > 0 && !isVideo;
 
@@ -165,7 +167,7 @@ export default function AudioPlayer() {
         >
           {/* 封面/视频：占标题以外全部高度（min-h-0 允许收缩） */}
           <div className='flex min-h-0 w-full flex-1 items-center justify-center'>
-            {isVideo ? (
+            {videoActive ? (
               <VideoSurface workId={track.workId} />
             ) : track.workId ? (
               <img
