@@ -24,6 +24,7 @@ export function getVideoElement(): HTMLVideoElement {
   if (document.body) {
     videoHost = document.createElement('div');
     videoHost.style.display = 'none';
+    videoHost.dataset.videoPark = 'true';
     videoHost.appendChild(videoEl);
     document.body.appendChild(videoHost);
   }
