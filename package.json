@@ -1,6 +1,6 @@
 {
   "name": "kiku-frontend",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "description": "React 19 + @m3e/react rewrite of kikoeru-quasar",
