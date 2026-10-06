@@ -114,12 +114,12 @@ export default function WorkTree({
     return nodes;
   }, [tree, path]);
 
-  // 当前目录的音频队列（点击播放 / 下一首 / 添加到队列共用）
+  // 当前目录的音频/视频队列（点击播放 / 下一首 / 添加到队列共用）
   const queueTracks = useMemo(
     () =>
       fatherFolder
         .filter((n): n is TrackLeaf => n.type !== 'folder')
-        .filter((n) => n.type === 'audio')
+        .filter((n) => n.type === 'audio' || n.type === 'video')
         .map((n) => toTrack(work, n)),
     [fatherFolder, work],
   );
@@ -204,9 +204,9 @@ export default function WorkTree({
     });
   }
 
-  /** 行点击分流：音频播放；其余可预览文件开预览；不可预览无动作（走 ⋮ 下载）。 */
+  /** 行点击分流：音频/视频进播放队列；其余可预览文件开预览；不可预览无动作（走 ⋮ 下载）。 */
   function handleLeafClick(leaf: TrackLeaf) {
-    if (leaf.type === 'audio') {
+    if (leaf.type === 'audio' || leaf.type === 'video') {
       playLeaf(leaf);
       return;
     }
@@ -311,7 +311,7 @@ export default function WorkTree({
             {t('works.menu-preview')}
           </M3eMenuItem>
         )}
-        {menu && menu.node.type === 'audio' && (
+        {menu && (menu.node.type === 'audio' || menu.node.type === 'video') && (
           <>
             <M3eMenuItem onClick={() => addToQueue(toTrack(work, menu.node))}>
               <span slot='icon'>
