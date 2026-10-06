@@ -8,6 +8,7 @@ import {
 import { streamUrl, fetchLyricsText } from '../api/media';
 import { attachGainChain } from '../utils/normalizer';
 import { WasmWvPlayer, type PlayerBackend } from '../wavpack/WasmWvPlayer';
+import { isVideoTrack } from '../utils/track';
 import { parseLyrics, findActiveLineIndex, type LyricLine } from '../utils/lrc';
 import {
   trackPlayback,
@@ -29,6 +30,15 @@ let backend: PlayerBackend | null = null;
  * PlayerBackend 接口不暴露元素，故单独保留引用（仅 attachGainChain 用）。
  */
 let howl: Howl | null = null;
+
+/**
+ * 视频播放后端：<video> 单例 + PlayerBackend 适配，见 ./videoBackend.ts。
+ */
+import {
+  getVideoElement,
+  parkVideoElement,
+  videoBackend,
+} from './videoBackend';
 
 /**
  * 当前曲目的歌词行与最近一次激活行号。
@@ -224,7 +234,58 @@ export function usePlayer(): void {
       };
     }
 
-    // —— Howler 分支（非 .wv） ——
+    // —— 视频分支（.mp4/.webm/.mkv）：模块级 <video> 单例，画面层挂载此元素 ——
+    if (isVideoTrack(currentTrack)) {
+      const el = getVideoElement();
+      el.src = src;
+      const vBackend = videoBackend(el);
+      backend = vBackend;
+      // 视频元素同为 HTMLMediaElement：响度均衡增益链与 Howler 分支同等接入
+      attachGainChain(el).setGainDb(gainDb);
+      // 初始音量：音量同步 effect 依赖 [volume, muted]，切曲时不重跑 → 立即设初值
+      vBackend.volume(m ? 0 : Math.min(1, Math.max(0, v)));
+
+      const onLoadedMetadata = () => {
+        const dur = el.duration || 0;
+        usePlayerStore.getState().setDuration(dur);
+        // 「继续播放」：metadata 到达后跳到上次位置（与 Howler onload 同口径）
+        if (currentTrack.startAt != null && currentTrack.startAt > 0) {
+          const at = Math.min(
+            currentTrack.startAt,
+            dur > 0 ? dur : currentTrack.startAt,
+          );
+          el.currentTime = at;
+          usePlayerStore.getState().setCurrentTime(at);
+        }
+      };
+      const onEnded = () => {
+        // 切曲后 stale ended 不驱动旧闭包收尾（防多跳一首）
+        if (backend !== vBackend) return;
+        handleTrackEnd(currentTrack, el.duration || 0, () => {
+          el.currentTime = 0;
+          void el.play();
+        });
+      };
+      el.addEventListener('loadedmetadata', onLoadedMetadata);
+      el.addEventListener('ended', onEnded);
+
+      if (initialPlaying) {
+        void el.play();
+      }
+
+      return () => {
+        lyricCancelled = true;
+        // 切曲/卸载前先把旧曲进度发出
+        flushProgress();
+        el.removeEventListener('loadedmetadata', onLoadedMetadata);
+        el.removeEventListener('ended', onEnded);
+        vBackend.unload();
+        parkVideoElement();
+        if (backend === vBackend) backend = null;
+      };
+    }
+
+    // —— Howler 分支（非 .wv、非视频） ——
     const sound = new Howl({
       src: [src],
       html5: true, // 流式播放，避免大文件全量下载
@@ -294,7 +355,8 @@ export function usePlayer(): void {
   }, [volume, muted]);
 
   // —— 增益均衡：gainDb 变化（设置调整/切曲/开关）后应用到实例的元素 ——
-  // 仅 Howler 分支有底层 audio 元素；.wv 无 HTMLAudioElement，响度增益不生效
+  // Howler 分支从 howl._sounds 取底层 audio 元素；.wv 无 HTMLAudioElement，
+  // 响度增益不生效；视频分支直接取模块级 <video> 单例
 
   useEffect(() => {
     const el = howl as unknown as {
@@ -303,6 +365,9 @@ export function usePlayer(): void {
     const node = el?._sounds?.[0]?._node;
     if (node instanceof HTMLAudioElement) {
       attachGainChain(node).setGainDb(gainDb);
+    }
+    if (currentTrack && isVideoTrack(currentTrack)) {
+      attachGainChain(getVideoElement()).setGainDb(gainDb);
     }
   }, [gainDb, currentTrack]);
 

@@ -1,6 +1,6 @@
 /**
- * 音量均衡增益链：audio 元素 → MediaElementSource → GainNode → destination。
- * 元素 volume（Howler 管，0..1）× GainNode（均衡系数，可 >1）。
+ * 音量均衡增益链：media 元素（audio/video）→ MediaElementSource → GainNode → destination。
+ * 元素 volume（Howler/视频元素管，0..1）× GainNode（均衡系数，可 >1）。
  * 同源媒体才允许 MediaElementSource；kiku 流媒体同源，成立。
  */
 let ctx: AudioContext | null = null;
@@ -21,7 +21,7 @@ function ensureCtx(): AudioContext {
   return ctx;
 }
 
-export function attachGainChain(el: HTMLAudioElement): {
+export function attachGainChain(el: HTMLMediaElement): {
   setGainDb(db: number): void;
 } {
   const audioCtx = ensureCtx();
