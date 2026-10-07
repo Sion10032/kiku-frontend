@@ -98,6 +98,10 @@ export default function AudioPlayer() {
   const isVideo = isVideoTrack(track);
   const hasLyrics = lyricLines.length > 0 && !isVideo;
 
+  // 进度两侧时间预留等宽：按总时长格式长度 + 1（remaining 模式负号）预留，
+  // tabular-nums 下 ch ≈ 数字宽；位数变化（0:59→10:00→1:00:00）不再挤压 slider
+  const timeWidth = `${Math.max(4, formatDuration(duration).length + 1)}ch`;
+
   /** 进度条拖动：thumb 值实时写回（seekTo 内部 clamp）。 */
   function handleSeek(e: Event) {
     const value = (e.target as M3eSliderThumbElement).value;
@@ -213,11 +217,18 @@ export default function AudioPlayer() {
         </div>
       </div>
 
-      {/* 底部：进度条 + 控制区（不随歌词滚动）；窄屏覆盖按钮 token 缩为
-          medium 40px，宽度经 leading/trailing space 保持方形 */}
-      <div className='flex shrink-0 flex-col items-center gap-3 p-4 max-sm:[--m3e-icon-button-medium-container-height:2.5rem] max-sm:[--m3e-icon-button-medium-default-leading-space:0.5rem] max-sm:[--m3e-icon-button-medium-default-trailing-space:0.5rem]'>
+      {/* 底部：进度条 + 控制区（不随歌词滚动）。
+          播放器内按钮均未设 size → 默认 small 变体（40px 方形，跨断点恒定；
+          旧 max-sm medium token 覆盖是死代码——medium 变体 token 不作用于
+          默认尺寸按钮，窄屏对齐只是 small 默认恰为 40px）。此处按库自身
+          回退链补 small token 默认值，供下方音量百分比宽度引用：
+          var 未定义时 width 整条失效退回 auto */}
+      <div className='flex shrink-0 flex-col items-center gap-3 p-4 [--m3e-icon-button-small-container-height:var(--m3e-icon-button-container-height,40px)]'>
         <div className='flex w-full max-w-xl items-center gap-3'>
-          <span className='shrink-0 text-xs tabular-nums opacity-70'>
+          <span
+            style={{ width: timeWidth }}
+            className='shrink-0 text-center text-xs tabular-nums opacity-70'
+          >
             {formatDuration(currentTime)}
           </span>
           <M3eSlider
@@ -229,7 +240,10 @@ export default function AudioPlayer() {
           >
             <M3eSliderThumb value={Math.floor(currentTime)} />
           </M3eSlider>
-          <span className='shrink-0 text-xs tabular-nums opacity-70'>
+          <span
+            style={{ width: timeWidth }}
+            className='shrink-0 text-center text-xs tabular-nums opacity-70'
+          >
             {timeDisplayMode === 'remaining'
               ? formatRemaining(currentTime, duration)
               : formatDuration(duration)}
@@ -317,7 +331,9 @@ export default function AudioPlayer() {
           </M3eSlider>
           <span
             aria-hidden='true'
-            className='w-(--m3e-icon-button-medium-container-height) shrink-0 text-center text-xs tabular-nums opacity-70'
+            // 宽度跟随左侧图标按钮（默认 small 变体，40px 方形，恒定）：
+            // slider 两侧锚点对称，且宽度固定不随百分比位数抖动
+            className='w-(--m3e-icon-button-small-container-height) shrink-0 text-center text-xs tabular-nums opacity-70'
           >
             {Math.round(volume * 100)}%
           </span>
