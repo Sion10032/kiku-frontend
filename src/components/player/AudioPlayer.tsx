@@ -186,8 +186,10 @@ export default function AudioPlayer() {
             )}
           </div>
           <div className='max-w-full text-center'>
-            <h2 className='truncate text-xl font-medium'>{track.title}</h2>
-            <p className='mt-1 text-sm opacity-70'>{track.workTitle}</p>
+            <h2 className='line-clamp-2 text-xl font-medium'>{track.title}</h2>
+            <p className='mt-1 truncate text-sm opacity-70'>
+              {track.workTitle}
+            </p>
           </div>
         </div>
 
