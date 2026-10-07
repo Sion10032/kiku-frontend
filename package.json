@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@audio/decode-wavpack": "1.0.0",
+    "@audio/decode-wavpack": "2.0.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -57,5 +57,8 @@
     "typescript": "^6.0.3",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
+  },
+  "patchedDependencies": {
+    "@audio/decode-wavpack@2.0.0": "patches/@audio%2Fdecode-wavpack@2.0.0.patch"
   }
 }

@@ -11,6 +11,7 @@ import {
   findBlockAt,
   type IndexEntry,
 } from './block-index';
+import { createBlockScanner } from './block-scanner';
 import { createBlockSizeTracker } from './block-size-stats';
 import { locateBlock } from './probe-seek';
 import { RangeFetcher } from './range-fetcher';
@@ -51,6 +52,8 @@ interface Session {
   trimPending: number;
   /** 已观测音频块均大小（seek 探测窗口先验，O(1) running mean） */
   blockStats: ReturnType<typeof createBlockSizeTracker>;
+  /** 跨 chunk 顺序块扫描器（消费边界与 decoder 包装层镜像，seek 索引依赖） */
+  scanner: ReturnType<typeof createBlockScanner>;
   /** 缓存首块 PCM（play(0) 快路径；投递后置 null） */
   firstPcm: Float32Array[] | null;
   firstBlockSize: number;
@@ -161,10 +164,16 @@ export function createWavpackWorker(
       const frames = ch[0].length;
       const totalSamples = h.totalSamples;
       const sampleRate = first.sampleRate;
+      const index = createIndex(totalSamples);
+      const blockStats = createBlockSizeTracker();
       const sess: Session = {
         fetcher,
         dec,
-        index: createIndex(totalSamples),
+        index,
+        // 扫描器从拉流首 chunk 起顺序扫（首块由下方手工入索引/统计）
+        scanner: createBlockScanner(index, (bh) =>
+          blockStats.observe(bh.blockSamples, bh.blockSize),
+        ),
         pos: h.blockSize,
         fileSize: fileSizeOf(probe, head.length),
         totalSamples,
@@ -172,7 +181,7 @@ export function createWavpackWorker(
         channels: ch.length,
         outputSample: 0,
         trimPending: 0,
-        blockStats: createBlockSizeTracker(),
+        blockStats,
         firstPcm: ch,
         firstBlockSize: h.blockSize,
         ended: false,
@@ -321,7 +330,7 @@ export function createWavpackWorker(
         endOfStream(sess);
         return;
       }
-      scanIndex(sess, chunk, sess.pos);
+      sess.scanner.feed(chunk, sess.pos);
       sess.pos += chunk.length;
       let out: ReturnType<WavDecoder['decode']>;
       try {
@@ -332,28 +341,6 @@ export function createWavpackWorker(
       }
       if (myGen !== gen) return;
       deliver(sess, out);
-    }
-  }
-
-  /** 拉流循环顺手扫块头：增量索引；非 wvpk 字节（含尾部 trailer）惰性跳过，
-   *  字节仍整体喂给 decoder（包自身会忽略） */
-  function scanIndex(sess: Session, chunk: Uint8Array, pos: number): void {
-    let i = 0;
-    while (i + 32 <= chunk.length) {
-      const h = parseBlockHeader(chunk, i);
-      if (!h) {
-        i++;
-        continue;
-      }
-      appendEntry(sess.index, {
-        offset: pos + i,
-        sampleIndex: h.sampleIndex,
-        blockSamples: h.blockSamples,
-        flags: h.flags,
-      });
-      // 顺路增量更新块均大小（仅音频块，杂块会拉偏均值）
-      sess.blockStats.observe(h.blockSamples, h.blockSize);
-      i += h.blockSize;
     }
   }
 
@@ -403,11 +390,14 @@ function fileSizeOf(res: Response, bodyLen: number): number {
 }
 
 // ---- Worker 入口（浏览器 module worker 下生效；node/bun 导入时无害） ----
-const ctx = self as unknown as {
-  postMessage: (msg: WorkerMsg, transfer?: Transferable[]) => void;
-  onmessage: ((e: MessageEvent<WorkerCmd>) => void) | null;
-};
-const worker = createWavpackWorker((msg, transfer) =>
-  ctx.postMessage(msg, transfer ?? []),
-);
-ctx.onmessage = (e) => worker.handle(e.data);
+// node（vitest）下 self 未定义，守卫避免导入副作用（注释里“导入无害”的承诺）
+if (typeof self !== 'undefined') {
+  const ctx = self as unknown as {
+    postMessage: (msg: WorkerMsg, transfer?: Transferable[]) => void;
+    onmessage: ((e: MessageEvent<WorkerCmd>) => void) | null;
+  };
+  const worker = createWavpackWorker((msg, transfer) =>
+    ctx.postMessage(msg, transfer ?? []),
+  );
+  ctx.onmessage = (e) => worker.handle(e.data);
+}

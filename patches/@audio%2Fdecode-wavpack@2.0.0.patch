@@ -1,0 +1,51 @@
+diff --git a/decode-wavpack.js b/decode-wavpack.js
+index d318a00bf6f965d1808c564a3060a13e4b744931..e0557e08de76c42a4ab04ef9d61453a064e3bf32 100644
+--- a/decode-wavpack.js
++++ b/decode-wavpack.js
+@@ -14,6 +14,15 @@ const EMPTY = Object.freeze({ channelData: [], sampleRate: 0 })
+ const EMPTY_BYTES = new Uint8Array(0)
+ const HEADER = 8            // bytes needed to read ckSize and know the full block size
+ const MAX_BLOCK = 16 << 20  // sanity cap: no real WavPack block approaches 16 MiB
++// [kiku patch] Recycle the WASM decoder instance once its cumulative input passes this.
++// wv_reserve/wv_feed never free the wasm-side input staging (the Mem buffer in
++// wavpack_glue.c is append-only), so heap usage grows linearly with cumulative input
++// until malloc fails (~2x fed bytes against the ~64MB wasm cap, i.e. ~32MB input ==
++// a few minutes of streamed playback -> "out of WASM memory"). joined[0] is always a
++// block boundary and decoding from a block boundary is bit-exact (same mechanism as
++// libwavpack's own seek: context reinit), so swapping the handle between calls is
++// transparent to the caller. 8MB keeps measured peak heap bounded.
++const RECYCLE_FED_BYTES = 8 << 20
+ 
+ let modP
+ function getMod() {
+@@ -48,6 +57,7 @@ class WavpackDecoder {
+ 		this.left = EMPTY_BYTES
+ 		this.sawBlock = false // true once at least one real block has been parsed (ever)
+ 		this.freed = false
++		this.fed = 0 // [kiku patch] cumulative bytes handed to the current wasm instance
+ 	}
+ 
+ 	decode(data) {
+@@ -81,12 +91,22 @@ class WavpackDecoder {
+ 		if (!pos) return EMPTY
+ 
+ 		let m = this.m
++		// [kiku patch] recycle the wasm instance past the threshold (see RECYCLE_FED_BYTES).
++		// Joined input always starts at a block boundary, so a fresh handle decodes the
++		// rest of the stream identically; JS-side state (left/sawBlock) is unaffected.
++		if (this.fed >= RECYCLE_FED_BYTES) {
++			m._wv_destroy(this.h)
++			this.h = m._wv_create()
++			if (!this.h) throw Error('WavPack decoder allocation failed')
++			this.fed = 0
++		}
+ 		let dst = m._wv_reserve(this.h, pos)
+ 		if (!dst) throw Error('WavPack: out of WASM memory')
+ 		m.HEAPU8.set(joined.subarray(0, pos), dst)
+ 		let n = m._wv_feed(this.h, pos)
+ 		if (n < 0) throw Error(readError(m, this.h))
+ 		if (!n) return EMPTY
++		this.fed += pos
+ 
+ 		let channels = m._wv_channels(this.h)
+ 		let sampleRate = m._wv_rate(this.h)
