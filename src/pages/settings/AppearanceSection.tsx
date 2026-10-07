@@ -11,6 +11,7 @@ import type { M3eSliderThumbElement } from '@m3e/react/slider';
 import { M3eSwitch } from '@m3e/react/switch';
 import { SETTING_CONTROL_FILL, SETTING_ROW_LAYOUT } from '../../constants';
 import { setLanguage, type Locale } from '../../i18n';
+import { withThemeTransition } from '../../utils/theme';
 import {
   useSettingsStore,
   type ColorMode,
@@ -86,9 +87,12 @@ export default function AppearanceSection() {
             受控方式是给每个 M3eButtonSegment 传 checked */}
         <M3eSegmentedButton
           className={SETTING_CONTROL_FILL}
-          onInput={(e) =>
-            setColorMode((e.target as HTMLInputElement).value as ColorMode)
-          }
+          onInput={(e) => {
+            // 主题切换全页交叉淡化（View Transitions，不支持时退化为跳变）
+            withThemeTransition(() =>
+              setColorMode((e.target as HTMLInputElement).value as ColorMode),
+            );
+          }}
         >
           {COLOR_MODES.map((m) => (
             <M3eButtonSegment

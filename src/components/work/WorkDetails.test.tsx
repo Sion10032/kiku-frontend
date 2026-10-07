@@ -30,6 +30,7 @@ vi.mock('@tanstack/react-router', () => ({
 // utils/theme 顶层 import '@m3e/web/theme' 会在 jsdom 注册样式表（adoptedStyleSheets）
 vi.mock('../../utils/theme', () => ({
   getSeedColorForWork: () => Promise.resolve(null),
+  withThemeTransition: (update: () => void) => update(),
 }));
 
 vi.mock('../../queries/useFavouritesQuery', () => ({

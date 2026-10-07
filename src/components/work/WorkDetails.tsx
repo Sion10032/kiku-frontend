@@ -21,7 +21,7 @@ import '@m3e/icons/outlined/edit';
 import type { Work } from '../../types';
 import { useThemeStore, DEFAULT_SEED } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { getSeedColorForWork } from '../../utils/theme';
+import { getSeedColorForWork, withThemeTransition } from '../../utils/theme';
 import CoverSFW from '../common/CoverSFW';
 import WorkCircleSeriesLinks from '../common/WorkCircleSeriesLinks';
 import WorkRatingRow from '../common/WorkRatingRow';
@@ -109,7 +109,9 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
     }
     let cancelled = false;
     getSeedColorForWork(work.id).then((color) => {
-      if (color && !cancelled) useThemeStore.getState().setSeed(color);
+      // 新配色全页交叉淡化（View Transitions，不支持时退化为跳变）
+      if (!color || cancelled) return;
+      withThemeTransition(() => useThemeStore.getState().setSeed(color));
     });
     return () => {
       cancelled = true;

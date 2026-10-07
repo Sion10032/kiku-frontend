@@ -36,6 +36,10 @@ vi.mock('@m3e/react/option', () => ({
   M3eOption: (props: { children?: ReactNode }) => <div>{props.children}</div>,
 }));
 vi.mock('@m3e/react/snackbar', () => ({ M3eSnackbar: { open: () => {} } }));
+// utils/theme 顶层 import '@m3e/web/theme' 会在 jsdom 注册样式表（adoptedStyleSheets）
+vi.mock('../utils/theme', () => ({
+  withThemeTransition: (update: () => void) => update(),
+}));
 vi.mock('@m3e/react/segmented-button', () => ({
   M3eSegmentedButton: (props: { children?: ReactNode }) => (
     <div>{props.children}</div>
