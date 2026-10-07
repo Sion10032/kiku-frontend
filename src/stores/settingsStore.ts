@@ -9,6 +9,9 @@ export type CoverBlurMode = 'always' | 'hover' | 'never';
 /** 播放器时间显示模式：total 总时长 / remaining 剩余时间（-mm:ss）。 */
 export type TimeDisplayMode = 'total' | 'remaining';
 
+/** 全屏播放器封面显示比例：square 1:1 裁剪 / original 原始比例。 */
+export type CoverAspectRatio = 'square' | 'original';
+
 /** 作品库翻页方式：paginate 分页 / infinite 无限滚动。 */
 export type WorksPaginationMode = 'paginate' | 'infinite';
 
@@ -91,6 +94,8 @@ interface SettingsState {
   coverBlurMode: CoverBlurMode;
   /** 播放器时间显示：total 总时长 / remaining 剩余时间 */
   timeDisplayMode: TimeDisplayMode;
+  /** 全屏播放器封面比例：square 1:1 裁剪 / original 原始比例 */
+  coverAspectRatio: CoverAspectRatio;
   /** 作品库翻页方式（默认分页） */
   worksPaginationMode: WorksPaginationMode;
   /** 作品库分页控件显示位置（默认两处都显示） */
@@ -117,6 +122,7 @@ interface SettingsState {
   setPreview: (patch: Partial<PreviewSettings>) => void;
   setCoverBlurMode: (mode: CoverBlurMode) => void;
   setTimeDisplayMode: (mode: TimeDisplayMode) => void;
+  setCoverAspectRatio: (mode: CoverAspectRatio) => void;
   setWorksPaginationMode: (mode: WorksPaginationMode) => void;
   setWorksPaginatorPosition: (position: WorksPaginatorPosition) => void;
   setShowHistoryStrip: (on: boolean) => void;
@@ -145,6 +151,7 @@ const SNAPSHOT_KEYS = [
   'preview',
   'coverBlurMode',
   'timeDisplayMode',
+  'coverAspectRatio',
   'worksPaginationMode',
   'worksPaginatorPosition',
   'worksHistoryStrip',
@@ -183,6 +190,7 @@ export const useSettingsStore = create<SettingsState>()(
       preview: { textFontSize: 14, textWordWrap: true },
       coverBlurMode: 'hover',
       timeDisplayMode: 'total',
+      coverAspectRatio: 'original',
       worksPaginationMode: 'paginate',
       worksPaginatorPosition: 'both',
       worksHistoryStrip: true,
@@ -198,6 +206,7 @@ export const useSettingsStore = create<SettingsState>()(
         set((s) => ({ preview: { ...s.preview, ...patch } })),
       setCoverBlurMode: (mode) => set({ coverBlurMode: mode }),
       setTimeDisplayMode: (mode) => set({ timeDisplayMode: mode }),
+      setCoverAspectRatio: (mode) => set({ coverAspectRatio: mode }),
       setWorksPaginationMode: (mode) => set({ worksPaginationMode: mode }),
       setWorksPaginatorPosition: (position) =>
         set({ worksPaginatorPosition: position }),

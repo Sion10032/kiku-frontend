@@ -9,6 +9,7 @@ import { M3eSwitch } from '@m3e/react/switch';
 import { SETTING_CONTROL_FILL, SETTING_ROW_LAYOUT } from '../../constants';
 import {
   useSettingsStore,
+  type CoverAspectRatio,
   type TimeDisplayMode,
   type VideoMode,
 } from '../../stores/settingsStore';
@@ -20,6 +21,14 @@ const TIME_DISPLAY_MODES: {
 }[] = [
   { value: 'total', label: 'settings.time-display-total' },
   { value: 'remaining', label: 'settings.time-display-remaining' },
+];
+
+const COVER_ASPECT_MODES: {
+  value: CoverAspectRatio;
+  label: `settings.cover-aspect-${CoverAspectRatio}`;
+}[] = [
+  { value: 'square', label: 'settings.cover-aspect-square' },
+  { value: 'original', label: 'settings.cover-aspect-original' },
 ];
 
 const VIDEO_MODES: {
@@ -42,6 +51,8 @@ export default function PlaybackSection() {
   const setVideoMode = useSettingsStore((s) => s.setVideoMode);
   const timeDisplayMode = useSettingsStore((s) => s.timeDisplayMode);
   const setTimeDisplayMode = useSettingsStore((s) => s.setTimeDisplayMode);
+  const coverAspectRatio = useSettingsStore((s) => s.coverAspectRatio);
+  const setCoverAspectRatio = useSettingsStore((s) => s.setCoverAspectRatio);
   const mediaNotification = useSettingsStore((s) => s.mediaNotification);
   const setMediaNotification = useSettingsStore((s) => s.setMediaNotification);
   const loudnessNormalization = useSettingsStore(
@@ -110,6 +121,34 @@ export default function PlaybackSection() {
               key={m.value}
               value={m.value}
               checked={timeDisplayMode === m.value}
+            >
+              {t(m.label)}
+            </M3eButtonSegment>
+          ))}
+        </M3eSegmentedButton>
+      </div>
+
+      {/* 封面比例（全屏播放器） */}
+      <div className={SETTING_ROW_LAYOUT}>
+        <span className='flex flex-col'>
+          <span>{t('settings.cover-aspect')}</span>
+          <span className='text-sm opacity-70'>
+            {t('settings.cover-aspect-desc')}
+          </span>
+        </span>
+        <M3eSegmentedButton
+          className={SETTING_CONTROL_FILL}
+          onInput={(e) =>
+            setCoverAspectRatio(
+              (e.target as HTMLInputElement).value as CoverAspectRatio,
+            )
+          }
+        >
+          {COVER_ASPECT_MODES.map((m) => (
+            <M3eButtonSegment
+              key={m.value}
+              value={m.value}
+              checked={coverAspectRatio === m.value}
             >
               {t(m.label)}
             </M3eButtonSegment>

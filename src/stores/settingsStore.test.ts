@@ -33,6 +33,7 @@ const SNAPSHOT_KEYS = [
   'preview',
   'coverBlurMode',
   'timeDisplayMode',
+  'coverAspectRatio',
   'worksPaginationMode',
   'worksPaginatorPosition',
   'worksHistoryStrip',
@@ -291,6 +292,7 @@ describe('settingsStore 快照导出/应用', () => {
     expect(s.preview).toEqual({ textFontSize: 14, textWordWrap: true });
     expect(s.coverBlurMode).toBe('hover');
     expect(s.timeDisplayMode).toBe('total');
+    expect(s.coverAspectRatio).toBe('original');
     expect(s.worksPaginationMode).toBe('paginate');
     expect(s.worksPaginatorPosition).toBe('both');
     expect(s.worksHistoryStrip).toBe(true);

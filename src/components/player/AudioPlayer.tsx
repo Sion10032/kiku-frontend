@@ -75,6 +75,7 @@ export default function AudioPlayer() {
   const lyricLines = usePlayerStore((s) => s.lyricLines);
   const videoActive = usePlayerStore((s) => s.videoActive);
   const timeDisplayMode = useSettingsStore((s) => s.timeDisplayMode);
+  const coverAspectRatio = useSettingsStore((s) => s.coverAspectRatio);
 
   const [queueOpen, setQueueOpen] = useState(false);
   const [sleepOpen, setSleepOpen] = useState(false);
@@ -169,15 +170,22 @@ export default function AudioPlayer() {
               : 'opacity-100',
           )}
         >
-          {/* 封面/视频：占标题以外全部高度（min-h-0 允许收缩） */}
-          <div className='flex min-h-0 w-full flex-1 items-center justify-center'>
+          {/* 封面/视频：占标题以外全部高度（min-h-0 允许收缩）。
+              container-type:size 供封面 1:1 档取容器较小边——cqw/cqh 的
+              min() 保证宽屏/竖屏都是真正方形（纯 h-full + max-w-full 在
+              竖屏会被钳成竖长方形，裁得比 1:1 更狠） */}
+          <div className='flex min-h-0 w-full flex-1 items-center justify-center @container-size'>
             {videoActive ? (
               <VideoSurface workId={track.workId} />
             ) : track.workId ? (
               <img
                 src={mediaUrl(`/api/cover/${track.workId}/file`)}
                 alt={track.workTitle}
-                className='max-h-full max-w-full rounded-2xl object-contain'
+                className={
+                  coverAspectRatio === 'square'
+                    ? 'aspect-square w-[min(100cqw,100cqh)] rounded-2xl object-cover'
+                    : 'max-h-full max-w-full rounded-2xl object-contain'
+                }
               />
             ) : (
               <div className='flex aspect-square w-[min(50vw,240px)] items-center justify-center rounded-2xl bg-(--md-sys-color-surface-container) text-(--md-sys-color-on-surface-variant)'>
