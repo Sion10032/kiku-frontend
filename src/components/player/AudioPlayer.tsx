@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import { M3eSwipeGesture } from '@m3e/react/gestures';
 import { M3eIconButton } from '@m3e/react/icon-button';
 import { M3eIcon } from '@m3e/react/icon';
@@ -8,6 +9,7 @@ import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
 import type { M3eSliderThumbElement } from '@m3e/react/slider';
 import '@m3e/icons/outlined/keyboard_arrow_down';
 import '@m3e/icons/outlined/queue_music';
+import '@m3e/icons/outlined/album';
 import '@m3e/icons/outlined/bedtime';
 import '@m3e/icons/outlined/fast_rewind';
 import '@m3e/icons/outlined/fast_forward';
@@ -52,6 +54,7 @@ import { isVideoTrack } from '../../utils/track';
  */
 export default function AudioPlayer() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const hide = usePlayerStore((s) => s.hide);
   const currentUid = usePlayerStore((s) => s.currentUid);
   const track = usePlayerStore(selectCurrentTrack);
@@ -98,6 +101,8 @@ export default function AudioPlayer() {
   // 分流后写入，切曲生效——当前曲目不因设置变更重建后端）
   const isVideo = isVideoTrack(track);
   const hasLyrics = lyricLines.length > 0 && !isVideo;
+  // 局部变量收窄：闭包内保持 string 类型（track.workId 是属性访问，闭包内丢失收窄）
+  const workId = track.workId;
 
   // 进度两侧时间预留等宽：按总时长格式长度 + 1（remaining 模式负号）预留，
   // tabular-nums 下 ch ≈ 数字宽；位数变化（0:59→10:00→1:00:00）不再挤压 slider
@@ -127,11 +132,25 @@ export default function AudioPlayer() {
         hide ? 'translate-y-full' : 'translate-y-0',
       )}
     >
-      {/* 顶栏：仅折叠（播放列表/睡眠定时移至底部辅助行） */}
+      {/* 顶栏：左侧折叠，右侧跳转当前作品（workId 缺失时不显示）。
+          跳转后收起播放器露出作品页 */}
       <div className='flex items-center p-4'>
         <M3eIconButton aria-label={t('player.collapse')} onClick={toggleHide}>
           <M3eIcon name='keyboard_arrow_down' />
         </M3eIconButton>
+        {workId && (
+          <M3eIconButton
+            className='ml-auto'
+            aria-label={t('player.open-work')}
+            title={t('player.open-work')}
+            onClick={() => {
+              navigate({ to: '/work/$id', params: { id: workId } });
+              toggleHide();
+            }}
+          >
+            <M3eIcon name='album' />
+          </M3eIconButton>
+        )}
       </div>
 
       {/* 中部：默认（<lg）封面/歌词两视图绝对定位叠放，opacity 交叉淡化
