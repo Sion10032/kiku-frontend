@@ -7,6 +7,7 @@ import {
   M3eNavMenuItemGroup,
 } from '@m3e/react/nav-menu';
 import '@m3e/icons/outlined/library_music';
+import '@m3e/icons/outlined/history';
 import '@m3e/icons/outlined/favorite';
 import '@m3e/icons/outlined/star';
 import '@m3e/icons/outlined/groups';
@@ -71,6 +72,17 @@ export default function NavDrawer() {
                 <M3eNavMenuItem selected={isActive}>
                   <M3eIcon slot='icon' name='favorite' />
                   <span slot='label'>{t('works.favourites.title')}</span>
+                </M3eNavMenuItem>
+              )}
+            </Link>
+          )}
+          {/* 收听历史（私密数据，匿名态隐藏） */}
+          {auth && (
+            <Link to='/history' className='block no-underline text-inherit'>
+              {({ isActive }) => (
+                <M3eNavMenuItem selected={isActive}>
+                  <M3eIcon slot='icon' name='history' />
+                  <span slot='label'>{t('works.history.title')}</span>
                 </M3eNavMenuItem>
               )}
             </Link>
