@@ -63,6 +63,11 @@ function isEntityTab(tab: FavouritesTab): tab is EntityTab {
 /**
  * 注入内层 m3e-list-item-button 的 .content 样式：内容区弹性收缩并允许
  * 内部截断（长标题横向溢出的根因是 .content 的 min-width:auto）。
+ *
+ * 注意：注入依赖 Lit shadowRoot 就绪时机（挂载后一次性 effect），失败即
+ * 静默，因此只是兜底；主修复在 light DOM——行内文本元素用定宽钳制
+ * （w-0 + min-w-full）：定宽元素的内在宽度贡献恒为 0，标题再长也不会
+ * 经由 .content 的 min-width:auto 撑开整行（line-clamp-1 实测无效）。
  */
 const contentStyle = {
   '.content': {
@@ -90,9 +95,14 @@ function FavRow({
       <span slot='leading' className='me-3 flex items-center opacity-60'>
         <M3eIcon name={icon} />
       </span>
-      <span className='block truncate'>{title}</span>
+      {/* 定宽钳制（同 List 页）：w-0 使内在宽度贡献恒为 0，min-w-full
+          布局期撑满 .content；truncate 单行省略 */}
+      <span className='block w-0 min-w-full truncate'>{title}</span>
       {subtitle && (
-        <span slot='supporting-text' className='truncate text-xs opacity-60'>
+        <span
+          slot='supporting-text'
+          className='block w-0 min-w-full truncate text-xs opacity-60'
+        >
           {subtitle}
         </span>
       )}

@@ -248,14 +248,21 @@ export default function List({ type }: { type: ListType }) {
                   >
                     <M3eIcon name={LEADING_ICONS[type]} />
                   </span>
-                  <span className='block truncate'>
+                  {/* 定宽钳制：w-0（定宽元素的内在宽度贡献恒为 0，与文本
+                      可否断行/nowrap 无关）+ min-w-full（布局期再撑满
+                      .content）。单靠 truncate/line-clamp-1 时，标题的
+                      内在宽度仍会经由 .content 的 min-width:auto 把整行
+                      撑开、把两侧图标挤出容器（实测） */}
+                  <span className='block w-0 min-w-full truncate'>
                     {entry.name}
-                    <span className='opacity-50 mx-2'>({entry.workCount})</span>
                   </span>
                   <span
                     slot='trailing'
                     className='flex items-center gap-1 opacity-50'
                   >
+                    {/* 在库作品数（继承 trailing 槽的 label-small 字号与
+                        opacity-50）；置于收藏按钮左侧 */}
+                    <span>({entry.workCount})</span>
                     {favType && (
                       <FavButton
                         size='sm'
