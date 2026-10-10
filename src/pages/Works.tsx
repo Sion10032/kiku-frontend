@@ -93,16 +93,11 @@ export default function Works() {
   const [quickFilters, setQuickFilters] = useState(loadQuickFilters);
   const quickAge = quickFilters.age;
   const quickProgress = quickFilters.progress;
-  // 快速筛选（分级/状态）激活时与搜索同样隐藏最近收听条带
-  const hasQuickFilter = quickAge != null || quickProgress != null;
-
   const authed = useUserStore((s) => s.auth);
+  // 快速筛选（分级/状态）是持久偏好，不隐藏最近收听条带：条带只与
+  // 「明确搜索词」与页码绑定（有搜索词或翻到第 2 页起才隐藏）
   const showHistoryStrip =
-    worksHistoryStrip
-    && authed
-    && !isFiltered
-    && !hasQuickFilter
-    && (page === 1 || !isPaginated);
+    worksHistoryStrip && authed && !isFiltered && (page === 1 || !isPaginated);
 
   // 筛选与排序参数：统一走 /works?q= 端点；快速筛选编译为 LQL 片段附加
   const filterParams = {
