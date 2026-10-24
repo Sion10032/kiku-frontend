@@ -532,6 +532,8 @@
   "dashboard.settings.https-port": "HTTPS 端口",
   "dashboard.settings.auto-loudness-analysis": "扫描后自动分析响度",
   "dashboard.settings.auto-loudness-analysis-desc": "扫描结束后自动开始响度分析，需要 ffmpeg",
+  "dashboard.settings.loudness-analysis-on-play": "播放时分析当前文件响度",
+  "dashboard.settings.loudness-analysis-on-play-desc": "收听未分析过响度的文件时自动在后台分析该文件，需要 ffmpeg",
   "dashboard.settings.error-invalid-number": "「{{label}}」不是有效数字",
   "dashboard.settings.error-min": "「{{label}}」不能小于 {{min}}",
   "dashboard.settings.error-max": "「{{label}}」不能大于 {{max}}",

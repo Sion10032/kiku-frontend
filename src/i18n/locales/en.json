@@ -549,6 +549,8 @@
   "dashboard.settings.https-port": "HTTPS port",
   "dashboard.settings.auto-loudness-analysis": "Auto-analyze loudness after scan",
   "dashboard.settings.auto-loudness-analysis-desc": "Start loudness analysis automatically after a scan; requires ffmpeg",
+  "dashboard.settings.loudness-analysis-on-play": "Analyze loudness on play",
+  "dashboard.settings.loudness-analysis-on-play-desc": "Analyze the playing file's loudness in the background if not yet analyzed; requires ffmpeg",
   "dashboard.settings.error-invalid-number": "“{{label}}” is not a valid number",
   "dashboard.settings.error-min": "“{{label}}” must not be less than {{min}}",
   "dashboard.settings.error-max": "“{{label}}” must not be greater than {{max}}",

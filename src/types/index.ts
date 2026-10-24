@@ -335,6 +335,8 @@ export interface AdminConfig {
   tagLanguage: TagLanguage;
   /** 扫描结束后自动接力响度分析（默认 false） */
   autoLoudnessAnalysis: boolean;
+  /** 播放中按需单轨响度分析（默认 false） */
+  loudnessAnalysisOnPlay: boolean;
   production: boolean;
   dbBusyTimeout: number;
   checkUpdate: boolean;

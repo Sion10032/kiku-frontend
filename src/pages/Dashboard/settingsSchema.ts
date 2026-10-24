@@ -127,6 +127,12 @@ export const SETTINGS_SECTIONS: SettingsSectionDef[] = [
         label: 'dashboard.settings.auto-loudness-analysis',
         description: 'dashboard.settings.auto-loudness-analysis-desc',
       },
+      {
+        key: 'loudnessAnalysisOnPlay',
+        type: 'bool',
+        label: 'dashboard.settings.loudness-analysis-on-play',
+        description: 'dashboard.settings.loudness-analysis-on-play-desc',
+      },
     ],
   },
   {
