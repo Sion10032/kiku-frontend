@@ -691,6 +691,22 @@ describe('settingsStore equalizer 水合消毒', () => {
     expect(s.equalizer.activeId).toBe('bass-boost');
     expect(s.eqCurrent.gains).toEqual([6, 5, 3.5, 1.5, 0, 0, 0, 0, 0, 0]);
   });
+
+  it('blob 悬空 activeId（preset 不存在）→ 归一化 flat，eqCurrent 全 0', async () => {
+    const store = await hydrateFreshModule({
+      equalizer: {
+        enabled: true,
+        activeId: 'custom-gone',
+        customPresets: [
+          makePreset('c1', 'A', [6, 5, 3.5, 1.5, 0, 0, 0, 0, 0, 0]),
+        ],
+      },
+    });
+    const s = store.getState();
+    expect(s.equalizer.activeId).toBe('flat');
+    expect(s.eqCurrent.gains).toEqual(FLAT_GAINS);
+    expect(s.eqCurrent.qs).toEqual(DEFAULT_QS);
+  });
 });
 
 describe('settingsStore equalizer 快照应用', () => {
@@ -726,6 +742,22 @@ describe('settingsStore equalizer 快照应用', () => {
       activeId: 'flat',
       customPresets: [],
     });
+  });
+
+  it('悬空 activeId（preset 不存在）→ 归一化 flat，eqCurrent 全 0', () => {
+    applySettingsSnapshot({
+      equalizer: {
+        enabled: true,
+        activeId: 'custom-gone',
+        customPresets: [
+          makePreset('c1', 'A', [6, 5, 3.5, 1.5, 0, 0, 0, 0, 0, 0]),
+        ],
+      },
+    });
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.activeId).toBe('flat');
+    expect(s.eqCurrent.gains).toEqual(FLAT_GAINS);
+    expect(s.eqCurrent.qs).toEqual(DEFAULT_QS);
   });
 
   it('含超 8 套 preset → 截断到 8', () => {

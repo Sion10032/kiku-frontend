@@ -200,6 +200,18 @@ function presetCurrent(preset: EqualizerPreset): EqCurrent {
   return { gains: [...preset.gains], qs: [...preset.qs] };
 }
 
+/**
+ * activeId 悬空归一化：指向不存在的 preset（被 8 套上限截断 / 被丢弃的非法项 /
+ * 手改 blob）时强制回落内置 flat。消毒后立刻调用（在重装 eqCurrent 之前），
+ * 保证落盘的 activeId 与生效的 eqCurrent 一致，不会出现「选中项为空但 EQ 生效」。
+ */
+function normalizeActiveId(equalizer: EqualizerSettings): EqualizerSettings {
+  if (findPreset(equalizer.activeId, equalizer.customPresets)) {
+    return equalizer;
+  }
+  return { ...equalizer, activeId: 'flat' };
+}
+
 /** 按 activeId 取运行态；未命中（脏数据）回落全平。 */
 function currentForEqualizer(equalizer: EqualizerSettings): EqCurrent {
   const preset = findPreset(equalizer.activeId, equalizer.customPresets);
@@ -432,8 +444,11 @@ export const useSettingsStore = create<SettingsState>()(
           ...current,
           ...(persisted as Partial<SettingsState>),
         };
-        // equalizer 来自不可信 blob：逐项消毒（缺失/非法回落默认、超 8 套截断）
-        const equalizer = sanitizeEqualizerSettings(merged.equalizer);
+        // equalizer 来自不可信 blob：逐项消毒（缺失/非法回落默认、超 8 套截断），
+        // 再把悬空 activeId 归一化到 flat（先归一化，重装的 eqCurrent 才跟着走）
+        const equalizer = normalizeActiveId(
+          sanitizeEqualizerSettings(merged.equalizer),
+        );
         return {
           ...merged,
           worksPageSize: isWorksPageSize(merged.worksPageSize)
@@ -493,10 +508,13 @@ export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
       ? patch.contentWidth
       : 'wide';
   }
-  // equalizer 可能来自旧版本/手改备份：消毒后应用（超 8 套截断、非法字段回落默认）
+  // equalizer 可能来自旧版本/手改备份：消毒 + 悬空 activeId 归一化后应用
+  // （超 8 套截断、非法字段回落默认；归一化先于 eqCurrent 重装）
   let eqCurrent: EqCurrent | undefined;
   if ('equalizer' in patch) {
-    const equalizer = sanitizeEqualizerSettings(patch.equalizer);
+    const equalizer = normalizeActiveId(
+      sanitizeEqualizerSettings(patch.equalizer),
+    );
     patch.equalizer = equalizer;
     eqCurrent = currentForEqualizer(equalizer);
   }

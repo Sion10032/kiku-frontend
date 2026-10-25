@@ -76,7 +76,7 @@ afterEach(() => {
 const makeEl = (): HTMLAudioElement => ({}) as HTMLAudioElement;
 
 describe('attachGainChain', () => {
-  it('懒建 AudioContext 并连接 source → gain → destination', async () => {
+  it('懒建 AudioContext 并连接 source → EQ(10×biquad) → gain(响度) → destination', async () => {
     const { attachGainChain } = await load();
     attachGainChain(makeEl());
     expect(MockAudioContext.instances).toHaveLength(1);

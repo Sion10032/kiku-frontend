@@ -5,6 +5,7 @@
  * 同源媒体才允许 MediaElementSource；kiku 流媒体同源，成立。
  */
 import { createEqChain, type EqChain } from './equalizer';
+import { loudnessLinear } from './loudness';
 
 let ctx: AudioContext | null = null;
 let resumeBound = false;
@@ -53,9 +54,8 @@ export function attachGainChain(el: HTMLMediaElement): {
   const { gain, eq } = chain;
   return {
     setGainDb(db: number): void {
-      const capped = Math.max(-60, Math.min(20, db)); // +20dB 防失控硬上限
       gain.gain.setTargetAtTime(
-        10 ** (capped / 20),
+        loudnessLinear(db), // +20dB 防失控硬上限（helper 内 clamp）
         audioCtx.currentTime,
         0.05,
       );

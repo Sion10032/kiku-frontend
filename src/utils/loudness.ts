@@ -35,3 +35,13 @@ export function trackGainDb(
     maxGainDb,
   );
 }
+
+/**
+ * 均衡增益 dB → GainNode 线性系数（单一来源，正常播放与 .wv 调度器共用）。
+ * clamp(-60, 20) 后取 10^(db/20)：+20dB 防失控硬上限，-60dB 视为静音地板。
+ * 平滑时间常数属调用方各自的 setTargetAtTime（统一 0.05s）。
+ */
+export function loudnessLinear(db: number): number {
+  const capped = Math.max(-60, Math.min(20, db));
+  return 10 ** (capped / 20);
+}

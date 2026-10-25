@@ -18,6 +18,7 @@ import {
   flatGains,
   type EqChain,
 } from '../utils/equalizer';
+import { loudnessLinear } from '../utils/loudness';
 
 /** 队列积压上限（秒）：超过即向 worker 发 pause，防止内存无限增长。 */
 const MAX_QUEUED_SECONDS = 15;
@@ -112,16 +113,17 @@ export class AudioChunkScheduler {
 
   /** EQ 逐段增益/Q + 开关（ctx 未创建时记下，创建时应用）。 */
   setEqBands(gains: number[], qs: number[], enabled: boolean): void {
-    this.eqGains = gains;
-    this.eqQs = qs;
+    // 复制而非按引用保存：pending 值不跟随调用方后续对入参数组的原地修改
+    this.eqGains = [...gains];
+    this.eqQs = [...qs];
     this.eqEnabled = enabled;
     this.eq?.setBands(gains, qs, enabled);
   }
 
   /**
    * 响度均衡增益 dB（ctx 未创建时记下，创建时应用）。
-   * 公式与 utils/normalizer.ts 完全一致：clamp(-60, 20) → 10^(db/20)，
-   * setTargetAtTime 0.05s 平滑。
+   * 线性换算走 utils/loudness.ts 的 loudnessLinear（clamp(-60, 20) → 10^(db/20)，
+   * 与 utils/normalizer.ts 同一实现），setTargetAtTime 0.05s 平滑。
    */
   setLoudnessDb(db: number): void {
     this.loudnessDb = db;
@@ -132,8 +134,11 @@ export class AudioChunkScheduler {
     const node = this.loudnessGain;
     const ctx = this.ctx;
     if (!node || !ctx) return;
-    const capped = Math.max(-60, Math.min(20, this.loudnessDb)); // +20dB 防失控硬上限
-    node.gain.setTargetAtTime(10 ** (capped / 20), ctx.currentTime, 0.05);
+    node.gain.setTargetAtTime(
+      loudnessLinear(this.loudnessDb),
+      ctx.currentTime,
+      0.05,
+    );
   }
 
   /** 惰性创建 AudioContext + gain(EQ 前音量) / EQ 链 / 响度 GainNode。 */
