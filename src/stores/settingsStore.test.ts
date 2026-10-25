@@ -15,6 +15,7 @@ vi.hoisted(() => {
   }
 });
 
+import { BUILTIN_PRESETS } from '../utils/equalizer';
 import {
   applySettingsSnapshot,
   getSettingsSnapshot,
@@ -41,7 +42,49 @@ const SNAPSHOT_KEYS = [
   'uiScale',
   'contentWidth',
   'videoMode',
+  'equalizer',
 ] as const;
+
+/** 全平增益 / 默认 Q：测试内独立硬编码，防止实现侧常量漂移。 */
+const FLAT_GAINS = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const DEFAULT_QS = [1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4];
+
+/** 自定义 preset 夹具（10 段，默认全平）。 */
+function makePreset(id: string, name = id, gains: number[] = FLAT_GAINS) {
+  return { id, name, gains: [...gains], qs: [...DEFAULT_QS] };
+}
+
+/** 重置为 store 创建时的初始状态（含内部标记 uiScaleAuto）。 */
+function resetStore() {
+  localStorage.clear();
+  useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+}
+
+/** 以指定 equalizer 整体替换（模拟持久化/快照写入的自定义 preset 场景）。 */
+function seedEqualizer(
+  equalizer: Partial<{
+    enabled: boolean;
+    activeId: string;
+    customPresets: ReturnType<typeof makePreset>[];
+  }>,
+) {
+  useSettingsStore.setState({
+    equalizer: {
+      enabled: false,
+      activeId: 'flat',
+      customPresets: [],
+      ...equalizer,
+    },
+  });
+}
+
+/** 读取 persist 落盘 blob 的 state 部分。 */
+function persistedState(): Record<string, unknown> {
+  const raw = localStorage.getItem('kiku-settings');
+  expect(raw).toBeTruthy();
+  return (JSON.parse(raw as string) as { state: Record<string, unknown> })
+    .state;
+}
 
 /** 用全新模块实例跑「模块求值期真实水合」：localStorage 必须在动态 import 前种好。 */
 async function hydrateFreshModule(blob: Record<string, unknown>) {
@@ -339,5 +382,399 @@ describe('settingsStore 快照导出/应用', () => {
     };
     expect(persisted.state.colorMode).toBe('dark');
     expect(persisted.state.uiScale).toBe(130);
+  });
+});
+
+describe('settingsStore equalizer 默认值', () => {
+  it('equalizer 默认关闭，activeId flat，无自定义 preset', () => {
+    expect(useSettingsStore.getInitialState().equalizer).toEqual({
+      enabled: false,
+      activeId: 'flat',
+      customPresets: [],
+    });
+  });
+
+  it('eqCurrent 默认全平（0 dB / Q 1.4）', () => {
+    expect(useSettingsStore.getInitialState().eqCurrent).toEqual({
+      gains: FLAT_GAINS,
+      qs: DEFAULT_QS,
+    });
+  });
+});
+
+describe('settingsStore equalizer setEqualizerEnabled', () => {
+  beforeEach(resetStore);
+
+  it('开关切换且保留 activeId / customPresets', () => {
+    seedEqualizer({ activeId: 'vocal', customPresets: [makePreset('c1')] });
+    useSettingsStore.getState().setEqualizerEnabled(true);
+    expect(useSettingsStore.getState().equalizer).toEqual({
+      enabled: true,
+      activeId: 'vocal',
+      customPresets: [makePreset('c1')],
+    });
+    useSettingsStore.getState().setEqualizerEnabled(false);
+    expect(useSettingsStore.getState().equalizer.enabled).toBe(false);
+  });
+});
+
+describe('settingsStore equalizer selectEqualizerPreset', () => {
+  beforeEach(resetStore);
+
+  it('内置 preset：写 activeId 并载入其 gains/qs', () => {
+    useSettingsStore.getState().selectEqualizerPreset('bass-boost');
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.activeId).toBe('bass-boost');
+    expect(s.eqCurrent.gains).toEqual([6, 5, 3.5, 1.5, 0, 0, 0, 0, 0, 0]);
+    expect(s.eqCurrent.qs).toEqual(DEFAULT_QS);
+  });
+
+  it('自定义 preset：载入其 gains/qs', () => {
+    const gains = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    seedEqualizer({ customPresets: [makePreset('c1', '自定义', gains)] });
+    useSettingsStore.getState().selectEqualizerPreset('c1');
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.activeId).toBe('c1');
+    expect(s.eqCurrent.gains).toEqual(gains);
+  });
+
+  it('未知 id：回落 flat 并载入全平', () => {
+    useSettingsStore.getState().selectEqualizerPreset('bass-boost');
+    useSettingsStore.getState().selectEqualizerPreset('nope');
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.activeId).toBe('flat');
+    expect(s.eqCurrent.gains).toEqual(FLAT_GAINS);
+    expect(s.eqCurrent.qs).toEqual(DEFAULT_QS);
+  });
+
+  it('载入内置 preset 不与 BUILTIN_PRESETS 共享数组（深拷贝）', () => {
+    useSettingsStore.getState().selectEqualizerPreset('bass-boost');
+    const builtin = BUILTIN_PRESETS.find((p) => p.id === 'bass-boost');
+    expect(builtin).toBeTruthy();
+    const s = useSettingsStore.getState();
+    expect(s.eqCurrent.gains).not.toBe(builtin?.gains);
+    expect(s.eqCurrent.qs).not.toBe(builtin?.qs);
+    // 拖滑条只动运行态，内置 preset 本体不受污染
+    useSettingsStore.getState().updateEqualizerBand(0, -12);
+    expect(builtin?.gains[0]).toBe(6);
+    expect(s.equalizer.customPresets).toHaveLength(0);
+  });
+});
+
+describe('settingsStore equalizer updateEqualizerBand', () => {
+  beforeEach(resetStore);
+
+  it('内置选中：只改 eqCurrent，不回写', () => {
+    useSettingsStore.getState().selectEqualizerPreset('vocal');
+    const builtin = BUILTIN_PRESETS.find((p) => p.id === 'vocal');
+    const builtinGains = [...(builtin?.gains ?? [])];
+    useSettingsStore.getState().updateEqualizerBand(3, 5.3);
+    const s = useSettingsStore.getState();
+    // 5.3 → 量化到 0.5 网格
+    expect(s.eqCurrent.gains[3]).toBe(5.5);
+    expect(builtin?.gains).toEqual(builtinGains);
+    expect(s.equalizer.customPresets).toHaveLength(0);
+  });
+
+  it('自定义选中：写回 customPresets 并持久化', () => {
+    seedEqualizer({ customPresets: [makePreset('c1')] });
+    useSettingsStore.getState().selectEqualizerPreset('c1');
+    useSettingsStore.getState().updateEqualizerBand(2, 3.2);
+    const s = useSettingsStore.getState();
+    // 3.2 → 量化到 0.5 网格
+    expect(s.eqCurrent.gains[2]).toBe(3);
+    expect(s.equalizer.customPresets[0].gains[2]).toBe(3);
+    // 写回的其余频段保持原值
+    expect(s.equalizer.customPresets[0].gains[3]).toBe(0);
+    const persisted = persistedState() as {
+      equalizer: { customPresets: { gains: number[] }[] };
+    };
+    expect(persisted.equalizer.customPresets[0].gains[2]).toBe(3);
+  });
+
+  it('增益夹取到 ±12', () => {
+    useSettingsStore.getState().updateEqualizerBand(0, 99);
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(12);
+    useSettingsStore.getState().updateEqualizerBand(0, -99);
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(-12);
+  });
+
+  it('非有限数 / 越界索引 no-op', () => {
+    const before = useSettingsStore.getState().eqCurrent;
+    useSettingsStore.getState().updateEqualizerBand(0, Number.NaN);
+    useSettingsStore
+      .getState()
+      .updateEqualizerBand(0, Number.POSITIVE_INFINITY);
+    useSettingsStore.getState().updateEqualizerBand(42, 3);
+    useSettingsStore.getState().updateEqualizerBand(-1, 3);
+    expect(useSettingsStore.getState().eqCurrent).toBe(before);
+  });
+});
+
+describe('settingsStore equalizer updateEqualizerQ', () => {
+  beforeEach(resetStore);
+
+  it('端点频段（i=0 / i=9）忽略 Q 改动', () => {
+    const before = useSettingsStore.getState().eqCurrent;
+    useSettingsStore.getState().updateEqualizerQ(0, 5);
+    useSettingsStore.getState().updateEqualizerQ(9, 5);
+    expect(useSettingsStore.getState().eqCurrent).toBe(before);
+  });
+
+  it('中间频段：量化到 0.1 并写回自定义 preset', () => {
+    seedEqualizer({ customPresets: [makePreset('c1')] });
+    useSettingsStore.getState().selectEqualizerPreset('c1');
+    useSettingsStore.getState().updateEqualizerQ(4, 2.34);
+    const s = useSettingsStore.getState();
+    expect(s.eqCurrent.qs[4]).toBe(2.3);
+    expect(s.equalizer.customPresets[0].qs[4]).toBe(2.3);
+  });
+
+  it('Q 夹取到 0.4..8；非有限数 no-op', () => {
+    useSettingsStore.getState().updateEqualizerQ(1, 99);
+    expect(useSettingsStore.getState().eqCurrent.qs[1]).toBe(8);
+    useSettingsStore.getState().updateEqualizerQ(1, 0);
+    expect(useSettingsStore.getState().eqCurrent.qs[1]).toBe(0.4);
+    const before = useSettingsStore.getState().eqCurrent;
+    useSettingsStore.getState().updateEqualizerQ(1, Number.NaN);
+    expect(useSettingsStore.getState().eqCurrent).toBe(before);
+  });
+});
+
+describe('settingsStore equalizer 自定义 preset 生命周期', () => {
+  beforeEach(resetStore);
+
+  it('addEqualizerCustomPreset：快照 eqCurrent、切 activeId、返回新 id', () => {
+    useSettingsStore.getState().selectEqualizerPreset('bass-boost');
+    const id = useSettingsStore.getState().addEqualizerCustomPreset('我的预设');
+    expect(id).not.toBe('');
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.activeId).toBe(id);
+    expect(s.equalizer.customPresets).toHaveLength(1);
+    const preset = s.equalizer.customPresets[0];
+    expect(preset.id).toBe(id);
+    expect(preset.name).toBe('我的预设');
+    expect(preset.gains).toEqual([6, 5, 3.5, 1.5, 0, 0, 0, 0, 0, 0]);
+    expect(preset.qs).toEqual(DEFAULT_QS);
+    // 深拷贝：快照不与运行态共享数组
+    expect(preset.gains).not.toBe(s.eqCurrent.gains);
+    expect(preset.qs).not.toBe(s.eqCurrent.qs);
+  });
+
+  it('name 去首尾空白并截断到 16 字符', () => {
+    const name = `  ${'x'.repeat(30)}  `;
+    useSettingsStore.getState().addEqualizerCustomPreset(name);
+    expect(useSettingsStore.getState().equalizer.customPresets[0].name).toBe(
+      'x'.repeat(16),
+    );
+  });
+
+  it('name 空白：no-op 返回空串且不新增', () => {
+    expect(useSettingsStore.getState().addEqualizerCustomPreset('   ')).toBe(
+      '',
+    );
+    expect(useSettingsStore.getState().equalizer.customPresets).toHaveLength(0);
+    expect(useSettingsStore.getState().equalizer.activeId).toBe('flat');
+  });
+
+  it('已满 8 套：第 9 套 no-op 返回空串，activeId 不变', () => {
+    for (let i = 0; i < 8; i++) {
+      expect(
+        useSettingsStore.getState().addEqualizerCustomPreset(`p${i}`),
+      ).not.toBe('');
+    }
+    const activeBefore = useSettingsStore.getState().equalizer.activeId;
+    expect(useSettingsStore.getState().addEqualizerCustomPreset('p8')).toBe('');
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.customPresets).toHaveLength(8);
+    expect(s.equalizer.activeId).toBe(activeBefore);
+  });
+
+  it('deleteEqualizerCustomPreset：删 active → 回落 flat', () => {
+    const id = useSettingsStore.getState().addEqualizerCustomPreset('temp');
+    useSettingsStore.setState({
+      eqCurrent: { gains: FLAT_GAINS, qs: DEFAULT_QS },
+    });
+    useSettingsStore.getState().updateEqualizerBand(0, 6);
+    useSettingsStore.getState().deleteEqualizerCustomPreset(id);
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.customPresets).toHaveLength(0);
+    expect(s.equalizer.activeId).toBe('flat');
+    expect(s.eqCurrent.gains).toEqual(FLAT_GAINS);
+    expect(s.eqCurrent.qs).toEqual(DEFAULT_QS);
+  });
+
+  it('deleteEqualizerCustomPreset：删非 active → active 与运行态不变', () => {
+    seedEqualizer({
+      activeId: 'c1',
+      customPresets: [
+        makePreset('c1', 'A', [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        makePreset('c2'),
+      ],
+    });
+    useSettingsStore.getState().selectEqualizerPreset('c1');
+    const currentBefore = useSettingsStore.getState().eqCurrent;
+    useSettingsStore.getState().deleteEqualizerCustomPreset('c2');
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.customPresets.map((p) => p.id)).toEqual(['c1']);
+    expect(s.equalizer.activeId).toBe('c1');
+    expect(s.eqCurrent).toBe(currentBefore);
+  });
+
+  it('deleteEqualizerCustomPreset：内置 id 无操作', () => {
+    seedEqualizer({
+      activeId: 'vocal',
+      customPresets: [makePreset('c1')],
+    });
+    useSettingsStore.getState().selectEqualizerPreset('vocal');
+    useSettingsStore.getState().deleteEqualizerCustomPreset('vocal');
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.activeId).toBe('vocal');
+    expect(s.equalizer.customPresets.map((p) => p.id)).toEqual(['c1']);
+  });
+});
+
+describe('settingsStore equalizer 水合消毒', () => {
+  beforeEach(resetStore);
+  afterEach(resetStore);
+
+  it('blob 缺失 equalizer → 回落默认（含 eqCurrent 全平）', async () => {
+    const store = await hydrateFreshModule({});
+    expect(store.getState().equalizer).toEqual({
+      enabled: false,
+      activeId: 'flat',
+      customPresets: [],
+    });
+    expect(store.getState().eqCurrent).toEqual({
+      gains: FLAT_GAINS,
+      qs: DEFAULT_QS,
+    });
+  });
+
+  it('blob 非法 equalizer（字符串）→ 回落默认', async () => {
+    const store = await hydrateFreshModule({ equalizer: 'bogus' });
+    expect(store.getState().equalizer).toEqual({
+      enabled: false,
+      activeId: 'flat',
+      customPresets: [],
+    });
+  });
+
+  it('blob 字段逐项消毒：enabled 非布尔→false、activeId 空白→flat、无 id 的 preset 丢弃', async () => {
+    const store = await hydrateFreshModule({
+      equalizer: {
+        enabled: 'yes',
+        activeId: '   ',
+        customPresets: [{ name: 'no-id' }, makePreset('c1')],
+      },
+    });
+    const s = store.getState();
+    expect(s.equalizer.enabled).toBe(false);
+    expect(s.equalizer.activeId).toBe('flat');
+    expect(s.equalizer.customPresets.map((p) => p.id)).toEqual(['c1']);
+  });
+
+  it('blob 超 8 套自定义 preset → 截断到 8', async () => {
+    const nine = Array.from({ length: 9 }, (_, i) => makePreset(`c${i}`));
+    const store = await hydrateFreshModule({
+      equalizer: { enabled: true, activeId: 'flat', customPresets: nine },
+    });
+    expect(store.getState().equalizer.customPresets).toHaveLength(8);
+  });
+
+  it('合法 blob 原样保留，eqCurrent 跟随 activeId', async () => {
+    const store = await hydrateFreshModule({
+      equalizer: { enabled: true, activeId: 'bass-boost', customPresets: [] },
+    });
+    const s = store.getState();
+    expect(s.equalizer.enabled).toBe(true);
+    expect(s.equalizer.activeId).toBe('bass-boost');
+    expect(s.eqCurrent.gains).toEqual([6, 5, 3.5, 1.5, 0, 0, 0, 0, 0, 0]);
+  });
+});
+
+describe('settingsStore equalizer 快照应用', () => {
+  beforeEach(resetStore);
+
+  it('getSettingsSnapshot 含 equalizer，不含 eqCurrent', () => {
+    const snapshot = getSettingsSnapshot();
+    expect(snapshot).toHaveProperty('equalizer');
+    expect(snapshot).not.toHaveProperty('eqCurrent');
+  });
+
+  it('含 equalizer 键 → 消毒后应用', () => {
+    applySettingsSnapshot({
+      equalizer: {
+        enabled: true,
+        activeId: 'treble-boost',
+        customPresets: [makePreset('c1')],
+      },
+    });
+    const s = useSettingsStore.getState();
+    expect(s.equalizer.enabled).toBe(true);
+    expect(s.equalizer.activeId).toBe('treble-boost');
+    expect(s.equalizer.customPresets.map((p) => p.id)).toEqual(['c1']);
+    const builtin = BUILTIN_PRESETS.find((p) => p.id === 'treble-boost');
+    expect(s.eqCurrent.gains).toEqual(builtin?.gains);
+  });
+
+  it('含非法 equalizer → 消毒为默认值', () => {
+    seedEqualizer({ enabled: true, activeId: 'vocal' });
+    applySettingsSnapshot({ equalizer: 42 });
+    expect(useSettingsStore.getState().equalizer).toEqual({
+      enabled: false,
+      activeId: 'flat',
+      customPresets: [],
+    });
+  });
+
+  it('含超 8 套 preset → 截断到 8', () => {
+    const nine = Array.from({ length: 9 }, (_, i) => makePreset(`c${i}`));
+    applySettingsSnapshot({
+      equalizer: { enabled: true, activeId: 'flat', customPresets: nine },
+    });
+    expect(useSettingsStore.getState().equalizer.customPresets).toHaveLength(8);
+  });
+
+  it('不含 equalizer 键 → equalizer 不被触碰', () => {
+    seedEqualizer({
+      enabled: true,
+      activeId: 'vocal',
+      customPresets: [makePreset('c1')],
+    });
+    const before = useSettingsStore.getState().equalizer;
+    applySettingsSnapshot({ colorMode: 'dark' });
+    expect(useSettingsStore.getState().equalizer).toBe(before);
+  });
+
+  it('eqCurrent 不落盘：persist blob 无 eqCurrent', () => {
+    useSettingsStore.getState().selectEqualizerPreset('soft');
+    const persisted = persistedState();
+    expect(persisted).not.toHaveProperty('eqCurrent');
+    expect(persisted.equalizer).toBeTruthy();
+  });
+});
+
+describe('settingsStore equalizer 快照体积', () => {
+  beforeEach(resetStore);
+
+  it('满载（8 套 × 16 字符 name）快照 < 4096 字节', () => {
+    const gains = [-12, -11.5, -11, -10.5, -10, -9.5, -9, -8.5, -8, -7.5];
+    const qs = [7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 8];
+    const dense = Array.from({ length: 8 }, (_, i) => ({
+      id: `custom-lz9x0abc-${i}`,
+      name: 'ABCDEFGHIJKLMNOP',
+      gains: [...gains],
+      qs: [...qs],
+    }));
+    applySettingsSnapshot({
+      equalizer: { enabled: true, activeId: dense[0].id, customPresets: dense },
+    });
+    const equalizer = useSettingsStore.getState().equalizer;
+    expect(equalizer.customPresets).toHaveLength(8);
+    expect(equalizer.customPresets.every((p) => p.name.length === 16)).toBe(
+      true,
+    );
+    expect(JSON.stringify(getSettingsSnapshot()).length).toBeLessThan(4096);
   });
 });

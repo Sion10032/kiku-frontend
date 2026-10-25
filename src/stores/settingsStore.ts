@@ -1,5 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import {
+  BUILTIN_PRESETS,
+  EQ_BANDS,
+  EQ_CUSTOM_PRESET_LIMIT,
+  EQ_PRESET_NAME_MAX,
+  type EqualizerPreset,
+  defaultQs,
+  findPreset,
+  flatGains,
+  quantizeGainDb,
+  quantizeQ,
+  sanitizeEqualizerSettings,
+} from '../utils/equalizer';
 
 export type ColorMode = 'light' | 'dark' | 'auto';
 
@@ -65,6 +78,22 @@ export interface FloatingLyricsSettings {
   opacity: number;
 }
 
+/** 均衡器设置（自定义 preset 随快照/备份同步）。 */
+export interface EqualizerSettings {
+  /** 是否启用均衡器 */
+  enabled: boolean;
+  /** 当前选中 preset id：内置（BUILTIN_PRESETS）或自定义 */
+  activeId: string;
+  /** 用户自定义 preset（上限 EQ_CUSTOM_PRESET_LIMIT 套） */
+  customPresets: EqualizerPreset[];
+}
+
+/** 均衡器运行态：当前实际生效的增益/Q（不持久化、不进快照，水合后按 activeId 重装）。 */
+export interface EqCurrent {
+  gains: number[];
+  qs: number[];
+}
+
 /** 文件预览设置。 */
 export interface PreviewSettings {
   /** 文本预览字号（px），12–32 */
@@ -110,6 +139,10 @@ interface SettingsState {
   contentWidth: ContentWidth;
   /** 视频播放模式（默认 audio）：决定视频文件入队与播放后端（见 VideoMode） */
   videoMode: VideoMode;
+  /** 均衡器设置（默认关闭、选中内置 flat、无自定义 preset） */
+  equalizer: EqualizerSettings;
+  /** 均衡器运行态：当前生效的增益/Q（不持久化） */
+  eqCurrent: EqCurrent;
   /** 是否在首次加载时按屏幕像素密度自动推断 uiScale（推断一次后置 false，内部标记不对外暴露） */
   uiScaleAuto: boolean;
   setDynamicColor: (on: boolean) => void;
@@ -130,6 +163,70 @@ interface SettingsState {
   setUiScale: (scale: number) => void;
   setContentWidth: (v: ContentWidth) => void;
   setVideoMode: (mode: VideoMode) => void;
+  setEqualizerEnabled: (on: boolean) => void;
+  /** 选中 preset（内置/自定义）：载入其 gains/qs 到 eqCurrent；未知 id 回落 flat */
+  selectEqualizerPreset: (id: string) => void;
+  /** 改单频段增益（量化到 0.5 dB）；自定义选中项同步写回 */
+  updateEqualizerBand: (i: number, gainDb: number) => void;
+  /** 改单频段 Q（量化到 0.1）；首尾 shelf 频段忽略，自定义选中项同步写回 */
+  updateEqualizerQ: (i: number, q: number) => void;
+  /** 以当前运行态新建自定义 preset 并选中；已满 8 套或 name 空白时 no-op 返回 '' */
+  addEqualizerCustomPreset: (name: string) => string;
+  /** 删除自定义 preset；删的是当前选中项时回落 flat（内置 id 无操作） */
+  deleteEqualizerCustomPreset: (id: string) => void;
+}
+
+/** 内置 preset id：findPreset 优先命中内置项，同 id 的自定义项不参与写回。 */
+const BUILTIN_PRESET_IDS = new Set(BUILTIN_PRESETS.map((p) => p.id));
+
+let customPresetSeq = 0;
+
+/** 生成自定义 preset id：时间戳跨会话唯一，进程内序号消同毫秒碰撞。 */
+function nextCustomPresetId(): string {
+  customPresetSeq += 1;
+  return `custom-${Date.now().toString(36)}-${customPresetSeq}`;
+}
+
+/** 全平运行态（未命中 preset / 删除当前自定义项时回落）。 */
+function flatCurrent(): EqCurrent {
+  return { gains: flatGains(), qs: defaultQs() };
+}
+
+/**
+ * preset → 运行态。必须复制数组：BUILTIN_PRESETS 是可变结构，
+ * 直接引用会让用户拖滑条的写入污染内置 preset。
+ */
+function presetCurrent(preset: EqualizerPreset): EqCurrent {
+  return { gains: [...preset.gains], qs: [...preset.qs] };
+}
+
+/** 按 activeId 取运行态；未命中（脏数据）回落全平。 */
+function currentForEqualizer(equalizer: EqualizerSettings): EqCurrent {
+  const preset = findPreset(equalizer.activeId, equalizer.customPresets);
+  return preset ? presetCurrent(preset) : flatCurrent();
+}
+
+/** 频段下标是否合法（10 段）。 */
+function isBandIndex(i: number): boolean {
+  return Number.isInteger(i) && i >= 0 && i < EQ_BANDS.length;
+}
+
+/**
+ * 当前选中项是自定义 preset 时把运行态改动写回 customPresets；
+ * 内置 preset 只读（写回会污染 BUILTIN_PRESETS 且无法持久化）→ 返回空补丁。
+ */
+function customPresetWriteBack(
+  equalizer: EqualizerSettings,
+  patch: (preset: EqualizerPreset) => EqualizerPreset,
+): Partial<Pick<SettingsState, 'equalizer'>> {
+  if (BUILTIN_PRESET_IDS.has(equalizer.activeId)) return {};
+  const index = equalizer.customPresets.findIndex(
+    (p) => p.id === equalizer.activeId,
+  );
+  if (index < 0) return {};
+  const customPresets = [...equalizer.customPresets];
+  customPresets[index] = patch(equalizer.customPresets[index]);
+  return { equalizer: { ...equalizer, customPresets } };
 }
 
 /**
@@ -159,6 +256,7 @@ const SNAPSHOT_KEYS = [
   'uiScale',
   'contentWidth',
   'videoMode',
+  'equalizer',
 ] as const;
 
 type SnapshotKey = (typeof SNAPSHOT_KEYS)[number];
@@ -173,7 +271,7 @@ function pickSettings(state: SettingsState): Record<SnapshotKey, unknown> {
 /** 本地设置（纯用户偏好，localStorage 持久化，不依赖登录态）。 */
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       dynamicColor: true,
       colorMode: 'auto',
       setDynamicColor: (on) => set({ dynamicColor: on }),
@@ -199,7 +297,106 @@ export const useSettingsStore = create<SettingsState>()(
       uiScaleAuto: true,
       contentWidth: 'wide',
       videoMode: 'audio',
+      equalizer: { enabled: false, activeId: 'flat', customPresets: [] },
+      eqCurrent: flatCurrent(),
       setVideoMode: (mode) => set({ videoMode: mode }),
+      setEqualizerEnabled: (on) =>
+        set((s) => ({ equalizer: { ...s.equalizer, enabled: on } })),
+      selectEqualizerPreset: (id) =>
+        set((s) => {
+          const preset = findPreset(id, s.equalizer.customPresets);
+          // 未命中（含已删除的自定义项 / 未知 id）回落 flat
+          if (!preset) {
+            return {
+              equalizer: { ...s.equalizer, activeId: 'flat' },
+              eqCurrent: flatCurrent(),
+            };
+          }
+          return {
+            equalizer: { ...s.equalizer, activeId: preset.id },
+            eqCurrent: presetCurrent(preset),
+          };
+        }),
+      updateEqualizerBand: (i, gainDb) => {
+        // 参数来自 UI：非有限数 / 越界下标直接 no-op（量化函数对 NaN 返回 NaN）
+        if (!isBandIndex(i) || !Number.isFinite(gainDb)) return;
+        const gain = quantizeGainDb(gainDb);
+        set((s) => {
+          const gains = [...s.eqCurrent.gains];
+          gains[i] = gain;
+          return {
+            eqCurrent: { ...s.eqCurrent, gains },
+            ...customPresetWriteBack(s.equalizer, (preset) => {
+              const next = [...preset.gains];
+              next[i] = gain;
+              return { ...preset, gains: next };
+            }),
+          };
+        });
+      },
+      updateEqualizerQ: (i, q) => {
+        // 首尾走 shelf（buildBandParams 恒用默认 Q），Q 改动对它们无意义
+        if (!isBandIndex(i) || i === 0 || i === EQ_BANDS.length - 1) return;
+        if (!Number.isFinite(q)) return;
+        const value = quantizeQ(q);
+        set((s) => {
+          const qs = [...s.eqCurrent.qs];
+          qs[i] = value;
+          return {
+            eqCurrent: { ...s.eqCurrent, qs },
+            ...customPresetWriteBack(s.equalizer, (preset) => {
+              const next = [...preset.qs];
+              next[i] = value;
+              return { ...preset, qs: next };
+            }),
+          };
+        });
+      },
+      addEqualizerCustomPreset: (name) => {
+        // 名称去空白 + 截断到 EQ_PRESET_NAME_MAX（与 sanitize 一致）
+        const trimmed = name.trim().slice(0, EQ_PRESET_NAME_MAX);
+        const s = get();
+        if (
+          !trimmed
+          || s.equalizer.customPresets.length >= EQ_CUSTOM_PRESET_LIMIT
+        ) {
+          return '';
+        }
+        const id = nextCustomPresetId();
+        const preset: EqualizerPreset = {
+          id,
+          name: trimmed,
+          // 快照当前运行态；复制数组，避免与 eqCurrent 共享
+          gains: [...s.eqCurrent.gains],
+          qs: [...s.eqCurrent.qs],
+        };
+        set({
+          equalizer: {
+            ...s.equalizer,
+            activeId: id,
+            customPresets: [...s.equalizer.customPresets, preset],
+          },
+        });
+        return id;
+      },
+      deleteEqualizerCustomPreset: (id) =>
+        set((s) => {
+          const customPresets = s.equalizer.customPresets.filter(
+            (p) => p.id !== id,
+          );
+          // 未匹配（内置 id / 已删除）→ 原样返回 state，zustand 视为无操作
+          if (customPresets.length === s.equalizer.customPresets.length) {
+            return s;
+          }
+          if (s.equalizer.activeId !== id) {
+            return { equalizer: { ...s.equalizer, customPresets } };
+          }
+          // 删的是当前选中项 → 回落 flat
+          return {
+            equalizer: { ...s.equalizer, activeId: 'flat', customPresets },
+            eqCurrent: flatCurrent(),
+          };
+        }),
       setFloatingLyrics: (patch) =>
         set((s) => ({ floatingLyrics: { ...s.floatingLyrics, ...patch } })),
       setPreview: (patch) =>
@@ -235,6 +432,8 @@ export const useSettingsStore = create<SettingsState>()(
           ...current,
           ...(persisted as Partial<SettingsState>),
         };
+        // equalizer 来自不可信 blob：逐项消毒（缺失/非法回落默认、超 8 套截断）
+        const equalizer = sanitizeEqualizerSettings(merged.equalizer);
         return {
           ...merged,
           worksPageSize: isWorksPageSize(merged.worksPageSize)
@@ -245,6 +444,10 @@ export const useSettingsStore = create<SettingsState>()(
           contentWidth: isContentWidth(merged.contentWidth)
             ? merged.contentWidth
             : 'wide',
+          equalizer,
+          // eqCurrent 是运行态（不持久化），水合后按 activeId 重装，
+          // 否则刷新后选中项与生效值会不一致（EQ 静默失效）
+          eqCurrent: currentForEqualizer(equalizer),
         };
       },
       // 首次使用时按屏幕像素密度推断一次界面缩放档位，之后沿用持久化值
@@ -265,7 +468,8 @@ export function getSettingsSnapshot(): Record<string, unknown> {
 
 /**
  * 应用备份快照：仅接受白名单字段，未知/缺失字段忽略（保留当前值），
- * uiScale 夹取 80–130，worksPageSize 必须落在 WORKS_PAGE_SIZES 内（否则回落 20）。
+ * uiScale 夹取 80–130，worksPageSize 必须落在 WORKS_PAGE_SIZES 内（否则回落 20），
+ * equalizer 消毒后应用（快照不含运行态，eqCurrent 随之按 activeId 重装）。
  */
 export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
   const patch: Partial<Record<SnapshotKey, unknown>> = {};
@@ -289,7 +493,17 @@ export function applySettingsSnapshot(snapshot: Record<string, unknown>): void {
       ? patch.contentWidth
       : 'wide';
   }
+  // equalizer 可能来自旧版本/手改备份：消毒后应用（超 8 套截断、非法字段回落默认）
+  let eqCurrent: EqCurrent | undefined;
+  if ('equalizer' in patch) {
+    const equalizer = sanitizeEqualizerSettings(patch.equalizer);
+    patch.equalizer = equalizer;
+    eqCurrent = currentForEqualizer(equalizer);
+  }
   // 快照来自同结构 store（写入方同源），字段类型整体信任；嵌套对象整体替换不深合并。
   // setState 走 persist 中间件自动落盘；uiScale 变化由 ThemeRoot 现有 effect 即时生效。
-  useSettingsStore.setState(patch as Partial<SettingsState>);
+  useSettingsStore.setState({
+    ...(patch as Partial<SettingsState>),
+    ...(eqCurrent ? { eqCurrent } : {}),
+  });
 }
