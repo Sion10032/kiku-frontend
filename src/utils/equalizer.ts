@@ -1,6 +1,6 @@
 /**
  * 播放器均衡器纯逻辑层：频段常量、量化、preset 净化与频段参数构造。
- * 不触碰 WebAudio / DOM（`createEqChain` 由音频接线任务实现）。
+ * 除 `createEqChain`（建 WebAudio biquad 链，仅接收注入的 AudioContext）外不触碰 DOM。
  */
 
 /** 10 段图示均衡频段（Hz）。 */
@@ -204,7 +204,39 @@ export interface EqChain {
   setBands(gains: number[], qs: number[], enabled: boolean): void;
 }
 
-/** 音频接线任务（Task 4）实现；本任务只留签名。 */
-export function createEqChain(_ctx: AudioContext): EqChain {
-  throw new Error('TODO');
+/**
+ * 建 10 段 biquad 串联链：type/frequency 建链时按 buildBandParams 固定，
+ * 运行期只动 gain/Q（setTargetAtTime 0.05s 平滑，对齐响度增益链）。
+ * enabled=false 走全 0dB 的恒等变换而非断链——链路常在，切开关不重建节点。
+ */
+export function createEqChain(ctx: AudioContext): EqChain {
+  const filters: BiquadFilterNode[] = [];
+  for (let i = 0; i < BAND_COUNT; i++) {
+    const { type, frequency, Q } = buildBandParams(i, 0, EQ_Q_DEFAULT);
+    const filter = ctx.createBiquadFilter();
+    filter.type = type;
+    filter.frequency.value = frequency;
+    filter.gain.value = 0;
+    filter.Q.value = Q;
+    filters.push(filter);
+  }
+  for (let i = 0; i < filters.length - 1; i++) {
+    filters[i].connect(filters[i + 1]);
+  }
+
+  return {
+    input: filters[0],
+    output: filters[filters.length - 1],
+    setBands(gains: number[], qs: number[], enabled: boolean): void {
+      const now = ctx.currentTime;
+      for (let i = 0; i < filters.length; i++) {
+        // 关闭时全部 0dB：链仍在，只是恒等（Q 回落默认值，增益 0 时不可闻）
+        const params = enabled
+          ? buildBandParams(i, gains[i] ?? 0, qs[i] ?? EQ_Q_DEFAULT)
+          : buildBandParams(i, 0, EQ_Q_DEFAULT);
+        filters[i].gain.setTargetAtTime(params.gain, now, 0.05);
+        filters[i].Q.setTargetAtTime(params.Q, now, 0.05);
+      }
+    },
+  };
 }

@@ -132,6 +132,18 @@ function handleTrackEnd(track: Track, dur: number, replay: () => void): void {
 }
 
 /**
+ * 建链并立即写入当前响度增益与 EQ 运行态。
+ * 曲目加载 effect 依赖仅 [currentTrack]，增益/EQ 设置变化不会重建实例，
+ * 故建链时必须主动设初值；运行态读 getState 避免把设置项拉进依赖数组。
+ */
+function attachInitialChain(el: HTMLMediaElement, gainDb: number): void {
+  const { eqCurrent, equalizer } = useSettingsStore.getState();
+  const chain = attachGainChain(el);
+  chain.setGainDb(gainDb);
+  chain.setEqBands(eqCurrent.gains, eqCurrent.qs, equalizer.enabled);
+}
+
+/**
  * 播放实例管理 hook：在 AudioElement 中挂载一次。
  *
  * - .wv 曲目走 WasmWvPlayer（worker 解码 + AudioBuffer 链式调度），
@@ -152,6 +164,8 @@ export function usePlayer(): void {
   const volume = usePlayerStore((s) => s.volume);
   const muted = usePlayerStore((s) => s.muted);
   const gainDb = useCurrentGainDb();
+  const eqCurrent = useSettingsStore((s) => s.eqCurrent);
+  const eqEnabled = useSettingsStore((s) => s.equalizer.enabled);
   const rewindSeekMode = usePlayerStore((s) => s.rewindSeekMode);
   const forwardSeekMode = usePlayerStore((s) => s.forwardSeekMode);
   const sleepMode = usePlayerStore((s) => s.sleepMode);
@@ -252,8 +266,8 @@ export function usePlayer(): void {
       el.src = src;
       const vBackend = videoBackend(el);
       backend = vBackend;
-      // 视频元素同为 HTMLMediaElement：响度均衡增益链与 Howler 分支同等接入
-      attachGainChain(el).setGainDb(gainDb);
+      // 视频元素同为 HTMLMediaElement：响度均衡 + EQ 链与 Howler 分支同等接入
+      attachInitialChain(el, gainDb);
       // 初始音量：音量同步 effect 依赖 [volume, muted]，切曲时不重跑 → 立即设初值
       vBackend.volume(m ? 0 : Math.min(1, Math.max(0, v)));
 
@@ -327,12 +341,12 @@ export function usePlayer(): void {
     backend = howlerBackend;
     howl = sound;
 
-    // 音量均衡：html5 元素接 WebAudio 增益链（Howler volume 上限 1，无法提升）
+    // 音量均衡 + EQ：html5 元素接 WebAudio 链（Howler volume 上限 1，无法提升）
     const el = (
       sound as unknown as { _sounds?: Array<{ _node?: HTMLAudioElement }> }
     )._sounds?.[0]?._node;
     if (el instanceof HTMLAudioElement) {
-      attachGainChain(el).setGainDb(gainDb);
+      attachInitialChain(el, gainDb);
     }
 
     if (initialPlaying) sound.play();
@@ -383,6 +397,33 @@ export function usePlayer(): void {
       attachGainChain(getVideoElement()).setGainDb(gainDb);
     }
   }, [gainDb, currentTrack]);
+
+  // —— 均衡器：gains/qs/开关变化（或切曲）后应用到当前实例 ——
+  // 与 gainDb effect 同形：Howler 取底层 audio 元素、视频分支（videoActive=true）
+  // 取模块级 <video> 单例；.wv 分支走 PlayerBackend 可选方法（未实现则 no-op）
+
+  useEffect(() => {
+    const el = howl as unknown as {
+      _sounds?: Array<{ _node?: HTMLAudioElement }>;
+    } | null;
+    const node = el?._sounds?.[0]?._node;
+    if (node instanceof HTMLAudioElement) {
+      attachGainChain(node).setEqBands(
+        eqCurrent.gains,
+        eqCurrent.qs,
+        eqEnabled,
+      );
+    }
+    // 曲目加载 effect 同轮已按分流写入 videoActive，此处读最新值
+    if (currentTrack && usePlayerStore.getState().videoActive) {
+      attachGainChain(getVideoElement()).setEqBands(
+        eqCurrent.gains,
+        eqCurrent.qs,
+        eqEnabled,
+      );
+    }
+    backend?.setEqBands?.(eqCurrent.gains, eqCurrent.qs, eqEnabled);
+  }, [eqCurrent, eqEnabled, currentTrack]);
 
   // —— 时间轮询：播放中每 250ms 写回 currentTime（并节流上报播放进度） ——
 

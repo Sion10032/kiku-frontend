@@ -34,6 +34,25 @@ class MockAudioContext {
     this.gainMocks.push(gain);
     return { gain, connect: () => {} };
   }
+
+  // EQ 链接入后每个元素会多建 10 个 biquad：仅提供构造所需的桩，
+  // 行为断言仍限于响度增益（EQ 装配层不在 jsdom 测试范围内）
+  createBiquadFilter(): {
+    type: string;
+    frequency: GainParamMock;
+    Q: GainParamMock;
+    gain: GainParamMock;
+    connect: (dest: unknown) => unknown;
+  } {
+    const param = (): GainParamMock => ({ value: 0, setTargetAtTime: vi.fn() });
+    return {
+      type: 'peaking',
+      frequency: param(),
+      Q: param(),
+      gain: param(),
+      connect: (dest: unknown) => dest,
+    };
+  }
 }
 
 const windowMock = { addEventListener: vi.fn() };

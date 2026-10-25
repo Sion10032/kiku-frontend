@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   BUILTIN_PRESETS,
   buildBandParams,
-  createEqChain,
   defaultQs,
   EQ_BANDS,
   EQ_CUSTOM_PRESET_LIMIT,
@@ -399,11 +398,5 @@ describe('BUILTIN_PRESETS', () => {
     expect(byId.soft).toEqual([
       -2, -1.5, -1, 0.5, 1.5, 1.5, 0.5, -1, -2.5, -3.5,
     ]);
-  });
-});
-
-describe('createEqChain', () => {
-  it('本任务仅占位（Task 4 实现）', () => {
-    expect(() => createEqChain({} as AudioContext)).toThrow('TODO');
   });
 });

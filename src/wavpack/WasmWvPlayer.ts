@@ -31,6 +31,10 @@ export interface PlayerBackend {
   currentTime(): number;
   playing(): boolean;
   unload(): void;
+  /** 均衡器：逐段应用增益/Q（可选；媒体元素分支直接操作元素链，不实现即 no-op） */
+  setEqBands?(gains: number[], qs: number[], enabled: boolean): void;
+  /** 响度均衡增益 dB（可选；.wv 分支由调度链实现） */
+  setLoudnessDb?(db: number): void;
 }
 
 export interface WasmWvPlayerCallbacks {
