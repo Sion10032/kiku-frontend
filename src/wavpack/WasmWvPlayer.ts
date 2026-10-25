@@ -135,6 +135,16 @@ export class WasmWvPlayer implements PlayerBackend {
     this.scheduler.setVolume(Math.min(1, Math.max(0, v)));
   }
 
+  /** 均衡器：逐段增益/Q + 开关（调度链的 biquad 串联链；ctx 未建时记 pending）。 */
+  setEqBands(gains: number[], qs: number[], enabled: boolean): void {
+    this.scheduler.setEqBands(gains, qs, enabled);
+  }
+
+  /** 响度均衡增益 dB（调度链的 GainNode；ctx 未建时记 pending）。 */
+  setLoudnessDb(db: number): void {
+    this.scheduler.setLoudnessDb(db);
+  }
+
   duration(): number {
     return this.durationSec;
   }

@@ -7,8 +7,17 @@
 //   play(lastFedSample) 续拉，worker 侧 fromSample==outputSample 走不重建快路径）
 // - worker 发出 ended 且队列排空 → onEnd（曲目自然结束）
 //
+// 输出链：source（每块）→ gain(音量) → EQ(10 段 biquad) → loudnessGain(响度均衡)
+// → destination（spec D2：音量在 EQ 前，EQ 在响度增益前）。
+//
 // 纯逻辑部分（时间→sample 换算）拆为 computeCurrentSample 供单测；
 // 类本体依赖 Web Audio API，仅在浏览器实例化。
+import {
+  createEqChain,
+  defaultQs,
+  flatGains,
+  type EqChain,
+} from '../utils/equalizer';
 
 /** 队列积压上限（秒）：超过即向 worker 发 pause，防止内存无限增长。 */
 const MAX_QUEUED_SECONDS = 15;
@@ -56,6 +65,8 @@ export class AudioChunkScheduler {
   private readonly cb: AudioChunkSchedulerCallbacks;
   private ctx: AudioContext | null = null;
   private gain: GainNode | null = null;
+  private eq: EqChain | null = null;
+  private loudnessGain: GainNode | null = null;
   private resumeBound = false;
   /** 已排定的链（按播放顺序，队首最先播完） */
   private entries: ChainEntry[] = [];
@@ -72,6 +83,12 @@ export class AudioChunkScheduler {
   /** worker 已报 ended：队列排空即触发 onEnd */
   private endedReceived = false;
   private volume = 1;
+  /** EQ 待应用值（ctx 未创建时记下，建链时应用；默认恒等） */
+  private eqGains = flatGains();
+  private eqQs = defaultQs();
+  private eqEnabled = false;
+  /** 响度均衡增益 dB（待应用值，默认 0 = 直通） */
+  private loudnessDb = 0;
 
   constructor(cb: AudioChunkSchedulerCallbacks) {
     this.cb = cb;
@@ -93,13 +110,47 @@ export class AudioChunkScheduler {
     if (this.gain) this.gain.gain.value = v;
   }
 
-  /** 惰性创建 AudioContext + GainNode。 */
+  /** EQ 逐段增益/Q + 开关（ctx 未创建时记下，创建时应用）。 */
+  setEqBands(gains: number[], qs: number[], enabled: boolean): void {
+    this.eqGains = gains;
+    this.eqQs = qs;
+    this.eqEnabled = enabled;
+    this.eq?.setBands(gains, qs, enabled);
+  }
+
+  /**
+   * 响度均衡增益 dB（ctx 未创建时记下，创建时应用）。
+   * 公式与 utils/normalizer.ts 完全一致：clamp(-60, 20) → 10^(db/20)，
+   * setTargetAtTime 0.05s 平滑。
+   */
+  setLoudnessDb(db: number): void {
+    this.loudnessDb = db;
+    this.applyLoudnessDb();
+  }
+
+  private applyLoudnessDb(): void {
+    const node = this.loudnessGain;
+    const ctx = this.ctx;
+    if (!node || !ctx) return;
+    const capped = Math.max(-60, Math.min(20, this.loudnessDb)); // +20dB 防失控硬上限
+    node.gain.setTargetAtTime(10 ** (capped / 20), ctx.currentTime, 0.05);
+  }
+
+  /** 惰性创建 AudioContext + gain(EQ 前音量) / EQ 链 / 响度 GainNode。 */
   private ensureCtx(): AudioContext {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.gain = this.ctx.createGain();
       this.gain.gain.value = this.volume;
-      this.gain.connect(this.ctx.destination);
+      this.eq = createEqChain(this.ctx);
+      this.loudnessGain = this.ctx.createGain();
+      // 链路：source → gain → EQ.input，EQ.output → loudnessGain → destination
+      this.gain.connect(this.eq.input);
+      this.eq.output.connect(this.loudnessGain);
+      this.loudnessGain.connect(this.ctx.destination);
+      // 建链即应用 pending 初值（setter 早于首次 ensureCtx 调用是常态）
+      this.eq.setBands(this.eqGains, this.eqQs, this.eqEnabled);
+      this.applyLoudnessDb();
     }
     // 自动播放策略：play() 可能经由 store effect 丢失手势上下文，
     // 兜底绑一次性手势 resume（与 utils/normalizer.ts 同款）
@@ -225,6 +276,9 @@ export class AudioChunkScheduler {
     this.ctx?.close().catch(() => {});
     this.ctx = null;
     this.gain = null;
+    this.eq = null;
+    this.loudnessGain = null;
+    // pending 值（volume/eq/loudness）保留：万一重建 ctx 仍按最后设置建链
     this.resumeBound = false;
   }
 

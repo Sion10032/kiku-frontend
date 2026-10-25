@@ -240,6 +240,12 @@ export function usePlayer(): void {
       // 初始音量：WasmWvPlayer 构造不接收音量（GainNode 默认 1），
       // 音量同步 effect 依赖 [volume, muted]，切曲时不重跑 → 构造后立即设初值
       player.volume(m ? 0 : Math.min(1, Math.max(0, v)));
+      // 初始响度增益 + EQ：.wv 无 HTMLMediaElement 可 attach，链由调度器惰性建 ctx，
+      // 设置变化经 PlayerBackend 可选方法同步；此处与 attachInitialChain 同口径写初值
+      const { eqCurrent: eqInit, equalizer: eqInitState } =
+        useSettingsStore.getState();
+      player.setLoudnessDb(gainDb);
+      player.setEqBands(eqInit.gains, eqInit.qs, eqInitState.enabled);
 
       if (initialPlaying) player.play();
 
@@ -382,7 +388,8 @@ export function usePlayer(): void {
 
   // —— 增益均衡：gainDb 变化（设置调整/切曲/开关）后应用到实例的元素 ——
   // Howler 分支从 howl._sounds 取底层 audio 元素；.wv 无 HTMLAudioElement，
-  // 响度增益不生效；视频分支（videoActive=true）直接取模块级 <video> 单例
+  // 响度增益走 PlayerBackend 可选方法（调度链的 loudnessGain）；
+  // 视频分支（videoActive=true）直接取模块级 <video> 单例
 
   useEffect(() => {
     const el = howl as unknown as {
@@ -396,6 +403,7 @@ export function usePlayer(): void {
     if (currentTrack && usePlayerStore.getState().videoActive) {
       attachGainChain(getVideoElement()).setGainDb(gainDb);
     }
+    backend?.setLoudnessDb?.(gainDb);
   }, [gainDb, currentTrack]);
 
   // —— 均衡器：gains/qs/开关变化（或切曲）后应用到当前实例 ——
