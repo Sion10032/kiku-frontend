@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { usePlayerStore } from '../../stores/playerStore';
 import AudioPlayer from './AudioPlayer';
@@ -61,6 +67,18 @@ vi.mock('@m3e/react/slider', () => ({
   M3eSliderThumb: () => null,
 }));
 
+// EqualizerDialog 依赖 m3e 对话框，mock 成可观察 open 的占位；onClose 经
+// 容器暴露给测试触发（真实组件由 onClosed 回调驱动）
+const eqMocks = vi.hoisted(() => ({
+  onClose: undefined as (() => void) | undefined,
+}));
+vi.mock('./EqualizerDialog', () => ({
+  default: (props: { open: boolean; onClose: () => void }) => {
+    eqMocks.onClose = props.onClose;
+    return props.open ? <div data-testid='eq-dialog' /> : null;
+  },
+}));
+
 // 图标 side-effect 导入（注册 custom element）在 jsdom 无法执行，置空
 vi.mock('@m3e/icons/outlined/keyboard_arrow_down', () => ({}));
 vi.mock('@m3e/icons/outlined/queue_music', () => ({}));
@@ -78,6 +96,7 @@ vi.mock('@m3e/icons/outlined/shuffle', () => ({}));
 vi.mock('@m3e/icons/outlined/volume_up', () => ({}));
 vi.mock('@m3e/icons/outlined/volume_off', () => ({}));
 vi.mock('@m3e/icons/outlined/music_note', () => ({}));
+vi.mock('@m3e/icons/outlined/graphic_eq', () => ({}));
 
 // 渲染期不触碰播放引擎/子面板，mock 掉减少依赖面
 vi.mock('../../hooks/usePlayer', () => ({ seekTo: () => {} }));
@@ -88,8 +107,9 @@ vi.mock('./LyricsPanel', () => ({
   default: () => <div data-testid='lyrics-panel' />,
 }));
 
-/** 注入一条带歌词的当前曲目并重置手势回调容器 */
+/** 注入一条带歌词的当前曲目并重置手势/对话框回调容器 */
 function seedTrack() {
+  eqMocks.onClose = undefined;
   usePlayerStore.setState({
     hide: false,
     queue: [{ hash: 'h1', title: 'Track A', workTitle: 'Work W', uid: 'q1' }],
@@ -123,6 +143,33 @@ describe('音量百分比显示', () => {
     seedTrack();
     render(<AudioPlayer />);
     expect(screen.getByText('100%')).not.toBeNull();
+  });
+});
+
+describe('均衡器入口', () => {
+  it('辅助开关行渲染 EQ 按钮，点击后打开对话框', () => {
+    seedTrack();
+    render(<AudioPlayer />);
+    expect(screen.queryByTestId('eq-dialog')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'player.eq-open' }));
+    expect(screen.queryByTestId('eq-dialog')).not.toBeNull();
+  });
+
+  it('对话框 onClose 后关闭，可再次打开', () => {
+    seedTrack();
+    render(<AudioPlayer />);
+    const button = screen.getByRole('button', { name: 'player.eq-open' });
+
+    fireEvent.click(button);
+    expect(screen.queryByTestId('eq-dialog')).not.toBeNull();
+
+    // 真实 M3eDialog 关闭动画结束后回调 onClosed → onClose
+    act(() => eqMocks.onClose?.());
+    expect(screen.queryByTestId('eq-dialog')).toBeNull();
+
+    fireEvent.click(button);
+    expect(screen.queryByTestId('eq-dialog')).not.toBeNull();
   });
 });
 

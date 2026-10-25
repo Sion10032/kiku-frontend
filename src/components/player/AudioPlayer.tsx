@@ -24,10 +24,12 @@ import '@m3e/icons/outlined/shuffle';
 import '@m3e/icons/outlined/volume_up';
 import '@m3e/icons/outlined/volume_off';
 import '@m3e/icons/outlined/music_note';
+import '@m3e/icons/outlined/graphic_eq';
 import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
 import GainIndicator from './GainIndicator';
 import QueueDialog from './QueueDialog';
+import EqualizerDialog from './EqualizerDialog';
 import VideoSurface from './VideoSurface';
 import './AudioPlayer.css';
 import { PLAY_MODE_ICON, PLAY_MODE_LABEL } from '../../constants';
@@ -44,12 +46,12 @@ import { isVideoTrack } from '../../utils/track';
  *
  * - 顶栏仅折叠按钮；底部控制区自上而下：进度条（M3eSlider，拖动实时
  *   seek）、传输控制（快退/上一首/播放/下一首/快进）、辅助开关
- *   （播放模式/播放列表/睡眠定时）、音量滑块 + 静音
+ *   （播放模式/播放列表/均衡器/睡眠定时）、音量滑块 + 静音
  * - 中部宽屏封面/歌词双栏自动显示；窄屏点击封面↔歌词非中心行/空白
  *   处切换（交叉淡化 300ms）；歌词仅中心行可点击 seek（见 LyricsPanel）
  * - 窄屏（<640px）覆盖 M3E 按钮 token 缩小尺寸，防止控制行溢出
  * - 封面区块下滑快扫收起播放器（useSwipeHide + m3e-swipe-gesture）
- * - 播放列表对话框（dnd-kit 拖拽排序）、睡眠定时器
+ * - 播放列表对话框（dnd-kit 拖拽排序）、均衡器对话框、睡眠定时器
  * - 首挂载自底部滑入；hide 时滑回底部但不卸载（translate 过渡 + inert）
  */
 export default function AudioPlayer() {
@@ -81,6 +83,7 @@ export default function AudioPlayer() {
   const coverAspectRatio = useSettingsStore((s) => s.coverAspectRatio);
 
   const [queueOpen, setQueueOpen] = useState(false);
+  const [eqOpen, setEqOpen] = useState(false);
   const [sleepOpen, setSleepOpen] = useState(false);
   // 封面下滑收起 + 尾随 click 抑制（共享逻辑见 useSwipeHide）
   const { handleGesture: handleSwipeGesture, swallowSwipeClick } =
@@ -315,7 +318,7 @@ export default function AudioPlayer() {
           </M3eIconButton>
         </div>
 
-        {/* 辅助开关：播放模式 / 播放列表 / 睡眠定时 */}
+        {/* 辅助开关：播放模式 / 播放列表 / 均衡器 / 睡眠定时 */}
         <div className='flex items-center gap-4'>
           <M3eIconButton
             aria-label={t('player.play-mode', {
@@ -330,6 +333,12 @@ export default function AudioPlayer() {
             onClick={() => setQueueOpen(true)}
           >
             <M3eIcon name='queue_music' />
+          </M3eIconButton>
+          <M3eIconButton
+            aria-label={t('player.eq-open')}
+            onClick={() => setEqOpen(true)}
+          >
+            <M3eIcon name='graphic_eq' />
           </M3eIconButton>
           <M3eIconButton
             aria-label={t('player.sleep-timer')}
@@ -373,6 +382,9 @@ export default function AudioPlayer() {
 
       {/* 播放列表（dnd-kit 拖拽排序） */}
       <QueueDialog open={queueOpen} onClose={() => setQueueOpen(false)} />
+
+      {/* 均衡器 */}
+      <EqualizerDialog open={eqOpen} onClose={() => setEqOpen(false)} />
 
       {/* 睡眠定时器 */}
       <SleepMode open={sleepOpen} onClose={() => setSleepOpen(false)} />
