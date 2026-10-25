@@ -35,11 +35,11 @@ describe('eq 常量', () => {
     expect(EQ_GAIN_STEP).toBe(0.5);
   });
 
-  it('Q 范围 0.4..8 步进 0.1，默认 1.41', () => {
+  it('Q 范围 0.4..8 步进 0.1，默认 1.4（落在网格上）', () => {
     expect(EQ_Q_MIN).toBe(0.4);
     expect(EQ_Q_MAX).toBe(8);
     expect(EQ_Q_STEP).toBe(0.1);
-    expect(EQ_Q_DEFAULT).toBe(1.41);
+    expect(EQ_Q_DEFAULT).toBe(1.4);
   });
 
   it('自定义 preset 上限 8 套、名称最长 16 字符', () => {
@@ -109,8 +109,20 @@ describe('flatGains / defaultQs', () => {
     expect(flatGains()[0]).toBe(0);
   });
 
-  it('defaultQs 为 10 个 1.41', () => {
+  it('defaultQs 为 10 个 1.4', () => {
     expect(defaultQs()).toEqual(new Array(10).fill(EQ_Q_DEFAULT));
+    expect(defaultQs()).toEqual(new Array(10).fill(1.4));
+  });
+
+  it('默认 Q 已在 0.1 网格上（消毒幂等）', () => {
+    expect(quantizeQ(EQ_Q_DEFAULT)).toBe(EQ_Q_DEFAULT);
+    const preset = sanitizeEqualizerPreset({
+      id: 'x',
+      name: 'n',
+      gains: flatGains(),
+      qs: defaultQs(),
+    });
+    expect(preset?.qs).toEqual(defaultQs());
   });
 });
 
@@ -184,11 +196,11 @@ describe('sanitizeEqualizerPreset', () => {
     });
     expect(padded?.gains).toEqual([2, 3, 0, 0, 0, 0, 0, 0, 0, 0]);
     expect(padded?.qs).toEqual([
-      0.5, 1.41, 1.41, 1.41, 1.41, 1.41, 1.41, 1.41, 1.41, 1.41,
+      0.5, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4,
     ]);
   });
 
-  it('NaN/非数字元素 → gain 0、Q 1.41', () => {
+  it('NaN/非数字元素 → gain 0、Q 1.4', () => {
     const got = sanitizeEqualizerPreset({
       id: 'x',
       name: 'n',
@@ -196,9 +208,7 @@ describe('sanitizeEqualizerPreset', () => {
       qs: [Number.NaN, '2', null, undefined, {}, 2],
     });
     expect(got?.gains).toEqual([0, 0, 0, 0, 0, 1, 0, 0, 0, 0]);
-    expect(got?.qs).toEqual([
-      1.41, 1.41, 1.41, 1.41, 1.41, 2, 1.41, 1.41, 1.41, 1.41,
-    ]);
+    expect(got?.qs).toEqual([1.4, 1.4, 1.4, 1.4, 1.4, 2, 1.4, 1.4, 1.4, 1.4]);
   });
 
   it('越界元素 clamp 并量化到步进', () => {
@@ -216,9 +226,7 @@ describe('sanitizeEqualizerPreset', () => {
       qs: [0.1, 12, 1.41, 4.1999999],
     });
     expect(got?.gains).toEqual([12, -12, 4.5, -4, 12, -12, 0, 0, 0, 0]);
-    expect(got?.qs).toEqual([
-      0.4, 8, 1.4, 4.2, 1.41, 1.41, 1.41, 1.41, 1.41, 1.41,
-    ]);
+    expect(got?.qs).toEqual([0.4, 8, 1.4, 4.2, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4]);
   });
 
   it('不修改入参数组', () => {
@@ -299,7 +307,7 @@ describe('findPreset', () => {
 });
 
 describe('buildBandParams', () => {
-  it('band 0 为 lowshelf，忽略传入 Q 用默认 1.41', () => {
+  it('band 0 为 lowshelf，忽略传入 Q 用默认 1.4', () => {
     expect(buildBandParams(0, 6, 4)).toEqual({
       type: 'lowshelf',
       frequency: 31,
@@ -308,7 +316,7 @@ describe('buildBandParams', () => {
     });
   });
 
-  it('band 9 为 highshelf，忽略传入 Q 用默认 1.41', () => {
+  it('band 9 为 highshelf，忽略传入 Q 用默认 1.4', () => {
     expect(buildBandParams(9, -3, 0.5)).toEqual({
       type: 'highshelf',
       frequency: 16000,
@@ -362,7 +370,7 @@ describe('BUILTIN_PRESETS', () => {
     });
   });
 
-  it('每套 gains 长度 10、在量化值域内；qs 全 1.41', () => {
+  it('每套 gains 长度 10、在量化值域内；qs 全 1.4', () => {
     for (const preset of BUILTIN_PRESETS) {
       expect(preset.gains).toHaveLength(10);
       expect(preset.qs).toEqual(new Array(10).fill(EQ_Q_DEFAULT));

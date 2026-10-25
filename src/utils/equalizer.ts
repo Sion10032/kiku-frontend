@@ -15,8 +15,8 @@ export const EQ_GAIN_STEP = 0.5;
 export const EQ_Q_MIN = 0.4;
 export const EQ_Q_MAX = 8;
 export const EQ_Q_STEP = 0.1;
-/** 默认 Q；shelf 频段恒用此值。 */
-export const EQ_Q_DEFAULT = 1.41;
+/** 默认 Q；shelf 频段恒用此值。取值在 0.1 量化网格上，消毒后不变。 */
+export const EQ_Q_DEFAULT = 1.4;
 
 /** 自定义 preset 套数上限。 */
 export const EQ_CUSTOM_PRESET_LIMIT = 8;
@@ -56,7 +56,7 @@ export function flatGains(): number[] {
   return new Array(BAND_COUNT).fill(0);
 }
 
-/** 默认 Q：10 个 1.41。 */
+/** 默认 Q：10 个 1.4。 */
 export function defaultQs(): number[] {
   return new Array(BAND_COUNT).fill(EQ_Q_DEFAULT);
 }
@@ -77,9 +77,9 @@ function normalizeGains(raw: unknown): number[] {
   return gains;
 }
 
-/** 把任意数组收拾成 10 个量化 Q；缺失/非数组补 1.41，NaN 元素当 1.41。 */
+/** 把任意数组收拾成 10 个量化 Q；缺失/非数组补 1.4，NaN 元素当 1.4。 */
 function normalizeQs(raw: unknown): number[] {
-  // 整个 qs 缺失/非数组 → 用默认值（1.41，不落在 0.1 网格上，不做量化）
+  // 整个 qs 缺失/非数组 → 直接用默认值（1.4，本身落在 0.1 网格上）
   if (!Array.isArray(raw)) return defaultQs();
   const qs: number[] = [];
   for (let i = 0; i < BAND_COUNT; i++) {
@@ -146,7 +146,7 @@ export function findPreset(
 }
 
 /**
- * 单频段滤波参数：两端走 shelf（忽略传入 Q，恒默认 1.41），中间走 peaking。
+ * 单频段滤波参数：两端走 shelf（忽略传入 Q，恒默认 1.4），中间走 peaking。
  * frequency 取自 EQ_BANDS，gain 由调用方量化后透传。
  */
 export function buildBandParams(
