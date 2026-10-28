@@ -46,6 +46,32 @@ vi.mock('@m3e/react/button', () => ({
   ),
 }));
 
+vi.mock('@m3e/react/icon-button', () => ({
+  M3eIconButton: (props: {
+    children?: ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    'aria-label'?: string;
+  }) => (
+    <button
+      type='button'
+      aria-label={props['aria-label']}
+      disabled={props.disabled}
+      onClick={props.onClick}
+    >
+      {props.children}
+    </button>
+  ),
+}));
+
+vi.mock('@m3e/react/icon', () => ({
+  M3eIcon: (props: { name?: string }) => <span data-icon={props.name} />,
+}));
+
+// 图标 side-effect 导入（注册 custom element）在 jsdom 无法执行，置空
+vi.mock('@m3e/icons/outlined/add', () => ({}));
+vi.mock('@m3e/icons/outlined/delete', () => ({}));
+
 // 下拉：把 M3eOption 子元素摊成原生 option，value 由选中项推导（M3eOption
 // 的 selected 只反映受控选中态，jsdom 里没有 select 的 value 语义）
 vi.mock('@m3e/react/select', () => ({
@@ -53,6 +79,7 @@ vi.mock('@m3e/react/select', () => ({
     id?: string;
     children?: ReactNode;
     disabled?: boolean;
+    'aria-label'?: string;
     onChange?: (e: { target: { value: string } }) => void;
   }) => {
     const options = Children.toArray(props.children) as ReactElement<{
@@ -64,6 +91,7 @@ vi.mock('@m3e/react/select', () => ({
       <select
         id={props.id}
         data-testid='eq-preset-select'
+        aria-label={props['aria-label']}
         disabled={props.disabled}
         value={value}
         onChange={(e) =>
@@ -442,5 +470,187 @@ describe('总开关', () => {
     expect((screen.getByLabelText('Q 62') as HTMLInputElement).disabled).toBe(
       false,
     );
+  });
+});
+
+describe('滑条区触摸手势（滚动 vs 调值）', () => {
+  /** 滑条与滚动容器；jsdom 无布局，这里 stub 尺寸/位置 */
+  function setupScroller() {
+    const fader = screen
+      .getByTestId('eq-slider-0')
+      .closest('[data-eq-fader]') as HTMLElement;
+    const scroller = fader.closest('[data-eq-bands]') as HTMLElement;
+    Object.defineProperty(scroller, 'scrollWidth', {
+      value: 600,
+      configurable: true,
+    });
+    Object.defineProperty(scroller, 'clientWidth', {
+      value: 400,
+      configurable: true,
+    });
+    scroller.scrollLeft = 0;
+    // 滑条 200px 高、顶边在 y=0：clientY=0 → +12dB，clientY=200 → -12dB
+    fader.getBoundingClientRect = () =>
+      ({ top: 0, height: 200, bottom: 200, left: 0, right: 44 }) as DOMRect;
+    // jsdom 没有 pointer capture，记录调用次数
+    const captures: number[] = [];
+    (
+      scroller as unknown as { setPointerCapture?: (id: number) => void }
+    ).setPointerCapture = (id: number) => captures.push(id);
+    return { fader, scroller, captures };
+  }
+
+  const touch = { pointerId: 1, pointerType: 'touch' as const };
+
+  it('横向拖动：滚动容器，不改增益', () => {
+    seed({});
+    render(<EqualizerDialog open onClose={() => {}} />);
+    const { fader, scroller } = setupScroller();
+
+    fireEvent.pointerDown(fader, { ...touch, clientX: 200, clientY: 100 });
+    fireEvent.pointerMove(fader, { ...touch, clientX: 160, clientY: 102 });
+
+    expect(scroller.scrollLeft).toBe(40);
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(0);
+  });
+
+  it('纵向拖动：按手指位置调值，不滚动', () => {
+    seed({});
+    render(<EqualizerDialog open onClose={() => {}} />);
+    const { fader, scroller } = setupScroller();
+
+    fireEvent.pointerDown(fader, { ...touch, clientX: 200, clientY: 100 });
+    // dy=40 超死区 → 纵向；clientY=50 → ratio 0.75 → -12+18 = +6
+    fireEvent.pointerMove(fader, { ...touch, clientX: 202, clientY: 50 });
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(6);
+
+    // 继续往下拖：clientY=150 → ratio 0.25 → -12+6 = -6
+    fireEvent.pointerMove(fader, { ...touch, clientX: 202, clientY: 150 });
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(-6);
+    expect(scroller.scrollLeft).toBe(0);
+  });
+
+  it('轻点（未移动）：按按下位置给值，不滚动', () => {
+    seed({});
+    render(<EqualizerDialog open onClose={() => {}} />);
+    const { fader, scroller } = setupScroller();
+
+    // clientY=100 → ratio 0.5 → 0dB；用 clientY=20 → ratio 0.9 → +9.6 → 量化 9.5
+    fireEvent.pointerDown(fader, { ...touch, clientX: 200, clientY: 20 });
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(0); // 按下不跳值
+    fireEvent.pointerUp(fader, { ...touch, clientX: 200, clientY: 20 });
+
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(9.5);
+    expect(scroller.scrollLeft).toBe(0);
+  });
+
+  it('鼠标拖动不介入（交给 M3E 原生处理）', () => {
+    seed({});
+    render(<EqualizerDialog open onClose={() => {}} />);
+    const { fader, scroller } = setupScroller();
+
+    fireEvent.pointerDown(fader, {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: 200,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(fader, {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: 120,
+      clientY: 40,
+    });
+
+    expect(scroller.scrollLeft).toBe(0);
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(0);
+  });
+});
+
+describe('关闭态下的触摸手势', () => {
+  it('关闭时触摸不发变增益（只保留滚动）', () => {
+    seed({ enabled: false });
+    render(<EqualizerDialog open onClose={() => {}} />);
+    const fader = screen
+      .getByTestId('eq-slider-0')
+      .closest('[data-eq-fader]') as HTMLElement;
+    fader.getBoundingClientRect = () =>
+      ({ top: 0, height: 200, bottom: 200, left: 0, right: 44 }) as DOMRect;
+
+    fireEvent.pointerDown(fader, {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 200,
+      clientY: 20,
+    });
+    fireEvent.pointerMove(fader, {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 202,
+      clientY: 60,
+    });
+    fireEvent.pointerUp(fader, {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 202,
+      clientY: 60,
+    });
+
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(0);
+  });
+});
+
+describe('触摸手势的边界行为', () => {
+  function setup() {
+    const fader = screen
+      .getByTestId('eq-slider-0')
+      .closest('[data-eq-fader]') as HTMLElement;
+    const scroller = fader.closest('[data-eq-bands]') as HTMLElement;
+    Object.defineProperty(scroller, 'scrollWidth', {
+      value: 600,
+      configurable: true,
+    });
+    Object.defineProperty(scroller, 'clientWidth', {
+      value: 400,
+      configurable: true,
+    });
+    fader.getBoundingClientRect = () =>
+      ({ top: 0, height: 200, bottom: 200, left: 0, right: 44 }) as DOMRect;
+    const captures: number[] = [];
+    (
+      scroller as unknown as { setPointerCapture?: (id: number) => void }
+    ).setPointerCapture = (id: number) => captures.push(id);
+    return { fader, captures };
+  }
+
+  const touch = { pointerId: 3, pointerType: 'touch' as const };
+
+  it('pointerdown 即捕获指针（拖出滑条也能继续跟手与收尾）', () => {
+    seed({});
+    render(<EqualizerDialog open onClose={() => {}} />);
+    const { fader, captures } = setup();
+
+    fireEvent.pointerDown(fader, { ...touch, clientX: 100, clientY: 100 });
+    expect(captures).toEqual([touch.pointerId]);
+  });
+
+  it('pointercancel（被系统打断）不改增益', () => {
+    seed({});
+    render(<EqualizerDialog open onClose={() => {}} />);
+    const { fader } = setup();
+
+    // 按下后未移动就被取消：不应按取消位置写值
+    fireEvent.pointerDown(fader, { ...touch, clientX: 100, clientY: 100 });
+    fireEvent.pointerCancel(fader, { ...touch, clientX: 100, clientY: 0 });
+
+    expect(useSettingsStore.getState().eqCurrent.gains[0]).toBe(0);
+  });
+
+  it('预置下拉带可访问名称', () => {
+    seed({});
+    render(<EqualizerDialog open onClose={() => {}} />);
+    expect(
+      screen.getByTestId('eq-preset-select').getAttribute('aria-label'),
+    ).toBe('player.eq-preset-label');
   });
 });

@@ -333,6 +333,8 @@ export const useSettingsStore = create<SettingsState>()(
         // 参数来自 UI：非有限数 / 越界下标直接 no-op（量化函数对 NaN 返回 NaN）
         if (!isBandIndex(i) || !Number.isFinite(gainDb)) return;
         const gain = quantizeGainDb(gainDb);
+        // 同值 no-op：拖动时 pointermove 远多于量化档位，避免无意义的重渲染与音频链重设
+        if (get().eqCurrent.gains[i] === gain) return;
         set((s) => {
           const gains = [...s.eqCurrent.gains];
           gains[i] = gain;
@@ -351,6 +353,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (!isBandIndex(i) || i === 0 || i === EQ_BANDS.length - 1) return;
         if (!Number.isFinite(q)) return;
         const value = quantizeQ(q);
+        if (get().eqCurrent.qs[i] === value) return; // 同值 no-op
         set((s) => {
           const qs = [...s.eqCurrent.qs];
           qs[i] = value;

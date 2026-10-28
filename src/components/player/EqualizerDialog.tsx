@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { M3eButton } from '@m3e/react/button';
 import { M3eDialog } from '@m3e/react/dialog';
 import { M3eFormField } from '@m3e/react/form-field';
+import { M3eIcon } from '@m3e/react/icon';
+import { M3eIconButton } from '@m3e/react/icon-button';
+import '@m3e/icons/outlined/add';
+import '@m3e/icons/outlined/delete';
 import { M3eOption } from '@m3e/react/option';
 import { M3eSelect, type M3eSelectElement } from '@m3e/react/select';
 import { M3eSlider, M3eSliderThumb } from '@m3e/react/slider';
@@ -21,8 +25,30 @@ import {
   EQ_Q_MAX,
   EQ_Q_MIN,
   EQ_Q_STEP,
-  quantizeQ,
 } from '../../utils/equalizer';
+
+/** 触摸手势方向判定死区（px）：小于它不判定方向，避免误判抖动 */
+const BAND_DRAG_DEAD_ZONE = 8;
+
+/** 横向占优的判定偏置：|dx| 需超过 |dy| 的这个倍数才算滑动（纵向优先） */
+const BAND_DRAG_HORIZONTAL_BIAS = 1.2;
+
+/**
+ * 一轮落在滑条上的触摸手势。
+ * 触摸由我们全权处理（M3E 滑条一按下就跳值、还会吃掉横向手势），鼠标不介入。
+ */
+type BandDrag = {
+  pointerId: number;
+  /** 频段下标（来自 data-eq-fader） */
+  band: number;
+  /** 该段滑条的外框，高度即轨道长，用来把 clientY 映射成增益 */
+  fader: HTMLElement;
+  startX: number;
+  startY: number;
+  startScroll: number;
+  /** pending = 方向未定；scroll = 横向滚动；value = 调增益 */
+  mode: 'pending' | 'scroll' | 'value';
+};
 
 /** 内置 preset 显示名 i18n key（preset.name 只是中文兜底，自定义项直接显示 name）。 */
 type BuiltinNameKey =
@@ -40,10 +66,9 @@ const BUILTIN_NAME_KEY: Record<string, BuiltinNameKey | undefined> = {
   soft: 'player.eq-preset-soft',
 };
 
-/** 增益显示：正值带 +，负零归零，固定一位小数（-0.toFixed(1) 本就是 0.0）。 */
+/** 增益显示：正值带 +，固定一位小数（-0 由 toFixed 归一成 "0.0"）。 */
 function formatGain(db: number): string {
-  const value = db === 0 ? 0 : db;
-  return `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
+  return `${db > 0 ? '+' : ''}${db.toFixed(1)}`;
 }
 
 /** 频段标签：≥1kHz 折成 1k / 16k 形式，其余原样。 */
@@ -80,6 +105,8 @@ export default function EqualizerDialog({
     (s) => s.deleteEqualizerCustomPreset,
   );
   const [addOpen, setAddOpen] = useState(false);
+  const bandScrollRef = useRef<HTMLDivElement>(null);
+  const bandDragRef = useRef<BandDrag | null>(null);
 
   const { enabled, activeId, customPresets } = equalizer;
   const hasCustom = customPresets.length > 0;
@@ -100,6 +127,89 @@ export default function EqualizerDialog({
 
   function handleEnabledInput(e: Event) {
     setEqualizerEnabled((e.target as HTMLInputElement).checked);
+  }
+
+  /**
+   * 落在滑条上的触摸手势由我们全权处理（M3E 的触摸带是 touch-action: none，
+   * 浏览器不会滚动容器；而且滑条一按下就跳值）。
+   *
+   * - 先拦下 pointerdown，不交给滑条（否则值会立刻跳到手指位置）
+   * - 方向判定：横向 → 接管指针并滚动滑条区；纵向/轻点 → 按 clientY 自己算增益
+   * - 鼠标不介入，交还 M3E 原生行为（桌面端靠滚轮横向滚动）
+   */
+  function handleBandPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === 'mouse') return;
+    const fader = (e.target as HTMLElement | null)?.closest<HTMLElement>(
+      '[data-eq-fader]',
+    );
+    const el = bandScrollRef.current;
+    if (!fader || !el) return;
+    const band = Number(fader.dataset.eqFader);
+    if (!Number.isInteger(band)) return;
+    bandDragRef.current = {
+      pointerId: e.pointerId,
+      band,
+      fader,
+      startX: e.clientX,
+      startY: e.clientY,
+      startScroll: el.scrollLeft,
+      mode: 'pending',
+    };
+    // 立即捕获指针：手指拖出滑条/容器后仍能继续跟手与收尾（否则会卡住不动的拖拽）
+    el.setPointerCapture?.(e.pointerId);
+    // 不让滑条看到这次 pointerdown，否则它会立刻跳值
+    e.stopPropagation();
+  }
+
+  function handleBandPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const drag = bandDragRef.current;
+    const el = bandScrollRef.current;
+    if (!drag || !el || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+
+    if (drag.mode === 'pending') {
+      // 死区：位移不足时不动，避免误判抖动
+      if (
+        Math.abs(dx) < BAND_DRAG_DEAD_ZONE
+        && Math.abs(dy) < BAND_DRAG_DEAD_ZONE
+      )
+        return;
+      // 纵向优先（滑条意图更明确），只有明显偏横向才抢来滚动
+      drag.mode =
+        Math.abs(dx) <= Math.abs(dy) * BAND_DRAG_HORIZONTAL_BIAS
+          ? 'value'
+          : 'scroll';
+    }
+
+    e.stopPropagation();
+    if (drag.mode === 'scroll') {
+      el.scrollLeft = drag.startScroll - dx;
+      return;
+    }
+    applyBandFromPointer(drag, e.clientY);
+  }
+
+  function handleBandPointerEnd(e: React.PointerEvent<HTMLDivElement>) {
+    const drag = bandDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    // 轻点（方向未判定）才给值：保留「点哪跳哪」；被系统打断（pointercancel）则不动值
+    if (drag.mode === 'pending' && e.type !== 'pointercancel')
+      applyBandFromPointer(drag, e.clientY);
+    bandDragRef.current = null;
+  }
+
+  /** 把手指的竖向位置映射成该段增益（比例 → 增益 → store 量化/夹取） */
+  function applyBandFromPointer(drag: BandDrag, clientY: number) {
+    if (!enabled) return; // 关闭态只允许滚动，不允许改值
+    const rect = drag.fader.getBoundingClientRect();
+    if (rect.height <= 0) return;
+    const ratio = 1 - (clientY - rect.top) / rect.height;
+    const clamped = Math.min(1, Math.max(0, ratio));
+    updateEqualizerBand(
+      drag.band,
+      EQ_GAIN_MIN + clamped * (EQ_GAIN_MAX - EQ_GAIN_MIN),
+    );
   }
 
   /** 下拉选项：内置在前、自定义在后，两组间插不可选的分隔项 */
@@ -158,41 +268,43 @@ export default function EqualizerDialog({
           className={clsx('flex flex-col gap-4 py-1', !enabled && 'opacity-60')}
         >
           {/* 预置行：选择 + 新增 / 删除 */}
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
+          <div className='flex flex-row gap-2 items-center'>
             <M3eFormField
               variant='outlined'
               hideSubscript='always'
-              className='w-full sm:w-auto [--m3e-form-field-width:12rem]'
+              className='w-full density-3'
             >
-              <label slot='label' htmlFor='eq-preset'>
-                {t('player.eq-preset-label')}
-              </label>
               <M3eSelect
                 id='eq-preset'
+                aria-label={t('player.eq-preset-label')}
                 disabled={!enabled}
                 onChange={handlePresetChange}
               >
                 {presetOptions}
               </M3eSelect>
             </M3eFormField>
-            <div className='flex shrink-0 gap-2'>
-              <M3eButton
+            <div className='flex shrink-0 items-center gap-1'>
+              <M3eIconButton
                 variant='filled'
                 aria-label={t('player.eq-add')}
                 disabled={!enabled || atLimit}
                 onClick={() => setAddOpen(true)}
               >
-                {`＋ ${t('player.eq-add')}`}
-              </M3eButton>
-              <M3eButton
-                variant='text'
-                className='text-[var(--md-sys-color-error)]'
+                <M3eIcon name='add' />
+              </M3eIconButton>
+              <M3eIconButton
+                variant='tonal'
                 aria-label={t('player.eq-delete')}
                 disabled={!enabled || !activeIsCustom}
                 onClick={() => deleteEqualizerCustomPreset(activeId)}
               >
-                {`🗑 ${t('player.eq-delete')}`}
-              </M3eButton>
+                {/* 颜色落在图标上：m3e-icon 的 svg 用 fill: currentColor，
+                    比宿主 color 更可靠（宿主的图标色由 variant token 控制） */}
+                <M3eIcon
+                  name='delete'
+                  className='text-(--md-sys-color-error)'
+                />
+              </M3eIconButton>
             </div>
           </div>
 
@@ -203,7 +315,15 @@ export default function EqualizerDialog({
           )}
 
           {/* 滑条区：窄屏横向滚动，10 段列宽固定不压缩 */}
-          <div className='overflow-x-auto'>
+          <div
+            ref={bandScrollRef}
+            data-eq-bands
+            className='overflow-x-auto pb-2'
+            onPointerDownCapture={handleBandPointerDown}
+            onPointerMoveCapture={handleBandPointerMove}
+            onPointerUpCapture={handleBandPointerEnd}
+            onPointerCancelCapture={handleBandPointerEnd}
+          >
             <div className='flex justify-between gap-1'>
               {EQ_BANDS.map((band, index) => (
                 <div
@@ -213,21 +333,23 @@ export default function EqualizerDialog({
                   <span className='text-xs tabular-nums'>
                     {formatGain(gains[index])}
                   </span>
-                  {/* 竖排滑条的高度来自 min-block-size（默认 200px 太高） */}
-                  <M3eSlider
-                    id={`eq-band-${index}`}
-                    orientation='vertical'
-                    size='small'
-                    aria-label={`${formatBand(band)} Hz`}
-                    min={EQ_GAIN_MIN}
-                    max={EQ_GAIN_MAX}
-                    step={EQ_GAIN_STEP}
-                    disabled={!enabled}
-                    onInput={(e) => handleBandInput(index, e)}
-                    className='h-32 [--m3e-slider-min-width:8rem]'
-                  >
-                    <M3eSliderThumb value={gains[index]} />
-                  </M3eSlider>
+                  {/* data-eq-fader：触摸手势仲裁要知道落在哪一段上（值是频段下标） */}
+                  <div data-eq-fader={index} className='flex justify-center'>
+                    {/* 高度取库默认 min-block-size（200px）；轨道宽由 extra-small 决定（16px） */}
+                    <M3eSlider
+                      id={`eq-band-${index}`}
+                      orientation='vertical'
+                      size='extra-small'
+                      aria-label={`${formatBand(band)} Hz`}
+                      min={EQ_GAIN_MIN}
+                      max={EQ_GAIN_MAX}
+                      step={EQ_GAIN_STEP}
+                      disabled={!enabled}
+                      onInput={(e) => handleBandInput(index, e)}
+                    >
+                      <M3eSliderThumb value={gains[index]} />
+                    </M3eSlider>
+                  </div>
                   <span className='text-[0.625rem] tabular-nums opacity-70'>
                     {formatBand(band)}
                   </span>
@@ -238,8 +360,8 @@ export default function EqualizerDialog({
                       disabled={!enabled}
                     />
                   ) : (
-                    // 首尾走 shelf（恒默认 Q），留白对齐
-                    <div className='h-7' aria-hidden='true' />
+                    // 首尾走 shelf（恒默认 Q），占位对齐输入框高度
+                    <div className='h-6' aria-hidden='true' />
                   )}
                 </div>
               ))}
@@ -285,7 +407,8 @@ function QInput({
     const raw = Number(shown);
     setDraft(null);
     if (!shown.trim() || !Number.isFinite(raw)) return;
-    updateEqualizerQ(band, quantizeQ(raw));
+    // 量化/夹取由 store 负责，UI 只转交
+    updateEqualizerQ(band, raw);
   }
 
   return (
@@ -300,7 +423,17 @@ function QInput({
       value={shown}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
-      className='w-11 rounded border border-(--md-sys-color-outline-variant) bg-transparent py-0.5 text-center text-xs tabular-nums outline-none disabled:opacity-60'
+      className={clsx(
+        // MD3 outlined 字段的紧凑版：透明底 + 四面 1px 描边 + 四角 4px 圆角
+        'h-6 w-10 rounded-sm border border-solid border-(--md-sys-color-on-surface-variant)',
+        'bg-transparent py-0 text-center text-[0.6875rem] tabular-nums',
+        'outline-none transition-colors hover:border-(--md-sys-color-on-surface)',
+        // 1px 边框 + 内阴影 1px 叠成 2px 主色描边，避免 focus 时尺寸跳动
+        'focus:border-(--md-sys-color-primary) focus:shadow-[inset_0_0_0_1px_var(--md-sys-color-primary)]',
+        'disabled:opacity-60',
+        // 抹掉 number 的原生增减按钮（Chrome/Safari/Firefox）
+        '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+      )}
     />
   );
 }
