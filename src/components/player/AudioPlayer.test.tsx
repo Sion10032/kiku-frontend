@@ -8,6 +8,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import AudioPlayer from './AudioPlayer';
 
 vi.mock('react-i18next', () => ({
@@ -97,6 +98,7 @@ vi.mock('@m3e/icons/outlined/volume_up', () => ({}));
 vi.mock('@m3e/icons/outlined/volume_off', () => ({}));
 vi.mock('@m3e/icons/outlined/music_note', () => ({}));
 vi.mock('@m3e/icons/outlined/graphic_eq', () => ({}));
+vi.mock('@m3e/icons/outlined/graphic_eq_off', () => ({}));
 
 // 渲染期不触碰播放引擎/子面板，mock 掉减少依赖面
 vi.mock('../../hooks/usePlayer', () => ({ seekTo: () => {} }));
@@ -154,6 +156,28 @@ describe('均衡器入口', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'player.eq-open' }));
     expect(screen.queryByTestId('eq-dialog')).not.toBeNull();
+  });
+
+  it('图标随均衡器开关切换（开 graphic_eq / 关 graphic_eq_off）', () => {
+    const initialEqualizer = useSettingsStore.getState().equalizer;
+    seedTrack();
+
+    useSettingsStore.setState({
+      equalizer: { ...initialEqualizer, enabled: true },
+    });
+    const { container, unmount } = render(<AudioPlayer />);
+    expect(container.querySelector('[data-icon="graphic_eq"]')).not.toBeNull();
+    unmount();
+
+    useSettingsStore.setState({
+      equalizer: { ...initialEqualizer, enabled: false },
+    });
+    const off = render(<AudioPlayer />);
+    expect(
+      off.container.querySelector('[data-icon="graphic_eq_off"]'),
+    ).not.toBeNull();
+
+    useSettingsStore.setState({ equalizer: initialEqualizer });
   });
 
   it('对话框 onClose 后关闭，可再次打开', () => {

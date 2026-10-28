@@ -25,6 +25,7 @@ import '@m3e/icons/outlined/volume_up';
 import '@m3e/icons/outlined/volume_off';
 import '@m3e/icons/outlined/music_note';
 import '@m3e/icons/outlined/graphic_eq';
+import '@m3e/icons/outlined/graphic_eq_off';
 import SleepMode from './SleepMode';
 import LyricsPanel from './LyricsPanel';
 import GainIndicator from './GainIndicator';
@@ -81,6 +82,8 @@ export default function AudioPlayer() {
   const videoActive = usePlayerStore((s) => s.videoActive);
   const timeDisplayMode = useSettingsStore((s) => s.timeDisplayMode);
   const coverAspectRatio = useSettingsStore((s) => s.coverAspectRatio);
+  // 均衡器开关（决定入口图标：开启 graphic_eq / 关闭 graphic_eq_off）
+  const eqEnabled = useSettingsStore((s) => s.equalizer.enabled);
 
   const [queueOpen, setQueueOpen] = useState(false);
   const [eqOpen, setEqOpen] = useState(false);
@@ -338,7 +341,7 @@ export default function AudioPlayer() {
             aria-label={t('player.eq-open')}
             onClick={() => setEqOpen(true)}
           >
-            <M3eIcon name='graphic_eq' />
+            <M3eIcon name={eqEnabled ? 'graphic_eq' : 'graphic_eq_off'} />
           </M3eIconButton>
           <M3eIconButton
             aria-label={t('player.sleep-timer')}
