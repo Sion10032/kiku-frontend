@@ -13,6 +13,7 @@ import {
   EQ_Q_MAX,
   EQ_Q_MIN,
   EQ_Q_STEP,
+  EQ_ID_MAX,
   findPreset,
   flatGains,
   quantizeGainDb,
@@ -147,6 +148,16 @@ describe('sanitizeEqualizerPreset', () => {
     expect(sanitizeEqualizerPreset({ ...base, id: '   ' })).toBeNull();
   });
 
+  it('id 超长被截断到 EQ_ID_MAX（4KB 备份预算是结构性保证）', () => {
+    const preset = sanitizeEqualizerPreset({
+      id: 'x'.repeat(500),
+      name: '名字',
+      gains: new Array(10).fill(0),
+      qs: new Array(10).fill(1.4),
+    });
+    expect(preset?.id).toHaveLength(64);
+  });
+
   it('name 缺失/非字符串/空白 → null', () => {
     expect(sanitizeEqualizerPreset({ id: 'x' })).toBeNull();
     expect(sanitizeEqualizerPreset({ id: 'x', name: null })).toBeNull();
@@ -256,6 +267,12 @@ describe('sanitizeEqualizerSettings', () => {
     expect(sanitizeEqualizerSettings({ activeId: 'bass-boost' }).activeId).toBe(
       'bass-boost',
     );
+  });
+
+  it('activeId 超长被截断到 EQ_ID_MAX（4KB 备份预算是结构性保证）', () => {
+    expect(
+      sanitizeEqualizerSettings({ activeId: 'y'.repeat(500) }).activeId,
+    ).toHaveLength(EQ_ID_MAX);
   });
 
   it('customPresets 非数组 → []，坏项丢弃', () => {

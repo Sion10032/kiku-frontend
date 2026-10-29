@@ -621,6 +621,15 @@ describe('settingsStore equalizer 自定义 preset 生命周期', () => {
     expect(s.eqCurrent).toBe(currentBefore);
   });
 
+  it('deleteEqualizerCustomPreset：重复 id 只删第一处（与写回对称）', () => {
+    seedEqualizer({
+      activeId: 'flat',
+      customPresets: [makePreset('dup'), makePreset('dup')],
+    });
+    useSettingsStore.getState().deleteEqualizerCustomPreset('dup');
+    expect(useSettingsStore.getState().equalizer.customPresets).toHaveLength(1);
+  });
+
   it('deleteEqualizerCustomPreset：内置 id 无操作', () => {
     seedEqualizer({
       activeId: 'vocal',

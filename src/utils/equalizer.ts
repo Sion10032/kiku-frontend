@@ -22,6 +22,11 @@ export const EQ_Q_DEFAULT = 1.4;
 export const EQ_CUSTOM_PRESET_LIMIT = 8;
 /** 自定义 preset 名称长度上限。 */
 export const EQ_PRESET_NAME_MAX = 16;
+/**
+ * preset id / activeId 长度上限。正常 id 是 `custom-<base36>-<seq>`（约 20 字符），
+ * 上限只为把「备份 payload ≤ 4KB」变成结构性保证（不可信数据不可无限拉长）。
+ */
+export const EQ_ID_MAX = 64;
 
 export interface EqualizerPreset {
   id: string;
@@ -97,7 +102,8 @@ function normalizeQs(raw: unknown): number[] {
 export function sanitizeEqualizerPreset(p: unknown): EqualizerPreset | null {
   if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
   const raw = p as Record<string, unknown>;
-  const id = typeof raw.id === 'string' ? raw.id.trim() : '';
+  const id =
+    typeof raw.id === 'string' ? raw.id.trim().slice(0, EQ_ID_MAX) : '';
   const name = typeof raw.name === 'string' ? raw.name.trim() : '';
   if (!id || !name) return null;
   return {
@@ -118,9 +124,11 @@ export function sanitizeEqualizerSettings(raw: unknown): {
     return { enabled: false, activeId: 'flat', customPresets: [] };
   }
   const r = raw as Record<string, unknown>;
+  // activeId 同 id 一并截断：4KB 备份预算靠的是「每个字段都有上限」，
+  // 否则手改 blob 塞个超长 activeId 就能让整个备份 PUT 被后端拦下
   const activeId =
     typeof r.activeId === 'string' && r.activeId.trim()
-      ? r.activeId.trim()
+      ? r.activeId.trim().slice(0, EQ_ID_MAX)
       : 'flat';
   const customPresets = Array.isArray(r.customPresets)
     ? r.customPresets

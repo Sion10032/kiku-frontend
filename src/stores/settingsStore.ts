@@ -396,13 +396,14 @@ export const useSettingsStore = create<SettingsState>()(
       },
       deleteEqualizerCustomPreset: (id) =>
         set((s) => {
-          const customPresets = s.equalizer.customPresets.filter(
-            (p) => p.id !== id,
-          );
+          // 只删第一处匹配，与 customPresetWriteBack 的 findIndex 对称：
+          // id 唯一是常态，重复 id（手改 blob）时不能让 filter 把两套一起清掉
+          const index = s.equalizer.customPresets.findIndex((p) => p.id === id);
           // 未匹配（内置 id / 已删除）→ 原样返回 state，zustand 视为无操作
-          if (customPresets.length === s.equalizer.customPresets.length) {
-            return s;
-          }
+          if (index < 0) return s;
+          const customPresets = s.equalizer.customPresets.filter(
+            (_, i) => i !== index,
+          );
           if (s.equalizer.activeId !== id) {
             return { equalizer: { ...s.equalizer, customPresets } };
           }
