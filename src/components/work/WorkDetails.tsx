@@ -38,7 +38,6 @@ import {
   useSyncWorkTracksMutation,
 } from '../../queries/useWorkAdminMutation';
 import { usePipeline } from '../../hooks/useTasks';
-import PhaseDots from '../tasks/PhaseDots';
 import FavDialog from '../favourites/FavDialog';
 import WriteReview from './WriteReview';
 import MetadataEditDialog from './MetadataEditDialog';
@@ -354,14 +353,6 @@ export default function WorkDetails({ work }: WorkDetailsProps) {
             {t('works.delete')}
           </M3eMenuItem>
         </M3eMenu>
-      )}
-
-      {/* 任务中心投影：本作品流水线活跃时显示阶段点行 */}
-      {isAdmin && opRunning && pipeline && (
-        <div className='flex items-center gap-2 rounded-md border border-[var(--md-sys-color-outline-variant)] px-3 py-2 text-xs'>
-          <span className='opacity-60'>{work.id}</span>
-          <PhaseDots pipeline={pipeline} />
-        </div>
       )}
 
       {isAdmin && (

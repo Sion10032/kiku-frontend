@@ -182,16 +182,14 @@ describe('WorkDetails 管理菜单按来源条件渲染', () => {
 });
 
 describe('WorkDetails 任务中心投影', () => {
-  it('流水线活跃：菜单禁用 + 行内阶段点渲染', () => {
+  it('流水线活跃：菜单禁用，不再渲染行内阶段点（指示器已删，进度看任务中心）', () => {
     h.pipeline = {
       workId: 'RJ01173549',
       phases: { metadata: { status: 'running', changedAt: 't' } },
       updatedAt: 't',
     };
     renderAsAdmin(makeWork());
-    const dot = screen.getByTitle('metadata: running');
-    expect(dot).toBeTruthy();
-    console.log('DEBUG DOM:', document.body.innerHTML.slice(0, 2000));
+    expect(screen.queryByTitle('metadata: running')).toBeNull();
     const items = document.querySelectorAll('[data-disabled]');
     const refreshItem = [...items].find((el) =>
       el.textContent?.includes('works.menu-refresh-metadata'),
