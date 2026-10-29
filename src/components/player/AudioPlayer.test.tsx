@@ -127,10 +127,13 @@ function fireGesture(detail: Record<string, unknown>) {
 }
 
 const initialStore = usePlayerStore.getState();
+const initialEqualizer = useSettingsStore.getState().equalizer;
 
 afterEach(() => {
   cleanup();
   usePlayerStore.setState(initialStore, true);
+  // 放在 afterEach：断言失败时用例末尾的恢复代码不会执行，会把 enabled 泄漏给后续用例
+  useSettingsStore.setState({ equalizer: initialEqualizer });
 });
 
 describe('音量百分比显示', () => {
@@ -159,7 +162,6 @@ describe('均衡器入口', () => {
   });
 
   it('图标随均衡器开关切换（开 graphic_eq / 关 graphic_eq_off）', () => {
-    const initialEqualizer = useSettingsStore.getState().equalizer;
     seedTrack();
 
     useSettingsStore.setState({
@@ -176,8 +178,24 @@ describe('均衡器入口', () => {
     expect(
       off.container.querySelector('[data-icon="graphic_eq_off"]'),
     ).not.toBeNull();
+  });
 
-    useSettingsStore.setState({ equalizer: initialEqualizer });
+  it('开着播放器时切换开关，图标跟着变（订阅而不是初次读取）', () => {
+    seedTrack();
+    useSettingsStore.setState({
+      equalizer: { ...initialEqualizer, enabled: false },
+    });
+    const { container } = render(<AudioPlayer />);
+    expect(
+      container.querySelector('[data-icon="graphic_eq_off"]'),
+    ).not.toBeNull();
+
+    act(() => {
+      useSettingsStore.setState({
+        equalizer: { ...initialEqualizer, enabled: true },
+      });
+    });
+    expect(container.querySelector('[data-icon="graphic_eq"]')).not.toBeNull();
   });
 
   it('对话框 onClose 后关闭，可再次打开', () => {
