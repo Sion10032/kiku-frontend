@@ -4,7 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SubscribeHooks, TaskEvent } from '../api/tasks';
 import { fetchTaskSnapshot, subscribeTaskEvents } from '../api/tasks';
 import { emptyTaskSnapshot, useTasksStore } from '../stores/tasks';
-import { useBatches, usePipeline, useTasks } from './useTasks';
+import type { WorkPipelineState } from '../api/tasks';
+import {
+  useActiveManualPipelines,
+  useBatches,
+  usePipeline,
+  useTasks,
+} from './useTasks';
 
 vi.mock('../api/tasks', () => ({
   fetchTaskSnapshot: vi.fn(),
@@ -141,5 +147,73 @@ describe('选择器', () => {
     const { result: miss } = renderHook(() => usePipeline('RJ2'));
     expect(hit.current?.workId).toBe('RJ1');
     expect(miss.current).toBeUndefined();
+  });
+
+  it('useActiveManualPipelines：活跃且无 batchId 的阶段才算手动任务在跑', () => {
+    const manualRunning: WorkPipelineState = {
+      workId: 'RJ1',
+      phases: {
+        analyze: {
+          workId: 'RJ1',
+          phase: 'analyze',
+          status: 'running',
+          changedAt: 't',
+        },
+      },
+      updatedAt: 't',
+    };
+    const manualDone: WorkPipelineState = {
+      workId: 'RJ2',
+      phases: {
+        analyze: {
+          workId: 'RJ2',
+          phase: 'analyze',
+          status: 'completed',
+          changedAt: 't',
+        },
+      },
+      updatedAt: 't',
+    };
+    const batchRunning: WorkPipelineState = {
+      workId: 'RJ3',
+      phases: {
+        analyze: {
+          workId: 'RJ3',
+          phase: 'analyze',
+          status: 'running',
+          changedAt: 't',
+          batchId: 'analysis-1',
+        },
+      },
+      updatedAt: 't',
+    };
+    // 混合态：旧 scan 批次阶段 + 手动 analyze 在跑（历史归属漂移后仍应算手动活跃）
+    const mixed: WorkPipelineState = {
+      workId: 'RJ4',
+      phases: {
+        metadata: {
+          workId: 'RJ4',
+          phase: 'metadata',
+          status: 'completed',
+          changedAt: 't',
+          batchId: 'scan-1',
+        },
+        analyze: {
+          workId: 'RJ4',
+          phase: 'analyze',
+          status: 'pending',
+          changedAt: 't',
+        },
+      },
+      updatedAt: 't',
+    };
+    useTasksStore.setState({
+      snapshot: {
+        ...emptyTaskSnapshot(),
+        pipelines: [manualRunning, manualDone, batchRunning, mixed],
+      },
+    });
+    const { result } = renderHook(() => useActiveManualPipelines());
+    expect(result.current.map((p) => p.workId)).toEqual(['RJ1', 'RJ4']);
   });
 });

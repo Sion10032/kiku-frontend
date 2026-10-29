@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { M3eIcon } from '@m3e/react/icon';
 import '@m3e/icons/outlined/pending';
 import '@m3e/icons/outlined/chevron_right';
-import { useBatches } from '../../hooks/useTasks';
+import { useActiveManualPipelines, useBatches } from '../../hooks/useTasks';
 import TaskCenterDialog from './TaskCenterDialog';
 
 /**
- * 音声管理页任务面板：有批次时显示指示器行（进行中合计进度 / 最近批次摘要，
- * 点击开任务中心），无任何批次时只渲染裸弹窗（不占布局）。
+ * 音声管理页任务面板：有批次或手动流水线时显示指示器行（进行中合计进度 /
+ * 最近批次摘要，点击开任务中心），两者皆无时只渲染裸弹窗（不占布局）。
+ * 手动任务（作品页高优注入，无批次卡）也计入活跃数——否则无批次时入口
+ * 隐藏，work 页触发的运维在管理后台无处可看。
  *
  * 弹窗必须渲染在稳定的树位置（Fragment 直挂，不随指示器行条件分支切换）：
  * 否则批次 running→终态的瞬间分支切换会卸载重挂 M3eDialog，
@@ -18,9 +20,11 @@ import TaskCenterDialog from './TaskCenterDialog';
 export default function TaskPanel() {
   const { t } = useTranslation();
   const batches = useBatches();
+  const activeManual = useActiveManualPipelines();
   const [open, setOpen] = useState(false);
 
   const active = batches.filter((b) => b.status === 'running');
+  const activeCount = active.length + activeManual.length;
   const totals = active.reduce(
     (acc, b) => ({
       done: acc.done + b.counters.completed + b.counters.failed,
@@ -33,7 +37,7 @@ export default function TaskPanel() {
     <TaskCenterDialog open={open} onClose={() => setOpen(false)} />
   );
 
-  if (batches.length === 0) return dialog;
+  if (batches.length === 0 && activeManual.length === 0) return dialog;
 
   return (
     <>
@@ -44,11 +48,11 @@ export default function TaskPanel() {
       >
         <M3eIcon
           name='pending'
-          className={active.length > 0 ? 'shrink-0 animate-pulse' : 'shrink-0'}
+          className={activeCount > 0 ? 'shrink-0 animate-pulse' : 'shrink-0'}
         />
         <span className='min-w-0 flex-1 truncate'>
-          {active.length > 0
-            ? t('tasks.panel.active', { n: active.length })
+          {activeCount > 0
+            ? t('tasks.panel.active', { n: activeCount })
             : t('tasks.panel.recent')}
         </span>
         {active.length > 0 && (

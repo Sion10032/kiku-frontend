@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import type { BatchInfo } from '../api/tasks';
+import { useEffect, useMemo } from 'react';
+import type { BatchInfo, WorkPipelineState } from '../api/tasks';
 import { fetchTaskSnapshot, subscribeTaskEvents } from '../api/tasks';
 import { useTasksStore } from '../stores/tasks';
 
@@ -61,5 +61,22 @@ export function useBatches(): BatchInfo[] {
 export function usePipeline(workId: string) {
   return useTasksStore((s) =>
     s.snapshot.pipelines.find((p) => p.workId === workId),
+  );
+}
+
+/** 活跃手动流水线（作品页高优注入，不建批次卡）：存在无 batchId 且 pending/running 的阶段。
+ *  任务面板入口与活跃计数据此纳入手动任务——否则无批次时入口隐藏，手动任务无处可看。
+ *  选原始 pipelines 引用再 useMemo 派生，避免 selector 每次返回新数组触发无限重渲染。 */
+export function useActiveManualPipelines(): WorkPipelineState[] {
+  const pipelines = useTasksStore((s) => s.snapshot.pipelines);
+  return useMemo(
+    () =>
+      pipelines.filter((p) =>
+        Object.values(p.phases).some(
+          (ph) =>
+            !ph.batchId && (ph.status === 'running' || ph.status === 'pending'),
+        ),
+      ),
+    [pipelines],
   );
 }
