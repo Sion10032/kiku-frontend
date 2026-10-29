@@ -33,6 +33,9 @@ const BAND_DRAG_DEAD_ZONE = 8;
 /** 横向占优的判定偏置：|dx| 需超过 |dy| 的这个倍数才算滑动（纵向优先） */
 const BAND_DRAG_HORIZONTAL_BIAS = 1.2;
 
+/** 竖排 extra-small 滑条 thumb 直径的兜底值（px）；真机从 DOM 量，量不到时用它 */
+const BAND_THUMB_FALLBACK = 16;
+
 /**
  * 一轮落在滑条上的触摸手势。
  * 触摸由我们全权处理（M3E 滑条一按下就跳值、还会吃掉横向手势），鼠标不介入。
@@ -41,8 +44,10 @@ type BandDrag = {
   pointerId: number;
   /** 频段下标（来自 data-eq-fader） */
   band: number;
-  /** 该段滑条的外框，高度即轨道长，用来把 clientY 映射成增益 */
+  /** 该段滑条的外框；竖向行程需再扣掉 thumb 直径，见 applyBandFromPointer */
   fader: HTMLElement;
+  /** thumb 直径（px）：M3E 的点击换算按 thumb 中心算，触摸要与之同一刻度 */
+  thumbSize: number;
   startX: number;
   startY: number;
   startScroll: number;
@@ -74,6 +79,11 @@ function formatGain(db: number): string {
 /** 频段标签：≥1kHz 折成 1k / 16k 形式，其余原样。 */
 function formatBand(freq: number): string {
   return freq >= 1000 ? `${freq / 1000}k` : String(freq);
+}
+
+/** 频段可访问名称：31 Hz / 1 kHz（带单位，避免读成「1k」） */
+function bandAriaLabel(freq: number): string {
+  return freq >= 1000 ? `${freq / 1000} kHz` : `${freq} Hz`;
 }
 
 /**
@@ -139,6 +149,9 @@ export default function EqualizerDialog({
    */
   function handleBandPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (e.pointerType === 'mouse') return;
+    // 单指仲裁：已有拖拽在跑时忽略新的 pointerdown
+    // （否则第二根手指会抢走 band，原频段拖拽静默中断 + 新频段被写值）
+    if (bandDragRef.current) return;
     const fader = (e.target as HTMLElement | null)?.closest<HTMLElement>(
       '[data-eq-fader]',
     );
@@ -153,12 +166,19 @@ export default function EqualizerDialog({
       startX: e.clientX,
       startY: e.clientY,
       startScroll: el.scrollLeft,
+      thumbSize:
+        fader.querySelector<HTMLElement>('m3e-slider-thumb')?.clientHeight
+        || BAND_THUMB_FALLBACK,
       mode: 'pending',
     };
-    // 立即捕获指针：手指拖出滑条/容器后仍能继续跟手与收尾（否则会卡住不动的拖拽）
-    el.setPointerCapture?.(e.pointerId);
-    // 不让滑条看到这次 pointerdown，否则它会立刻跳值
+    // 先掐断事件、再捕获指针：capture 在指针已失效时会抛 NotFoundError，
+    // 顺序反了会跳过后面的 stopPropagation，滑条就会看到这次 pointerdown 而跳值
     e.stopPropagation();
+    try {
+      el.setPointerCapture?.(e.pointerId);
+    } catch {
+      // 捕获失败不影响后续：move/up 仍在容器内派发
+    }
   }
 
   function handleBandPointerMove(e: React.PointerEvent<HTMLDivElement>) {
@@ -184,7 +204,11 @@ export default function EqualizerDialog({
 
     e.stopPropagation();
     if (drag.mode === 'scroll') {
-      el.scrollLeft = drag.startScroll - dx;
+      const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+      const next = Math.min(Math.max(0, drag.startScroll - dx), maxScroll);
+      // 越界时把基准回写到实际位置：否则回拖仍按夹取前的位移算，内容会瞬移
+      drag.startScroll = next + dx;
+      el.scrollLeft = next;
       return;
     }
     applyBandFromPointer(drag, e.clientY);
@@ -203,8 +227,11 @@ export default function EqualizerDialog({
   function applyBandFromPointer(drag: BandDrag, clientY: number) {
     if (!enabled) return; // 关闭态只允许滚动，不允许改值
     const rect = drag.fader.getBoundingClientRect();
-    if (rect.height <= 0) return;
-    const ratio = 1 - (clientY - rect.top) / rect.height;
+    // 与 M3E 自己的换算同刻度：thumb 中心只在 [t/2, h-t/2] 之间移动，
+    // 直接用 clientY/height 会让触摸和鼠标/键盘滑到同一点时得到不同数值
+    const travel = rect.height - drag.thumbSize;
+    if (travel <= 0) return;
+    const ratio = 1 - (clientY - rect.top - drag.thumbSize / 2) / travel;
     const clamped = Math.min(1, Math.max(0, ratio));
     updateEqualizerBand(
       drag.band,
@@ -315,6 +342,7 @@ export default function EqualizerDialog({
           )}
 
           {/* 滑条区：窄屏横向滚动，10 段列宽固定不压缩 */}
+          {/* data-eq-bands 仅供测试定位；生产逻辑只读 data-eq-fader */}
           <div
             ref={bandScrollRef}
             data-eq-bands
@@ -340,14 +368,18 @@ export default function EqualizerDialog({
                       id={`eq-band-${index}`}
                       orientation='vertical'
                       size='extra-small'
-                      aria-label={`${formatBand(band)} Hz`}
                       min={EQ_GAIN_MIN}
                       max={EQ_GAIN_MAX}
                       step={EQ_GAIN_STEP}
                       disabled={!enabled}
                       onInput={(e) => handleBandInput(index, e)}
                     >
-                      <M3eSliderThumb value={gains[index]} />
+                      {/* 名称必须落在 thumb 上：role="slider" 与焦点都在 m3e-slider-thumb，
+                          而 m3e-slider host 没有 role、也不会转发 aria-label（库源码可查） */}
+                      <M3eSliderThumb
+                        value={gains[index]}
+                        aria-label={bandAriaLabel(band)}
+                      />
                     </M3eSlider>
                   </div>
                   <span className='text-[0.625rem] tabular-nums opacity-70'>
