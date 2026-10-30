@@ -43,9 +43,9 @@ export default function Work() {
   return (
     <PageContainer
       base='detail'
-      className='flex flex-col gap-6 lg:flex-row lg:items-start'
+      className='flex flex-col gap-6 md:flex-row md:items-start'
     >
-      <div className='w-full shrink-0 lg:w-90'>
+      <div className='w-full shrink-0 md:w-90 xl:w-110 2xl:w-130'>
         <WorkDetails work={work} />
       </div>
       <div className='min-w-0 flex-1'>
