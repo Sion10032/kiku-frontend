@@ -19,6 +19,7 @@ import '@m3e/icons/outlined/download';
 import '@m3e/icons/outlined/more_vert';
 import '@m3e/icons/outlined/queue_music';
 import '@m3e/icons/outlined/open_in_new';
+import '@m3e/icons/outlined/info';
 import '@m3e/icons/outlined/arrow_back';
 import '@m3e/icons/outlined/visibility';
 import { selectCurrentTrack, usePlayerStore } from '../../stores/playerStore';
@@ -39,6 +40,7 @@ import {
   LoudnessCurveDialog,
   type CurveTrackInfo,
 } from './LoudnessCurveDialog';
+import { FileInfoDialog } from './FileInfoDialog';
 import { isPreviewable } from '../preview/registry';
 import { toPreviewFile, type PreviewFile } from '../preview/types';
 import type { CssInput } from '../../utils/css';
@@ -138,6 +140,9 @@ export default function WorkTree({
 
   // 响度曲线 Dialog 的目标音轨（⋮ 菜单「响度曲线」项点击时传入；null = 关闭）
   const [curveTrack, setCurveTrack] = useState<CurveTrackInfo | null>(null);
+
+  // 文件信息 Dialog 的目标叶（⋮ 菜单「文件信息」项点击时传入；null = 关闭）
+  const [fileInfoLeaf, setFileInfoLeaf] = useState<TrackLeaf | null>(null);
 
   // 当前目录可预览文件（画廊范围）
   const previewFiles = useMemo(
@@ -356,6 +361,14 @@ export default function WorkTree({
           </M3eMenuItem>
         )}
         {menu && (
+          <M3eMenuItem onClick={() => setFileInfoLeaf(menu.node)}>
+            <span slot='icon'>
+              <M3eIcon name='info' />
+            </span>
+            {t('works.menu-file-info')}
+          </M3eMenuItem>
+        )}
+        {menu && (
           <M3eMenuItem onClick={() => downloadLeaf(menu.node)}>
             <span slot='icon'>
               <M3eIcon name='download' />
@@ -379,6 +392,12 @@ export default function WorkTree({
         workId={work.id}
         track={curveTrack}
         onClose={() => setCurveTrack(null)}
+      />
+
+      {/* 文件信息 Dialog（⋮ 菜单「文件信息」项打开；leaf=null 时自身不渲染） */}
+      <FileInfoDialog
+        leaf={fileInfoLeaf}
+        onClose={() => setFileInfoLeaf(null)}
       />
     </div>
   );
