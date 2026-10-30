@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFileInfoSections } from './FileInfoDialog';
+import { buildFileInfoSections } from './fileInfoSections';
 import type { TrackLeaf } from '../../types';
 
 const label = (key: string) => key;
