@@ -156,12 +156,16 @@ export interface TrackLeaf {
   type: Exclude<TrackItemType, 'folder'>;
   /** 文件相对路径（media index），如 `subfolder/track01.mp3` */
   hash: string;
+  /** 文件字节数（建树时带出；取不到为 null，旧响应无此键） */
+  sizeBytes?: number | null;
   /** 歌词引用（仅 audio；后端建树时匹配） */
   lyrics?: LyricsRef;
   /** 时长秒数（仅 audio；未探测/解析失败为 null，对齐后端 /api/tracks/:id） */
   durationSec?: number | null;
   /** 整合响度 LUFS（仅 audio；未分析为 null，与 durationSec 同构） */
   loudnessLufs?: number | null;
+  /** 真实峰值 dBTP（仅 audio；未分析为 null，与 loudnessLufs 同构） */
+  loudnessTruePeakDb?: number | null;
   children?: never;
 }
 

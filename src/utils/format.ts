@@ -93,3 +93,22 @@ export function formatRemaining(currentTime: number, duration: number): string {
   );
   return `-${formatDuration(rest)}`;
 }
+
+/**
+ * 格式化字节数为人类可读文本（1024 进制；<1KB 整数 B，其余一位小数：
+ * "8 B" / "1.0 KB" / "1.5 MB"）；无效值返回 '—'。
+ *
+ * @param bytes 字节数；null/undefined/非有限/负数视为未知
+ */
+export function formatBytes(bytes: number | null | undefined): string {
+  if (bytes == null || !Number.isFinite(bytes) || bytes < 0) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'] as const;
+  let value = bytes;
+  let i = -1;
+  while (value >= 1024 && i < units.length - 1) {
+    value /= 1024;
+    i++;
+  }
+  return `${value.toFixed(1)} ${units[i]}`;
+}

@@ -1,6 +1,7 @@
 import i18next from 'i18next';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
+  formatBytes,
   formatDuration,
   formatProgress,
   formatRemaining,
@@ -138,5 +139,23 @@ describe('formatDuration', () => {
   it('null/undefined 返回 —（时长未知）', () => {
     expect(formatDuration(null)).toBe('—');
     expect(formatDuration(undefined)).toBe('—');
+  });
+});
+
+describe('formatBytes', () => {
+  it('<1KB 整数 B', () => {
+    expect(formatBytes(8)).toBe('8 B');
+    expect(formatBytes(1023)).toBe('1023 B');
+  });
+  it('1024 进制，KB/MB/GB 一位小数', () => {
+    expect(formatBytes(1024)).toBe('1.0 KB');
+    expect(formatBytes(1024 * 1536)).toBe('1.5 MB');
+    expect(formatBytes(1024 ** 3)).toBe('1.0 GB');
+  });
+  it('null/undefined/非有限/负数 → —', () => {
+    expect(formatBytes(null)).toBe('—');
+    expect(formatBytes(undefined)).toBe('—');
+    expect(formatBytes(-1)).toBe('—');
+    expect(formatBytes(Number.NaN)).toBe('—');
   });
 });
