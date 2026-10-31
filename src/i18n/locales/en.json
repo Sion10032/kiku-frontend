@@ -374,6 +374,7 @@
   "player.wavpack-error-seek": "Failed to play WavPack track: could not locate the requested playback position",
   "player.wavpack-error-truncated": "Failed to play WavPack track: the audio stream ended prematurely",
   "player.wavpack-error-network": "Failed to play WavPack track: network error ({{message}})",
+  "player.wavpack-low-perf": "WavPack decodes slowly ({{rate}}×) and may stutter; check browser JIT settings or use Chrome",
   "player.previous-track": "Previous track",
   "player.next-track": "Next track",
   "player.rewind_one": "Rewind {{count}} second",

@@ -20,10 +20,18 @@ import {
 } from '../utils/equalizer';
 import { loudnessLinear } from '../utils/loudness';
 
-/** 队列积压上限（秒）：超过即向 worker 发 pause，防止内存无限增长。 */
-const MAX_QUEUED_SECONDS = 15;
-/** 续拉阈值（秒）：积压回落到此值以内再让 worker 续拉，避免缓冲被打空出现可听间隙。 */
-const RESUME_SECONDS = 2;
+/**
+ * 队列积压上限（秒）：超过即向 worker 发 pause，防止内存无限增长。
+ * 30s：低性能浏览器（wasm JIT 被降级，解码仅 ~3× 实时）的后台/息屏节流期
+ * 靠更厚的已解码队列扛过；96kHz float 最坏 ~23MB PCM，手机可承受。
+ */
+const MAX_QUEUED_SECONDS = 30;
+/**
+ * 续拉阈值（秒）：积压回落到此值以内再让 worker 续拉，避免缓冲被打空出现可听间隙。
+ * 5s：比 2s 更早恢复拉流，缩短低水位窗口（节流击穿的高危期）；
+ * 稳态积压在 [RESUME, MAX] 区间波动，也降低了 pause/resume 切换频率。
+ */
+const RESUME_SECONDS = 5;
 
 /**
  * 链式调度的时间→sample 换算：链起点 sample + 经过 ctx 时间 × 采样率。

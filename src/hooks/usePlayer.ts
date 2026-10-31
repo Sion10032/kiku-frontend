@@ -17,6 +17,7 @@ import {
   reportTrackEnd,
 } from '../utils/progressReporter';
 import { useCurrentGainDb } from './useCurrentGainDb';
+import { maybeRunWvPerfProbe } from '../wavpack/perf-probe';
 
 /**
  * 模块级播放后端单例（.wv → WasmWvPlayer，其余 → Howler 适配器）。
@@ -214,6 +215,7 @@ export function usePlayer(): void {
 
     if (isWv(currentTrack)) {
       // —— WavPack 分支：worker 解码 + AudioBuffer 链式调度 ——
+      maybeRunWvPerfProbe(src);
       const player = new WasmWvPlayer(src, {
         onLoad: (dur) => {
           usePlayerStore.getState().setDuration(dur);

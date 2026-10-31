@@ -361,6 +361,7 @@
   "player.wavpack-error-seek": "WavPack 音轨播放失败：无法定位到目标播放位置",
   "player.wavpack-error-truncated": "WavPack 音轨播放失败：音频流提前结束",
   "player.wavpack-error-network": "WavPack 音轨播放失败：网络错误（{{message}}）",
+  "player.wavpack-low-perf": "WavPack 解码较慢（{{rate}}×），可能卡顿，请检查浏览器 JIT 设置或改用 Chrome",
   "player.previous-track": "上一首",
   "player.next-track": "下一首",
   "player.rewind_other": "快退 {{count}} 秒",
